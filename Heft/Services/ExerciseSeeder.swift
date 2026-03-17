@@ -5,17 +5,10 @@ import SwiftData
 
 @MainActor
 enum ExerciseSeeder {
-    private static let didSeedExercisesKey = "didSeedExercises"
-
     static func seedIfNeeded(in context: ModelContext) {
-        guard UserDefaults.standard.bool(forKey: didSeedExercisesKey) == false else { return }
-
         let fetchDescriptor = FetchDescriptor<ExerciseDefinition>()
         let existingCount = (try? context.fetchCount(fetchDescriptor)) ?? .zero
-        guard existingCount == .zero else {
-            UserDefaults.standard.set(true, forKey: didSeedExercisesKey)
-            return
-        }
+        guard existingCount == .zero else { return }
 
         commonExercises.forEach { definition in
             context.insert(definition)
@@ -23,7 +16,6 @@ enum ExerciseSeeder {
 
         do {
             try context.save()
-            UserDefaults.standard.set(true, forKey: didSeedExercisesKey)
         } catch {
             assertionFailure("Failed to seed exercises: \(error)")
         }

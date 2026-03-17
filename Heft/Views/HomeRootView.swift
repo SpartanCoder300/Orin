@@ -15,6 +15,8 @@ struct HomeRootView: View {
     private var sessions: [WorkoutSession]
 
     @State private var stats = HomeStatsViewModel()
+    @State private var isShowingRoutineBuilder = false
+    @State private var routineToEdit: RoutineTemplate? = nil
 
     private var featuredRoutine: RoutineTemplate? { routines.first }
     private var remainingRoutines: [RoutineTemplate] { Array(routines.dropFirst()) }
@@ -50,10 +52,17 @@ struct HomeRootView: View {
                     SectionHeader(title: "Quick Start")
 
                     if let featured = featuredRoutine {
-                        FeaturedRoutineCard(routine: featured) {
-                            appState.pendingRoutineID = featured.id
-                            appState.isShowingActiveWorkout = true
-                        }
+                        FeaturedRoutineCard(
+                            routine: featured,
+                            onTap: {
+                                appState.pendingRoutineID = featured.id
+                                appState.isShowingActiveWorkout = true
+                            },
+                            onEdit: {
+                                routineToEdit = featured
+                                isShowingRoutineBuilder = true
+                            }
+                        )
                     } else {
                         EmptyRoutinesPrompt()
                     }
@@ -78,13 +87,23 @@ struct HomeRootView: View {
                         SectionHeader(title: "All Routines")
 
                         ForEach(remainingRoutines) { routine in
-                            RoutineListRow(routine: routine) {
-                                appState.pendingRoutineID = routine.id
-                                appState.isShowingActiveWorkout = true
-                            }
+                            RoutineListRow(
+                                routine: routine,
+                                onTap: {
+                                    appState.pendingRoutineID = routine.id
+                                    appState.isShowingActiveWorkout = true
+                                },
+                                onEdit: {
+                                    routineToEdit = routine
+                                    isShowingRoutineBuilder = true
+                                }
+                            )
                         }
 
-                        NewRoutineCard()
+                        NewRoutineCard {
+                            routineToEdit = nil
+                            isShowingRoutineBuilder = true
+                        }
                     }
                 }
 
@@ -101,13 +120,12 @@ struct HomeRootView: View {
             .padding(.horizontal, Spacing.md)
             .padding(.vertical, Spacing.lg)
         }
-        .navigationTitle("Heft")
-        .navigationBarTitleDisplayMode(.inline)
         .themedBackground()
         .toolbar {
             ToolbarItem(placement: .topBarTrailing) {
                 Button {
-                    // §7 Routine Builder — wired when built
+                    routineToEdit = nil
+                    isShowingRoutineBuilder = true
                 } label: {
                     Image(systemName: "plus")
                         .fontWeight(.semibold)
@@ -115,11 +133,10 @@ struct HomeRootView: View {
             }
         }
         .sheet(isPresented: $appState.isShowingActiveWorkout) {
-            // §8 Active Workout Screen — placeholder until built
-            Text("Active Workout")
-                .foregroundStyle(Color.textPrimary)
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .background(Color.heftBackground.ignoresSafeArea())
+            ActiveWorkoutPlaceholder()
+        }
+        .sheet(isPresented: $isShowingRoutineBuilder) {
+            RoutineBuilderView(existingRoutine: routineToEdit)
         }
         .onChange(of: sessions, initial: true) {
             stats.update(from: sessions, container: modelContext.container)
@@ -183,6 +200,7 @@ private struct StatChip: View {
 private struct FeaturedRoutineCard: View {
     let routine: RoutineTemplate
     let onTap: () -> Void
+    let onEdit: () -> Void
     @Environment(\.heftTheme) private var theme
 
     var body: some View {
@@ -216,6 +234,11 @@ private struct FeaturedRoutineCard: View {
             )
         }
         .buttonStyle(.plain)
+        .contextMenu {
+            Button { onEdit() } label: {
+                Label("Edit Routine", systemImage: "pencil")
+            }
+        }
     }
 
     private var lastUsedLabel: String? {
@@ -249,6 +272,7 @@ private struct MetadataPill: View {
 private struct RoutineListRow: View {
     let routine: RoutineTemplate
     let onTap: () -> Void
+    let onEdit: () -> Void
 
     var body: some View {
         Button(action: onTap) {
@@ -279,6 +303,11 @@ private struct RoutineListRow: View {
             .background(.thinMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
         }
         .buttonStyle(.plain)
+        .contextMenu {
+            Button { onEdit() } label: {
+                Label("Edit Routine", systemImage: "pencil")
+            }
+        }
     }
 
     /// Unique muscle groups from this routine's exercise definitions, up to 3.
@@ -297,12 +326,11 @@ private struct RoutineListRow: View {
 // MARK: - New Routine Card
 
 private struct NewRoutineCard: View {
+    let action: () -> Void
     @Environment(\.heftTheme) private var theme
 
     var body: some View {
-        Button {
-            // §7 Routine Builder — wired when built
-        } label: {
+        Button(action: action) {
             HStack(spacing: Spacing.sm) {
                 Image(systemName: "plus")
                     .font(.system(size: 16, weight: .semibold))
@@ -399,6 +427,80 @@ private struct EmptyRoutinesPrompt: View {
         .padding(Spacing.lg)
         .frame(maxWidth: .infinity)
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
+    }
+}
+
+// MARK: - Active Workout Placeholder (§8 shell)
+
+private struct ActiveWorkoutPlaceholder: View {
+    @Environment(\.dismiss) private var dismiss
+    @Environment(\.heftTheme) private var theme
+
+    @State private var isShowingExercisePicker = false
+
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                Color.heftBackground.ignoresSafeArea()
+                LinearGradient(
+                    colors: [theme.accentColor.opacity(0.18), Color.clear],
+                    startPoint: .top,
+                    endPoint: UnitPoint(x: 0.5, y: 0.42)
+                )
+                .ignoresSafeArea()
+
+                VStack(spacing: Spacing.lg) {
+                    Image(systemName: "figure.strengthtraining.traditional")
+                        .font(.system(size: DesignTokens.Icon.placeholder))
+                        .foregroundStyle(theme.accentColor)
+
+                    Text("Active Workout")
+                        .font(Typography.title)
+                        .foregroundStyle(Color.textPrimary)
+
+                    Text("§8 — full logging UI coming next")
+                        .font(Typography.caption)
+                        .foregroundStyle(Color.textFaint)
+
+                    Button {
+                        isShowingExercisePicker = true
+                    } label: {
+                        Label("Add Exercise", systemImage: "plus")
+                            .font(Typography.body)
+                            .fontWeight(.semibold)
+                            .foregroundStyle(theme.accentColor)
+                            .padding(.horizontal, Spacing.xl)
+                            .padding(.vertical, Spacing.md)
+                            .background(theme.accentColor.opacity(0.12), in: Capsule())
+                            .overlay(Capsule().strokeBorder(theme.accentColor.opacity(0.35), lineWidth: 1))
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .navigationTitle("Workout")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
+            .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("End") { dismiss() }
+                        .foregroundStyle(Color.heftRed)
+                }
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        isShowingExercisePicker = true
+                    } label: {
+                        Image(systemName: "plus")
+                            .fontWeight(.semibold)
+                    }
+                }
+            }
+            .sheet(isPresented: $isShowingExercisePicker) {
+                ExercisePicker { exercise in
+                    // §8 — add exercise to active session
+                    _ = exercise
+                }
+            }
+        }
     }
 }
 

@@ -57,7 +57,9 @@ enum PersistenceController {
         )
 
         do {
-            return try ModelContainer(for: schema, configurations: [configuration])
+            let container = try ModelContainer(for: schema, configurations: [configuration])
+            ExerciseSeeder.seedIfNeeded(in: container.mainContext)
+            return container
         } catch {
             fatalError("Unable to create preview model container: \(error)")
         }
