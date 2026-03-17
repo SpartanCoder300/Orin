@@ -35,9 +35,10 @@ struct AppView: View {
             }
             .tag(AppTab.settings)
         }
-        .tint(.heftAccent)
+        .tint(appState.accentTheme.accentColor)
         .background(Color.heftBackground.ignoresSafeArea())
         .preferredColorScheme(.dark)
+        .environment(\.heftTheme, appState.accentTheme)
         .task {
             ExerciseSeeder.seedIfNeeded(in: modelContext)
         }

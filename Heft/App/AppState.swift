@@ -14,4 +14,15 @@ enum AppTab: Hashable {
 final class AppState {
     var selectedTab: AppTab = .home
     var activeWorkoutID: UUID?
+    var isShowingActiveWorkout: Bool = false
+    var pendingRoutineID: UUID? = nil
+
+    var accentTheme: AccentTheme = {
+        let raw = UserDefaults.standard.string(forKey: "heft.accentTheme") ?? ""
+        return AccentTheme(rawValue: raw) ?? .midnightStrength
+    }() {
+        didSet {
+            UserDefaults.standard.set(accentTheme.rawValue, forKey: "heft.accentTheme")
+        }
+    }
 }

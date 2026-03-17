@@ -1,0 +1,1307 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Heft — watchOS Companion</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --text-primary: rgba(255,255,255,0.94);
+    --text-secondary: rgba(255,255,255,0.52);
+    --text-tertiary: rgba(255,255,255,0.28);
+    --accent: #7C7FF5;
+    --accent-rgb: 92,95,239;
+    --accent-secondary-rgb: 155,89,245;
+    --violet: #9B59F5;
+    --teal: #2DD4BF;
+    --amber: #F59E0B;
+    --green: #34D399;
+    --red: #F87171;
+  }
+
+  /* ── Base theme definitions ── */
+  body[data-theme="midnight"] {
+    --watch-bg: #07071A;
+    --watch-glow1: rgba(70,75,160,0.22);
+    --watch-glow2: rgba(40,30,100,0.15);
+    --accent: #7C7FF5;
+    --accent-rgb: 92,95,239;
+    --accent-secondary-rgb: 155,89,245;
+  }
+  body[data-theme="ember"] {
+    --watch-bg: #0D0905;
+    --watch-glow1: rgba(200,70,20,0.22);
+    --watch-glow2: rgba(140,40,10,0.15);
+    --accent: #E8622A;
+    --accent-rgb: 232,98,42;
+    --accent-secondary-rgb: 200,55,20;
+    --amber: #E8622A;
+  }
+  body[data-theme="graphite"] {
+    --watch-bg: #0C0D0E;
+    --watch-glow1: rgba(100,112,130,0.16);
+    --watch-glow2: rgba(60,68,80,0.10);
+    --accent: #8E9AAB;
+    --accent-rgb: 142,154,171;
+    --accent-secondary-rgb: 110,122,140;
+  }
+  body[data-theme="abyss"] {
+    --watch-bg: #02050E;
+    --watch-glow1: rgba(10,80,200,0.30);
+    --watch-glow2: rgba(5,40,130,0.18);
+    --accent: #0A84FF;
+    --accent-rgb: 10,132,255;
+    --accent-secondary-rgb: 0,100,220;
+  }
+
+  body {
+    background: #06060E;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px 60px;
+  }
+
+  .header {
+    text-align: center;
+    margin-bottom: 12px;
+  }
+  .header .wordmark { font-size: 12px; letter-spacing: 0.25em; text-transform: uppercase; color: var(--text-tertiary); margin-bottom: 8px; }
+  .header h1 { font-size: 26px; font-weight: 300; letter-spacing: -0.02em; }
+  .header p { font-size: 13px; color: var(--text-secondary); margin-top: 6px; }
+
+  .state-legend {
+    display: flex; gap: 16px; justify-content: center; margin-bottom: 24px; flex-wrap: wrap;
+  }
+  .legend-item { display: flex; align-items: center; gap: 7px; font-size: 11px; color: var(--text-secondary); }
+  .legend-dot { width: 8px; height: 8px; border-radius: 50%; }
+
+  .screen-nav {
+    display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; margin-bottom: 32px; max-width: 720px;
+  }
+  .nav-btn {
+    background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 20px; padding: 6px 14px;
+    font-family: 'DM Sans', sans-serif; font-size: 11px; color: var(--text-secondary);
+    cursor: pointer; transition: all 0.2s;
+  }
+  .nav-btn:hover { color: var(--text-primary); border-color: rgba(255,255,255,0.2); }
+  .nav-btn.active { background: rgba(var(--accent-rgb),0.2); border-color: var(--accent); color: var(--accent); }
+
+  /* Watch frame - Apple Watch Ultra 2 / Series 9 45mm */
+  .watch-wrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+  }
+
+  .watch-outer {
+    position: relative;
+    width: 220px;
+  }
+
+  /* Watch body */
+  .watch-body {
+    width: 220px;
+    height: 266px;
+    border-radius: 66px;
+    background: linear-gradient(145deg, #2a2a2a, #1a1a1a);
+    box-shadow:
+      0 0 0 1.5px rgba(255,255,255,0.08),
+      0 30px 60px rgba(0,0,0,0.9),
+      inset 0 1px 0 rgba(255,255,255,0.06),
+      inset 0 -1px 0 rgba(0,0,0,0.5);
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* Crown */
+  .watch-crown {
+    position: absolute;
+    right: -8px;
+    top: 72px;
+    width: 10px;
+    height: 44px;
+    background: linear-gradient(to right, #333, #444);
+    border-radius: 3px;
+    box-shadow: 1px 0 3px rgba(0,0,0,0.5), inset -1px 0 1px rgba(255,255,255,0.06);
+  }
+  .watch-btn {
+    position: absolute;
+    right: -8px;
+    top: 124px;
+    width: 10px;
+    height: 22px;
+    background: linear-gradient(to right, #333, #444);
+    border-radius: 3px;
+    box-shadow: 1px 0 3px rgba(0,0,0,0.5), inset -1px 0 1px rgba(255,255,255,0.06);
+  }
+
+  /* Screen bezel */
+  .watch-screen-wrap {
+    width: 196px;
+    height: 242px;
+    border-radius: 58px;
+    background: #000;
+    overflow: hidden;
+    position: relative;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.04);
+  }
+
+  /* Theme toggle button */
+  /* ── Theme picker (collapsible) ── */
+  .theme-picker {
+    position: fixed;
+    top: 16px; right: 16px;
+    z-index: 9999;
+    background: rgba(12,12,22,0.92);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    backdrop-filter: blur(16px);
+    font-family: 'DM Sans', sans-serif;
+    user-select: none;
+    min-width: 200px;
+    overflow: hidden;
+  }
+  .theme-picker-header {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 10px 12px; cursor: pointer; gap: 10px;
+  }
+  .theme-picker-header:hover .theme-picker-label { color: rgba(255,255,255,0.5); }
+  .theme-picker-label {
+    font-size: 9px; text-transform: uppercase; letter-spacing: 0.1em;
+    color: rgba(255,255,255,0.28); transition: color 0.15s; flex: 1;
+  }
+  .theme-picker-current {
+    font-size: 11px; font-weight: 500;
+    color: rgba(255,255,255,0.7); letter-spacing: -0.01em;
+  }
+  .theme-picker-chevron {
+    font-size: 9px; color: rgba(255,255,255,0.3);
+    transition: transform 0.2s; line-height: 1;
+  }
+  .theme-picker.open .theme-picker-chevron { transform: rotate(180deg); }
+  .theme-picker-body {
+    max-height: 0; overflow: hidden;
+    transition: max-height 0.25s ease, padding 0.2s;
+    padding: 0 12px;
+    border-top: 1px solid transparent;
+  }
+  .theme-picker.open .theme-picker-body {
+    max-height: 320px; padding: 8px 12px 10px;
+    border-top-color: rgba(255,255,255,0.07);
+  }
+  .theme-options { display: flex; flex-direction: column; gap: 4px; }
+  .theme-opt {
+    display: flex; align-items: center; gap: 9px;
+    padding: 7px 10px; border-radius: 10px; cursor: pointer;
+    transition: background 0.15s; border: 1px solid transparent;
+  }
+  .theme-opt:hover { background: rgba(255,255,255,0.05); }
+  .theme-opt.active { background: rgba(255,255,255,0.07); border-color: rgba(255,255,255,0.1); }
+  .theme-swatch {
+    width: 22px; height: 22px; border-radius: 6px;
+    flex-shrink: 0; border: 1px solid rgba(255,255,255,0.08);
+  }
+  .theme-opt-info { display: flex; flex-direction: column; gap: 1px; flex: 1; }
+  .theme-opt-name { font-size: 12px; font-weight: 500; color: rgba(255,255,255,0.85); letter-spacing: -0.01em; }
+  .theme-opt-desc { font-size: 10px; color: rgba(255,255,255,0.32); }
+  .theme-opt .theme-check { font-size: 11px; color: var(--accent); opacity: 0; transition: opacity 0.15s; }
+  .theme-opt.active .theme-check { opacity: 1; }
+  .theme-premium-badge {
+    font-size: 8px; font-weight: 600; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--amber); background: rgba(245,158,11,0.12);
+    border: 1px solid rgba(245,158,11,0.25); border-radius: 5px; padding: 2px 5px;
+    margin-left: auto; flex-shrink: 0;
+  }
+  .theme-divider { height: 1px; background: rgba(255,255,255,0.07); margin: 6px 0; }
+
+  /* Legacy .theme-toggle — no longer rendered but keep for safety */
+  .theme-toggle {
+    position: fixed;
+    top: 16px; right: 16px;
+    z-index: 9999;
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(18,18,32,0.85);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-radius: 20px;
+    padding: 6px 14px;
+    cursor: pointer;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px; font-weight: 500;
+    color: rgba(255,255,255,0.7);
+    backdrop-filter: blur(12px);
+    transition: border-color 0.2s, color 0.2s;
+    user-select: none;
+  }
+  .theme-toggle:hover { border-color: rgba(255,255,255,0.25); color: #fff; }
+  .theme-toggle .toggle-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: rgba(255,255,255,0.3);
+    transition: background 0.3s;
+  }
+  body.mesh-mode .theme-toggle .toggle-dot {
+    background: var(--accent);
+    box-shadow: 0 0 6px rgba(var(--accent-rgb),0.6);
+  }
+
+  /* In Midnight Strength: hide canvas, show static deep bg + soft glow */
+  body:not(.mesh-mode) .watch-canvas { display: none; }
+  body:not(.mesh-mode) .watch-screen-wrap::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 50% 20%, var(--watch-glow1, rgba(70,75,160,0.22)) 0%, transparent 70%),
+                radial-gradient(ellipse at 80% 80%, var(--watch-glow2, rgba(40,30,100,0.15)) 0%, transparent 60%),
+                var(--watch-bg, #07071A);
+    border-radius: 58px;
+    z-index: 0;
+  }
+
+  /* Grain: mesh mode only */
+  body:not(.mesh-mode) .watch-grain { display: none; }
+
+  /* Grain annotation badge */
+  #grain-annotation {
+    display: none;
+    position: fixed;
+    bottom: 40px; right: 16px;
+    z-index: 9999;
+    font-family: 'DM Mono', monospace;
+    font-size: 9px; letter-spacing: 0.06em;
+    color: rgba(255,255,255,0.55);
+    background: rgba(12,12,24,0.85);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 5px 10px;
+    pointer-events: none;
+    line-height: 1.6; text-align: right;
+  }
+  #grain-annotation span {
+    display: block; color: rgba(var(--accent-rgb),0.8);
+    font-size: 8px; margin-top: 1px;
+  }
+  body.mesh-mode #grain-annotation { display: block; }
+
+  /* Mesh canvas inside watch */
+  .watch-canvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+  }
+
+  /* Grain */
+  .watch-grain {
+    position: absolute; top: 0; left: 0; right: 0; bottom: 0; z-index: 1;
+    opacity: 0.04; pointer-events: none;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 128 128' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-size: 128px 128px;
+    border-radius: 58px;
+  }
+
+  /* Watch screen content */
+  .watch-screen {
+    display: none;
+    width: 100%; height: 100%;
+    position: absolute; top: 0; left: 0;
+    z-index: 2;
+    overflow: hidden;
+  }
+  .watch-screen.active { display: flex; flex-direction: column; }
+
+  /* ---- Complication face ---- */
+  .face-time {
+    font-family: 'DM Mono', monospace;
+    font-size: 52px;
+    font-weight: 300;
+    letter-spacing: -0.04em;
+    text-align: center;
+    line-height: 1;
+    padding-top: 32px;
+    color: var(--text-primary);
+  }
+  .face-date {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-align: center;
+    margin-top: 4px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+  }
+  .complication-row {
+    display: flex;
+    justify-content: space-around;
+    padding: 18px 16px 0;
+  }
+  .complication {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+  }
+  .comp-icon { font-size: 18px; line-height: 1; }
+  .comp-value { font-size: 11px; font-family: 'DM Mono', monospace; color: var(--text-secondary); }
+  .comp-label { font-size: 9px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; }
+
+  /* Heft complication - circular */
+  .heft-comp {
+    width: 40px; height: 40px;
+    border-radius: 12px;
+    background: rgba(var(--accent-rgb),0.2);
+    border: 1px solid rgba(var(--accent-rgb),0.35);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+  }
+
+  /* ---- App home ---- */
+  .watch-header {
+    padding: 18px 16px 6px;
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    color: var(--text-primary);
+  }
+  .watch-subtitle {
+    padding: 0 16px 10px;
+    font-size: 10px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+  }
+  .watch-list-item {
+    margin: 0 10px 6px;
+    padding: 10px 12px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    backdrop-filter: blur(16px);
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+  }
+  .watch-list-item::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.18), transparent);
+  }
+  .watch-list-item.featured {
+    background: rgba(var(--accent-rgb),0.18);
+    border-color: rgba(var(--accent-rgb),0.35);
+  }
+  .wli-name { font-size: 13px; font-weight: 500; letter-spacing: -0.01em; margin-bottom: 2px; }
+  .wli-meta { font-size: 10px; color: var(--text-secondary); }
+  .wli-tag { font-size: 9px; color: var(--accent); }
+
+  /* ---- Active set ---- */
+  .set-screen {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 8px 14px;
+    position: relative;
+  }
+  .set-exercise-name {
+    font-size: 12px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    margin-bottom: 6px;
+    text-align: center;
+  }
+  .set-number-row {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    margin-bottom: 4px;
+  }
+  .set-value-block {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  .set-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 38px;
+    font-weight: 400;
+    letter-spacing: -0.04em;
+    line-height: 1;
+    color: var(--text-primary);
+  }
+  .set-unit {
+    font-size: 11px;
+    color: var(--text-secondary);
+    margin-top: 1px;
+  }
+  .set-divider {
+    font-size: 24px;
+    color: var(--text-tertiary);
+    margin-bottom: 10px;
+  }
+  .set-progress-row {
+    display: flex;
+    gap: 5px;
+    margin-bottom: 10px;
+  }
+  .set-dot {
+    width: 6px; height: 6px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+  }
+  .set-dot.done { background: var(--green); }
+  .set-dot.active { background: var(--accent); }
+  .watch-log-btn {
+    width: calc(100% - 0px);
+    height: 40px;
+    background: var(--accent);
+    border: none;
+    border-radius: 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 600;
+    color: white;
+    cursor: pointer;
+    position: relative;
+    overflow: hidden;
+    letter-spacing: -0.01em;
+  }
+  .watch-log-btn::before {
+    content: '';
+    position: absolute; top: 0; left: 0; right: 0; height: 50%;
+    background: rgba(255,255,255,0.1);
+    border-radius: 14px 14px 0 0;
+  }
+  .watch-log-btn.teal { background: var(--teal); color: rgba(0,0,0,0.8); }
+  .watch-log-btn.amber { background: var(--amber); color: rgba(0,0,0,0.8); }
+
+  .crown-hint {
+    font-size: 9px;
+    color: var(--text-tertiary);
+    text-align: center;
+    margin-bottom: 6px;
+    letter-spacing: 0.04em;
+  }
+
+  /* ---- Rest timer ---- */
+  .rest-screen {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 14px;
+  }
+  .rest-label-sm {
+    font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--teal); margin-bottom: 4px;
+  }
+  .rest-countdown {
+    font-family: 'DM Mono', monospace;
+    font-size: 54px; font-weight: 300; letter-spacing: -0.05em; line-height: 1;
+    color: var(--text-primary); margin-bottom: 2px;
+  }
+  .rest-countdown span { color: var(--teal); }
+  .rest-of { font-size: 10px; color: var(--text-secondary); margin-bottom: 12px; }
+  .rest-summary-row {
+    display: flex; gap: 12px; margin-bottom: 12px;
+    background: rgba(45,212,191,0.1); border: 1px solid rgba(45,212,191,0.2);
+    border-radius: 12px; padding: 8px 14px;
+    width: 100%;
+    justify-content: center;
+  }
+  .rsr-item { text-align: center; }
+  .rsr-val { font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 500; color: var(--teal); }
+  .rsr-lbl { font-size: 9px; color: var(--text-tertiary); margin-top: 1px; }
+  .rest-arc {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  /* ---- PR screen ---- */
+  .pr-watch {
+    flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 10px 14px;
+  }
+  .pr-badge-sm {
+    font-size: 9px; letter-spacing: 0.15em; text-transform: uppercase; color: var(--amber);
+    margin-bottom: 6px;
+  }
+  .pr-trophy { font-size: 28px; line-height: 1; margin-bottom: 4px; }
+  .pr-ex-name { font-size: 11px; color: var(--text-secondary); margin-bottom: 6px; text-align: center; }
+  .pr-weight {
+    font-family: 'DM Mono', monospace;
+    font-size: 44px; font-weight: 400; letter-spacing: -0.04em;
+    color: var(--amber); line-height: 1; margin-bottom: 2px;
+  }
+  .pr-unit-sm { font-size: 16px; color: rgba(245,158,11,0.5); }
+  .pr-prev-sm { font-size: 10px; color: var(--text-tertiary); margin-bottom: 12px; }
+  .pr-prev-sm strong { color: var(--text-secondary); }
+
+  /* ---- Summary ---- */
+  .summary-screen {
+    flex: 1; padding: 14px 14px 10px; overflow-y: auto; scrollbar-width: none;
+  }
+  .summary-screen::-webkit-scrollbar { display: none; }
+  .summary-title {
+    font-size: 13px; font-weight: 600; letter-spacing: -0.01em; margin-bottom: 12px;
+    color: var(--text-primary);
+  }
+  .summary-stat-row { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; margin-bottom: 6px; }
+  .summary-tile {
+    background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px; padding: 8px 10px;
+    backdrop-filter: blur(16px);
+  }
+  .summary-val { font-family: 'DM Mono', monospace; font-size: 18px; font-weight: 500; letter-spacing: -0.03em; }
+  .summary-lbl { font-size: 9px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.05em; margin-top: 1px; }
+  .summary-pr-row {
+    background: rgba(245,158,11,0.1); border: 1px solid rgba(245,158,11,0.2);
+    border-radius: 12px; padding: 8px 10px;
+    display: flex; align-items: center; justify-content: space-between;
+    margin-bottom: 6px;
+  }
+  .summary-pr-name { font-size: 11px; font-weight: 500; }
+  .summary-pr-weight { font-family: 'DM Mono', monospace; font-size: 14px; color: var(--amber); }
+
+  /* ---- Bottom display ---- */
+  .watch-bottom-label {
+    font-size: 10px;
+    text-align: center;
+    color: var(--text-tertiary);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    margin-top: 12px;
+  }
+  .watch-bottom-label strong { color: var(--text-secondary); font-weight: 500; }
+
+  /* Band */
+  .watch-band-top {
+    width: 160px; height: 30px;
+    background: linear-gradient(to bottom, #1a1a1a, #151515);
+    border-radius: 4px 4px 0 0;
+    margin: 0 auto;
+    position: relative;
+    top: 2px;
+    box-shadow: inset 0 1px 0 rgba(255,255,255,0.04);
+  }
+  .watch-band-bottom {
+    width: 160px; height: 30px;
+    background: linear-gradient(to top, #1a1a1a, #151515);
+    border-radius: 0 0 4px 4px;
+    margin: 0 auto;
+    position: relative;
+    bottom: 2px;
+    box-shadow: inset 0 -1px 0 rgba(255,255,255,0.04);
+  }
+
+  /* progress ring for rest timer */
+  .progress-ring {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    pointer-events: none;
+    z-index: 1;
+  }
+
+  /* interaction hint */
+  .crown-ring {
+    position: absolute;
+    right: -22px;
+    top: 50%;
+    transform: translateY(-50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+  }
+  .crown-hint-label {
+    font-size: 8px;
+    color: var(--text-tertiary);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+  }
+
+  /* Swipe hint dots */
+  .swipe-dots {
+    display: flex; gap: 4px; justify-content: center; margin-top: 8px;
+  }
+  .swipe-dot {
+    width: 4px; height: 4px; border-radius: 50%;
+    background: rgba(255,255,255,0.2);
+  }
+  .swipe-dot.active { background: var(--accent); }
+
+  /* Annotation labels */
+  .annotation-block {
+    max-width: 220px;
+    margin-top: 6px;
+    text-align: center;
+  }
+  .annotation-block .ann-title {
+    font-size: 12px; font-weight: 500; color: var(--text-secondary); margin-bottom: 4px;
+  }
+  .annotation-block .ann-body {
+    font-size: 10px; color: var(--text-tertiary); line-height: 1.5;
+  }
+  @keyframes repPulse {
+    0%, 100% { opacity: 1; transform: scale(1); box-shadow: 0 0 0 0 rgba(45,212,191,0.5); }
+    50% { opacity: 0.7; transform: scale(1.25); box-shadow: 0 0 0 5px rgba(45,212,191,0); }
+  }
+  @keyframes autoRingPulse {
+    0%, 100% { transform: scale(1); opacity: 0.25; }
+    50% { transform: scale(1.18); opacity: 0.6; }
+  }
+  @keyframes autoInnerPulse {
+    0%, 100% { background: rgba(45,212,191,0.10); }
+    50% { background: rgba(45,212,191,0.20); }
+  }
+  @keyframes autoCorePulse {
+    0%, 100% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.3); opacity: 1; }
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="wordmark">Heft</div>
+  <h1>watchOS Companion</h1>
+  <p>Standalone · Series 9 / Ultra 2 · 45mm · Dynamic Mesh</p>
+</div>
+
+<div class="state-legend">
+  <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#1a2744,#3a4a8a)"></div>Neutral</div>
+  <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#5B5FEF,#9B59F5)"></div>Active Set</div>
+  <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#0a2030,#2DD4BF)"></div>Rest</div>
+  <div class="legend-item"><div class="legend-dot" style="background:linear-gradient(135deg,#F59E0B,#7C3AED)"></div>PR</div>
+</div>
+
+<div class="theme-picker" id="theme-picker">
+  <div class="theme-picker-header" onclick="togglePicker()">
+    <span class="theme-picker-label">Theme</span>
+    <span class="theme-picker-current" id="theme-current-name">Midnight Strength</span>
+    <span class="theme-picker-chevron">▼</span>
+  </div>
+  <div class="theme-picker-body">
+    <div class="theme-options">
+
+      <div class="theme-opt active" id="opt-midnight" onclick="setTheme('midnight')">
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#1a1a2e,#07071a);"></div>
+        <div class="theme-opt-info">
+          <div class="theme-opt-name">Midnight Strength</div>
+          <div class="theme-opt-desc">Deep indigo · default</div>
+        </div>
+        <span class="theme-check">✓</span>
+      </div>
+
+      <div class="theme-opt" id="opt-ember" onclick="setTheme('ember')">
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#3a1a08,#0d0905);"></div>
+        <div class="theme-opt-info">
+          <div class="theme-opt-name">Ember</div>
+          <div class="theme-opt-desc">Hot iron · dark forge</div>
+        </div>
+        <span class="theme-check">✓</span>
+      </div>
+
+      <div class="theme-opt" id="opt-graphite" onclick="setTheme('graphite')">
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#1c1e20,#0c0d0e);"></div>
+        <div class="theme-opt-info">
+          <div class="theme-opt-name">Graphite</div>
+          <div class="theme-opt-desc">Cool silver · no color cast</div>
+        </div>
+        <span class="theme-check">✓</span>
+      </div>
+
+      <div class="theme-opt" id="opt-abyss" onclick="setTheme('abyss')">
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#03183a,#02050e);"></div>
+        <div class="theme-opt-info">
+          <div class="theme-opt-name">Abyss</div>
+          <div class="theme-opt-desc">Deep ocean · system blue</div>
+        </div>
+        <span class="theme-check">✓</span>
+      </div>
+
+      <div class="theme-divider"></div>
+
+      <div class="theme-opt" id="opt-mesh" onclick="setTheme('mesh')">
+        <div class="theme-swatch" style="background:linear-gradient(135deg,#3d1a60,#06040f);"></div>
+        <div class="theme-opt-info">
+          <div class="theme-opt-name">Dynamic Mesh</div>
+          <div class="theme-opt-desc">State-aware gradient · violet</div>
+        </div>
+        <span class="theme-premium-badge">Pro</span>
+        <span class="theme-check">✓</span>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div id="grain-annotation">
+  GRAIN OVERLAY APPLIED
+  <span>SVG fractal noise · opacity: ~4%</span>
+  <span>Static — baked into DOM at load</span>
+</div>
+
+<div class="screen-nav">
+  <button class="nav-btn active" onclick="showScreen('face', this, 'neutral')">⌚ Face</button>
+  <button class="nav-btn" onclick="showScreen('home', this, 'neutral')">① Routines</button>
+  <button class="nav-btn" onclick="showScreen('set', this, 'active')">② Log Set</button>
+  <button class="nav-btn" onclick="showScreen('rest', this, 'rest')">③ Rest Timer</button>
+  <button class="nav-btn" onclick="showScreen('pr', this, 'pr')">④ PR Moment</button>
+  <button class="nav-btn" onclick="showScreen('summary', this, 'neutral')">⑤ Summary</button>
+</div>
+
+<div class="watch-wrapper">
+  <div class="watch-band-top"></div>
+  <div class="watch-outer">
+    <div class="watch-crown"></div>
+    <div class="watch-btn"></div>
+
+    <div class="watch-body">
+      <div class="watch-screen-wrap">
+        <canvas class="watch-canvas" id="watch-canvas" width="196" height="242"></canvas>
+        <div class="watch-grain"></div>
+
+        <!-- ===== FACE ===== -->
+        <div id="watch-face" class="watch-screen active">
+          <div class="face-time">9:41</div>
+          <div class="face-date">Thu, Jan 30</div>
+          <div class="complication-row">
+            <div class="complication">
+              <div class="comp-icon">❤️</div>
+              <div class="comp-value">72</div>
+              <div class="comp-label">BPM</div>
+            </div>
+            <div class="heft-comp" onclick="showScreen('home', document.querySelectorAll('.nav-btn')[1], 'neutral')">
+              <span style="font-size:14px;font-weight:600;color:var(--accent);">F</span>
+            </div>
+            <div class="complication">
+              <div class="comp-icon">🔥</div>
+              <div class="comp-value">380</div>
+              <div class="comp-label">kcal</div>
+            </div>
+          </div>
+          <div style="padding:14px 16px 0; text-align:center;">
+            <div style="font-size:10px;color:var(--text-tertiary);">Push A · 4 days ago</div>
+          </div>
+        </div>
+
+        <!-- ===== HOME ===== -->
+        <div id="watch-home" class="watch-screen">
+          <div style="padding:10px 12px 6px;font-size:13px;font-weight:500;letter-spacing:-0.01em;color:var(--text-primary);">Routines</div>
+          <div class="watch-list-item featured" onclick="showScreen('set', document.querySelectorAll('.nav-btn')[2], 'active')" style="margin:0 8px 4px;padding:7px 10px;border-radius:14px;">
+            <div class="wli-name" style="font-size:12px;">Push A</div>
+            <div class="wli-meta" style="font-size:9px;">6 exercises · 52 min avg</div>
+            <div class="wli-tag" style="font-size:8px;">↑ Start</div>
+          </div>
+          <div class="watch-list-item" style="margin:0 8px 4px;padding:7px 10px;border-radius:14px;">
+            <div class="wli-name" style="font-size:12px;">Pull A</div>
+            <div class="wli-meta" style="font-size:9px;">5 exercises</div>
+          </div>
+          <div class="watch-list-item" style="margin:0 8px 4px;padding:7px 10px;border-radius:14px;">
+            <div class="wli-name" style="font-size:12px;">Legs</div>
+            <div class="wli-meta" style="font-size:9px;">7 exercises</div>
+          </div>
+          <div class="watch-list-item" style="margin:0 8px 0;padding:6px 10px;border-radius:14px;background:rgba(255,255,255,0.04);border-style:dashed;">
+            <div class="wli-meta" style="text-align:center;font-size:9px;">+ Quick Start</div>
+          </div>
+        </div>
+
+        <!-- ===== SET LOGGING ===== -->
+        <div id="watch-set" class="watch-screen">
+          <div class="set-screen" style="gap:0;padding:8px 12px 8px;">
+
+            <!-- Exercise + progress on one row -->
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+              <div class="set-exercise-name" style="margin-bottom:0;font-size:11px;">Bench Press · Set 3</div>
+              <div class="set-progress-row" style="margin-bottom:0;gap:4px;">
+                <div class="set-dot done"></div><div class="set-dot done"></div>
+                <div class="set-dot active"></div><div class="set-dot"></div>
+              </div>
+            </div>
+
+            <!-- Manual / Auto toggle -->
+            <div style="display:flex;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:10px;padding:2px;margin-bottom:8px;width:100%;">
+              <button id="mode-btn-manual" onclick="setDetectionMode('manual')"
+                style="flex:1;height:22px;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;cursor:pointer;transition:all 0.2s;background:rgba(255,255,255,0.12);color:rgba(255,255,255,0.9);">Manual</button>
+              <button id="mode-btn-auto" onclick="setDetectionMode('auto')"
+                style="flex:1;height:22px;border:none;border-radius:8px;font-family:'DM Sans',sans-serif;font-size:10px;font-weight:600;cursor:pointer;transition:all 0.2s;background:transparent;color:rgba(255,255,255,0.35);">Auto ✦</button>
+            </div>
+
+            <!-- ── MANUAL MODE ── -->
+            <div id="manual-ui" style="display:flex;flex-direction:column;align-items:stretch;width:100%;">
+              <div id="crown-mode-pill" style="display:flex;align-items:center;gap:5px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:20px;padding:3px 10px;margin-bottom:5px;">
+                <div style="width:6px;height:6px;border-radius:50%;border:1.5px solid var(--teal);flex-shrink:0;" id="crown-pill-dot"></div>
+                <span id="crown-pill-text" style="font-size:9px;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--teal);">Weight</span>
+                <span style="font-size:9px;color:var(--text-tertiary);margin-left:2px;" id="crown-pill-step">+2.5 kg/tick</span>
+              </div>
+              <div class="set-number-row" id="shared-number-row" style="margin-bottom:4px;">
+                <div class="set-value-block" id="set-weight-block" onclick="setLogMode('weight')" style="cursor:pointer;border-radius:10px;padding:3px 5px;transition:all 0.2s;background:rgba(45,212,191,0.1);border:1px solid rgba(45,212,191,0.25);">
+                  <div class="set-value" id="set-weight-val" style="color:var(--teal);font-size:32px;">82.5</div>
+                  <div class="set-unit" style="color:var(--teal);opacity:0.7;font-size:10px;">kg</div>
+                </div>
+                <div id="shared-reps-divider" class="set-divider" style="font-size:20px;">×</div>
+                <div class="set-value-block" id="set-reps-block" onclick="setLogMode('reps')" style="cursor:pointer;border-radius:10px;padding:3px 5px;transition:all 0.2s;background:transparent;border:1px solid transparent;">
+                  <div class="set-value" id="set-reps-val" style="opacity:0.55;font-size:32px;">6</div>
+                  <div class="set-unit" style="font-size:10px;">reps</div>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px;">
+                <div style="font-size:9px;color:var(--text-tertiary);">PR: <span style="color:rgba(255,255,255,0.4);">85 kg</span></div>
+                <div style="display:flex;align-items:center;gap:4px;background:rgba(var(--accent-rgb),0.1);border:1px solid rgba(var(--accent-rgb),0.22);border-radius:20px;padding:2px 8px;">
+                  <div style="display:flex;gap:2px;align-items:flex-end;">
+                    <div style="width:3px;height:7px;background:var(--accent);border-radius:2px;"></div>
+                    <div style="width:3px;height:9px;background:var(--accent);border-radius:2px;"></div>
+                  </div>
+                  <span style="font-size:8px;color:var(--accent);font-weight:500;">2-finger log</span>
+                </div>
+              </div>
+              <button class="watch-log-btn" style="height:36px;" onclick="showScreen('rest', document.querySelectorAll('.nav-btn')[3], 'rest')">Log Set 3</button>
+            </div>
+
+            <!-- ── AUTO MODE ── -->
+            <div id="auto-ui" style="display:none;flex-direction:column;align-items:center;width:100%;">
+              <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:6px;">
+                <div style="font-size:8px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:2px;">Crown · weight</div>
+                <div style="display:flex;align-items:baseline;gap:3px;">
+                  <div style="font-family:'DM Mono',monospace;font-size:34px;font-weight:300;letter-spacing:-0.05em;line-height:1;color:var(--teal);">82.5</div>
+                  <div style="font-size:12px;color:rgba(45,212,191,0.55);">kg</div>
+                </div>
+              </div>
+
+              <!-- STATE A: Ready -->
+              <div id="auto-ready" style="display:flex;flex-direction:column;align-items:center;width:100%;">
+                <div style="position:relative;width:50px;height:50px;margin-bottom:5px;cursor:pointer;" onclick="setAutoState('counting')">
+                  <div style="position:absolute;inset:-6px;border-radius:50%;border:1.5px solid rgba(45,212,191,0.22);animation:autoRingPulse 2s ease-in-out infinite;"></div>
+                  <div style="width:50px;height:50px;border-radius:50%;background:rgba(45,212,191,0.1);border:1.5px solid rgba(45,212,191,0.45);display:flex;align-items:center;justify-content:center;animation:autoInnerPulse 2s ease-in-out infinite;">
+                    <div style="width:10px;height:10px;border-radius:50%;background:var(--teal);animation:autoCorePulse 2s ease-in-out infinite;"></div>
+                  </div>
+                </div>
+                <div style="font-size:10px;font-weight:500;color:var(--teal);margin-bottom:2px;">Ready · lift to start</div>
+                <div style="font-size:8px;color:var(--text-tertiary);margin-bottom:8px;">Reps counted automatically</div>
+                <div onclick="setDetectionMode('manual')" style="font-size:9px;color:rgba(255,255,255,0.28);text-decoration:underline;cursor:pointer;">Switch to manual</div>
+              </div>
+
+              <!-- STATE B: Counting -->
+              <div id="auto-counting" style="display:none;flex-direction:column;align-items:center;width:100%;">
+                <div style="position:relative;width:62px;height:62px;margin-bottom:4px;">
+                  <svg width="62" height="62" style="position:absolute;top:0;left:0;">
+                    <circle cx="31" cy="31" r="28" fill="none" stroke="rgba(45,212,191,0.12)" stroke-width="3"/>
+                    <circle cx="31" cy="31" r="28" fill="none" stroke="rgba(45,212,191,0.7)" stroke-width="3"
+                      stroke-dasharray="176" stroke-dashoffset="44" stroke-linecap="round" transform="rotate(-90 31 31)"/>
+                  </svg>
+                  <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                    <div style="font-family:'DM Mono',monospace;font-size:28px;font-weight:300;line-height:1;color:var(--teal);">5</div>
+                    <div style="font-size:7px;text-transform:uppercase;letter-spacing:0.1em;color:var(--text-tertiary);">reps</div>
+                  </div>
+                </div>
+                <div style="display:flex;align-items:center;gap:4px;margin-bottom:6px;">
+                  <div style="width:5px;height:5px;border-radius:50%;background:var(--teal);animation:repPulse 0.8s ease-in-out infinite;"></div>
+                  <span style="font-size:9px;color:var(--teal);text-transform:uppercase;font-weight:500;">Detecting · crown adjusts</span>
+                </div>
+                <div style="display:flex;gap:6px;width:100%;">
+                  <button class="watch-log-btn" style="background:transparent;border:1px solid rgba(255,255,255,0.15);color:var(--text-secondary);font-size:10px;height:30px;flex:1;" onclick="setAutoState('ready')">Cancel</button>
+                  <button class="watch-log-btn teal" style="font-size:10px;height:30px;flex:2;" onclick="showScreen('rest', document.querySelectorAll('.nav-btn')[3], 'rest')">Confirm 5 ✓</button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+
+        <!-- ===== REP COUNTING (Pro — motion detection active) ===== -->
+        <!-- ===== REST TIMER ===== -->
+        <div id="watch-rest" class="watch-screen">
+          <svg class="progress-ring" viewBox="0 0 196 242" xmlns="http://www.w3.org/2000/svg">
+            <circle cx="98" cy="121" r="90" fill="none" stroke="rgba(45,212,191,0.08)" stroke-width="3"/>
+            <circle cx="98" cy="121" r="90" fill="none" stroke="rgba(45,212,191,0.55)" stroke-width="3"
+              stroke-dasharray="565.5" stroke-dashoffset="141" stroke-linecap="round" transform="rotate(-90 98 121)"/>
+          </svg>
+          <div class="rest-screen" style="gap:0;justify-content:center;padding:14px 12px 12px;">
+            <div style="display:flex;flex-direction:column;align-items:center;margin-bottom:8px;">
+              <div class="rest-label-sm">Rest</div>
+              <div class="rest-countdown">1<span>:</span>47</div>
+            </div>
+            <div style="background:rgba(var(--accent-rgb),0.3);border:1px solid rgba(var(--accent-rgb),0.5);border-radius:12px;padding:7px 10px;margin-bottom:6px;width:100%;">
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+                <div style="font-size:8px;color:var(--accent);text-transform:uppercase;letter-spacing:0.1em;font-weight:500;">↑ Next Set</div>
+                <div style="display:flex;align-items:center;gap:3px;">
+                  <div style="width:5px;height:5px;border-radius:50%;border:1.5px solid var(--teal);" id="rest-crown-dot"></div>
+                  <span style="font-size:7px;font-weight:600;text-transform:uppercase;color:var(--teal);" id="rest-crown-label">weight</span>
+                </div>
+              </div>
+              <div style="display:flex;align-items:center;gap:4px;">
+                <span style="font-family:'DM Mono',monospace;font-size:20px;cursor:pointer;border-radius:6px;padding:1px 4px;color:var(--teal);background:rgba(45,212,191,0.12);" id="rest-weight-val" onclick="setRestMode('weight')">85</span>
+                <span style="font-size:9px;color:var(--text-tertiary);">kg ×</span>
+                <span style="font-family:'DM Mono',monospace;font-size:20px;cursor:pointer;border-radius:6px;padding:1px 4px;color:rgba(255,255,255,0.65);" id="rest-reps-val" onclick="setRestMode('reps')">6</span>
+                <span style="font-size:9px;color:var(--text-tertiary);">reps</span>
+                <span style="font-size:8px;color:var(--text-tertiary);margin-left:auto;" id="rest-tap-hint">tap →</span>
+              </div>
+            </div>
+            <div style="display:flex;gap:6px;align-items:center;width:100%;margin-bottom:5px;">
+              <button class="watch-log-btn teal" style="height:30px;font-size:11px;background:transparent;border:1px solid rgba(45,212,191,0.3);color:var(--teal);flex:1;" onclick="showScreen('set', document.querySelectorAll('.nav-btn')[2], 'active')">Skip Rest</button>
+              <div style="display:flex;gap:4px;flex-shrink:0;">
+                <div style="font-size:9px;color:var(--text-tertiary);background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:2px 5px;">−30s</div>
+                <div style="font-size:9px;color:var(--text-tertiary);background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:2px 5px;">+30s</div>
+              </div>
+            </div>
+            <button onclick="showScreen('summary', document.querySelectorAll('.nav-btn')[5], 'summary')"
+              style="width:100%;height:28px;font-size:10px;font-weight:600;letter-spacing:0.04em;background:rgba(248,113,113,0.1);border:1px solid rgba(248,113,113,0.3);border-radius:10px;color:rgba(248,113,113,0.9);cursor:pointer;font-family:'DM Sans',sans-serif;">Finish Workout</button>
+          </div>
+        </div>
+
+        <!-- ===== PR ===== -->
+        <div id="watch-pr" class="watch-screen">
+          <div class="pr-watch" style="padding:10px 14px;">
+            <div class="pr-badge-sm" style="margin-bottom:4px;">🏆 Personal Record</div>
+            <div class="pr-trophy" style="font-size:22px;margin-bottom:2px;">🏋️</div>
+            <div class="pr-ex-name" style="font-size:11px;margin-bottom:4px;">Bench Press</div>
+            <div class="pr-weight" style="font-size:40px;margin-bottom:2px;">85<span class="pr-unit-sm" style="font-size:14px;"> kg</span></div>
+            <div class="pr-prev-sm" style="font-size:10px;margin-bottom:10px;">Prev: <strong>82.5 kg</strong></div>
+            <button class="watch-log-btn amber" style="height:34px;font-size:12px;" onclick="showScreen('set', document.querySelectorAll('.nav-btn')[2], 'active')">Keep Going</button>
+          </div>
+        </div>
+
+        <!-- ===== SUMMARY ===== -->
+        <div id="watch-summary" class="watch-screen">
+          <div class="summary-screen" style="padding:12px 12px 10px;">
+            <div class="summary-title" style="font-size:12px;margin-bottom:8px;">Push A · Done ✓</div>
+            <div class="summary-stat-row" style="gap:5px;margin-bottom:5px;">
+              <div class="summary-tile" style="padding:7px 8px;border-radius:10px;"><div class="summary-val" style="font-size:16px;">54m</div><div class="summary-lbl">Duration</div></div>
+              <div class="summary-tile" style="padding:7px 8px;border-radius:10px;"><div class="summary-val" style="font-size:16px;">18</div><div class="summary-lbl">Sets</div></div>
+            </div>
+            <div class="summary-stat-row" style="gap:5px;margin-bottom:5px;">
+              <div class="summary-tile" style="padding:7px 8px;border-radius:10px;"><div class="summary-val" style="font-size:16px;">8.4t</div><div class="summary-lbl">Volume</div></div>
+              <div class="summary-tile" style="padding:7px 8px;border-radius:10px;"><div class="summary-val" style="font-size:16px;color:var(--amber);">1 PR</div><div class="summary-lbl">Records</div></div>
+            </div>
+            <div class="summary-pr-row" style="border-radius:10px;padding:7px 10px;margin-bottom:6px;">
+              <div><div class="summary-pr-name" style="font-size:11px;">Bench Press</div><div style="font-size:8px;color:var(--text-tertiary);">New record</div></div>
+              <div class="summary-pr-weight" style="font-size:13px;">85 kg</div>
+            </div>
+            <button class="watch-log-btn" style="font-size:11px;height:32px;border-radius:10px;">End Workout</button>
+          </div>
+        </div>
+
+
+      </div><!-- /watch-screen-wrap -->
+    </div><!-- /watch-body -->
+  </div>
+  <div class="watch-band-bottom"></div>
+
+  <div class="watch-bottom-label" id="watch-desc">
+    <strong>Watch Face</strong> · Heft complication · tap F to launch
+  </div>
+</div>
+
+<script>
+const canvas = document.getElementById('watch-canvas');
+const ctx = canvas.getContext('2d');
+const W = 196, H = 242;
+
+const states = {
+  neutral: {
+    pts: [
+      { x:0.12, y:0.08, r: 72, g:52,  b:168 },
+      { x:0.88, y:0.15, r: 52, g:36,  b:148 },
+      { x:0.5,  y:0.45, r: 42, g:28,  b:128 },
+      { x:0.18, y:0.82, r: 26, g:16,  b: 92 },
+      { x:0.82, y:0.78, r: 62, g:45,  b:155 },
+    ],
+    bg: [4, 3, 12]
+  },
+  active: {
+    pts: [
+      { x:0.18, y:0.06, r: 36, g:92,  b:198 },
+      { x:0.82, y:0.10, r: 26, g:76,  b:182 },
+      { x:0.5,  y:0.38, r: 42, g:105, b:212 },
+      { x:0.12, y:0.72, r: 16, g:55,  b:150 },
+      { x:0.88, y:0.68, r: 32, g:88,  b:192 },
+    ],
+    bg: [4, 6, 16]
+  },
+  summary: {
+    pts: [
+      { x:0.12, y:0.08, r: 13, g:118, b: 94 },
+      { x:0.88, y:0.15, r:  9, g: 92, b: 74 },
+      { x:0.5,  y:0.45, r:  7, g: 72, b: 58 },
+      { x:0.18, y:0.82, r:  4, g: 54, b: 44 },
+      { x:0.82, y:0.78, r: 16, g:126, b:100 },
+    ],
+    bg: [3, 10, 8]
+  },
+  rest: {
+    pts: [
+      { x:0.15, y:0.08, r:15,  g:160, b:180 },
+      { x:0.85, y:0.18, r:10,  g:130, b:160 },
+      { x:0.5,  y:0.42, r:8,   g:100, b:140 },
+      { x:0.18, y:0.78, r:5,   g:80,  b:120 },
+      { x:0.82, y:0.72, r:20,  g:170, b:190 },
+    ],
+    bg: [3, 10, 18]
+  },
+  pr: {
+    pts: [
+      { x:0.18, y:0.06, r:255, g:185, b:20  },
+      { x:0.82, y:0.10, r:230, g:150, b:10  },
+      { x:0.5,  y:0.35, r:200, g:120, b:8   },
+      { x:0.10, y:0.62, r:140, g:75,  b:20  },
+      { x:0.90, y:0.65, r:245, g:165, b:15  },
+    ],
+    bg: [16, 9, 2]
+  }
+};
+
+let cur   = JSON.parse(JSON.stringify(states.neutral));
+let tgt   = JSON.parse(JSON.stringify(states.neutral));
+let animT = 1;
+let rafId = null;
+
+function lerp(a,b,t){ return a+(b-a)*t; }
+function ease(t){ return t<0.5?2*t*t:-1+(4-2*t)*t; }
+
+function draw(pts, bg) {
+  ctx.fillStyle = `rgb(${bg[0]|0},${bg[1]|0},${bg[2]|0})`;
+  ctx.fillRect(0,0,W,H);
+  ctx.globalCompositeOperation = 'screen';
+  pts.forEach(p => {
+    const x = p.x*W, y = p.y*H, r = W*0.8;
+    const g = ctx.createRadialGradient(x,y,0,x,y,r);
+    g.addColorStop(0, `rgba(${p.r|0},${p.g|0},${p.b|0},0.65)`);
+    g.addColorStop(1, `rgba(${p.r|0},${p.g|0},${p.b|0},0)`);
+    ctx.fillStyle = g;
+    ctx.fillRect(0,0,W,H);
+  });
+  ctx.globalCompositeOperation = 'source-over';
+}
+
+function transitionLoop() {
+  animT = Math.min(animT + 0.02, 1); // ~50 frames ≈ 0.85s
+  const e = ease(animT);
+  const pts = cur.pts.map((cp,i) => ({
+    x: lerp(cp.x, tgt.pts[i].x, e),
+    y: lerp(cp.y, tgt.pts[i].y, e),
+    r: lerp(cp.r, tgt.pts[i].r, e),
+    g: lerp(cp.g, tgt.pts[i].g, e),
+    b: lerp(cp.b, tgt.pts[i].b, e),
+  }));
+  draw(pts, cur.bg.map((v,i) => lerp(v, tgt.bg[i], e)));
+  if (animT < 1) {
+    rafId = requestAnimationFrame(transitionLoop);
+  } else {
+    cur = JSON.parse(JSON.stringify(tgt));
+    rafId = null;
+  }
+}
+
+function transition(name) {
+  if (!document.body.classList.contains('mesh-mode')) return;
+  if (rafId) cancelAnimationFrame(rafId);
+  const e = ease(animT);
+  cur = {
+    pts: cur.pts.map((cp,i) => ({
+      x: lerp(cp.x, tgt.pts[i].x, e), y: lerp(cp.y, tgt.pts[i].y, e),
+      r: lerp(cp.r, tgt.pts[i].r, e), g: lerp(cp.g, tgt.pts[i].g, e),
+      b: lerp(cp.b, tgt.pts[i].b, e),
+    })),
+    bg: cur.bg.map((v,i) => lerp(v, tgt.bg[i], e))
+  };
+  tgt   = JSON.parse(JSON.stringify(states[name] || states.neutral));
+  animT = 0;
+  rafId = requestAnimationFrame(transitionLoop);
+}
+
+// Draw initial frame only when mesh mode activated
+function drawInitial() {
+  draw(cur.pts, cur.bg);
+}
+
+const descs = {
+  face:        '<strong>Watch Face</strong> · Heft complication · tap F to launch',
+  home:        '<strong>① Routines</strong> · Featured last session · scroll for more',
+  set:         '<strong>② Log Set</strong> · Manual/Auto toggle · Manual: weight × reps, crown adjust, 2-finger tap or button · Auto: weight only (reps detected), pulsing listening state → tap ring to simulate motion → live rep counter appears in-place → Confirm or cancel',
+  rest:        '<strong>③ Rest Timer</strong> · Arc shows progress · next set shown · crown adjusts weight or reps · 2-finger skip',
+  pr:          '<strong>④ PR Moment</strong> · Haptic burst + amber wash · dismiss to continue',
+  summary:     '<strong>⑤ Summary</strong> · Volume, duration, PRs · syncs to iPhone on wrist drop',
+};
+
+// ── Detection mode toggle (Manual / Auto) ──────────────────────────────
+let detectionMode = 'manual';
+
+function setDetectionMode(mode) {
+  detectionMode = mode;
+  const manualUI    = document.getElementById('manual-ui');
+  const autoUI      = document.getElementById('auto-ui');
+  const btnManual   = document.getElementById('mode-btn-manual');
+  const btnAuto     = document.getElementById('mode-btn-auto');
+
+  if (mode === 'manual') {
+    manualUI.style.display = 'flex';
+    autoUI.style.display   = 'none';
+    btnManual.style.background = 'rgba(255,255,255,0.12)';
+    btnManual.style.color      = 'rgba(255,255,255,0.9)';
+    btnAuto.style.background   = 'transparent';
+    btnAuto.style.color        = 'rgba(255,255,255,0.35)';
+    setAutoState('ready');
+  } else {
+    manualUI.style.display = 'none';
+    autoUI.style.display   = 'flex';
+    btnAuto.style.background   = 'rgba(45,212,191,0.18)';
+    btnAuto.style.color        = 'var(--teal)';
+    btnManual.style.background = 'transparent';
+    btnManual.style.color      = 'rgba(255,255,255,0.35)';
+  }
+}
+
+// ── Auto mode sub-state (ready → counting) ─────────────────────────────
+function setAutoState(state) {
+  const ready    = document.getElementById('auto-ready');
+  const counting = document.getElementById('auto-counting');
+  if (state === 'ready') {
+    ready.style.display    = 'flex';
+    counting.style.display = 'none';
+  } else {
+    ready.style.display    = 'none';
+    counting.style.display = 'flex';
+  }
+}
+
+// ── Log Set crown mode toggle ──────────────────────────────────────────
+let logMode = 'weight';
+
+function setLogMode(mode) {
+  logMode = mode;
+  const weightBlock = document.getElementById('set-weight-block');
+  const repsBlock   = document.getElementById('set-reps-block');
+  const weightVal   = document.getElementById('set-weight-val');
+  const repsVal     = document.getElementById('set-reps-val');
+  const pill        = document.getElementById('crown-mode-pill');
+  const pillDot     = document.getElementById('crown-pill-dot');
+  const pillText    = document.getElementById('crown-pill-text');
+  const pillStep    = document.getElementById('crown-pill-step');
+
+  if (mode === 'weight') {
+    weightBlock.style.background = 'rgba(45,212,191,0.1)';
+    weightBlock.style.borderColor = 'rgba(45,212,191,0.25)';
+    weightVal.style.color = 'var(--teal)';
+    weightVal.style.opacity = '1';
+    repsBlock.style.background = 'transparent';
+    repsBlock.style.borderColor = 'transparent';
+    repsVal.style.color = '';
+    repsVal.style.opacity = '0.55';
+    pillDot.style.borderColor = 'var(--teal)';
+    pillText.style.color = 'var(--teal)';
+    pillText.textContent = 'Weight';
+    pillStep.textContent = '+2.5 kg/tick';
+  } else {
+    weightBlock.style.background = 'transparent';
+    weightBlock.style.borderColor = 'transparent';
+    weightVal.style.color = '';
+    weightVal.style.opacity = '0.55';
+    repsBlock.style.background = 'rgba(245,158,11,0.1)';
+    repsBlock.style.borderColor = 'rgba(245,158,11,0.25)';
+    repsVal.style.color = 'var(--amber)';
+    repsVal.style.opacity = '1';
+    pillDot.style.borderColor = 'var(--amber)';
+    pillText.style.color = 'var(--amber)';
+    pillText.textContent = 'Reps';
+    pillStep.textContent = '+1 rep/tick';
+  }
+}
+
+// ── Rest screen upcoming set crown mode ──────────────────────────────────
+let restMode = 'weight';
+
+function setRestMode(mode) {
+  restMode = mode;
+  const wEl = document.getElementById('rest-weight-val');
+  const rEl = document.getElementById('rest-reps-val');
+  const dot = document.getElementById('rest-crown-dot');
+  const lbl = document.getElementById('rest-crown-label');
+  const hint = document.getElementById('rest-tap-hint');
+
+  if (mode === 'weight') {
+    wEl.style.color = 'var(--teal)'; wEl.style.background = 'rgba(45,212,191,0.12)';
+    rEl.style.color = 'rgba(255,255,255,0.65)'; rEl.style.background = 'transparent';
+    dot.style.borderColor = 'var(--teal)'; lbl.style.color = 'var(--teal)'; lbl.textContent = 'weight';
+    hint.textContent = 'tap reps →'; hint.style.color = 'var(--text-tertiary)';
+  } else {
+    rEl.style.color = 'var(--amber)'; rEl.style.background = 'rgba(245,158,11,0.12)';
+    wEl.style.color = 'rgba(255,255,255,0.5)'; wEl.style.background = 'transparent';
+    dot.style.borderColor = 'var(--amber)'; lbl.style.color = 'var(--amber)'; lbl.textContent = 'reps';
+    hint.textContent = '← tap weight'; hint.style.color = 'var(--amber)';
+  }
+}
+
+// init defaults
+setRestMode('weight');
+
+const themeAccents = {
+  midnight: { accent:'#7C7FF5', accentRgb:'92,95,239',   accentSecRgb:'124,58,237',  watchBg:'#07071A', glow1:'rgba(70,75,160,0.22)',  glow2:'rgba(40,30,100,0.15)',  amber:null },
+  ember:    { accent:'#E8622A', accentRgb:'232,98,42',   accentSecRgb:'200,55,20',   watchBg:'#0D0905', glow1:'rgba(200,70,20,0.22)',  glow2:'rgba(140,40,10,0.15)',  amber:'#E8622A' },
+  graphite: { accent:'#8E9AAB', accentRgb:'142,154,171', accentSecRgb:'110,122,140', watchBg:'#0C0D0E', glow1:'rgba(100,112,130,0.16)',glow2:'rgba(60,68,80,0.10)',   amber:null },
+  abyss:    { accent:'#0A84FF', accentRgb:'10,132,255',  accentSecRgb:'0,100,220',   watchBg:'#02050E', glow1:'rgba(10,80,200,0.30)',  glow2:'rgba(5,40,130,0.18)',   amber:null },
+  mesh:     { accent:'#BF5AF2', accentRgb:'191,90,242',  accentSecRgb:'160,50,220',  watchBg:'#06040f', glow1:null, glow2:null, amber:null },
+};
+
+let currentTheme = 'midnight';
+
+function togglePicker() {
+  document.getElementById('theme-picker').classList.toggle('open');
+}
+
+function setTheme(name) {
+  document.querySelectorAll('.theme-opt').forEach(o => o.classList.remove('active'));
+  document.getElementById('opt-' + name).classList.add('active');
+
+  const isMesh = name === 'mesh';
+  document.body.classList.toggle('mesh-mode', isMesh);
+
+  const t = themeAccents[name] || themeAccents.midnight;
+  const root = document.documentElement;
+  root.style.setProperty('--accent', t.accent);
+  root.style.setProperty('--accent-rgb', t.accentRgb);
+  root.style.setProperty('--accent-secondary-rgb', t.accentSecRgb);
+  root.style.setProperty('--watch-bg', t.watchBg);
+  if (t.glow1) root.style.setProperty('--watch-glow1', t.glow1);
+  if (t.glow2) root.style.setProperty('--watch-glow2', t.glow2);
+  root.style.setProperty('--amber', t.amber || '#F59E0B');
+  document.body.setAttribute('data-theme', name === 'mesh' ? 'midnight' : name);
+
+  const nameLabels = { midnight:'Midnight Strength', ember:'Ember', graphite:'Graphite', abyss:'Abyss', mesh:'Dynamic Mesh ✦' };
+  document.getElementById('theme-current-name').textContent = nameLabels[name] || name;
+  document.getElementById('theme-picker').classList.remove('open');
+
+  currentTheme = name;
+
+  if (isMesh) {
+    const active = document.querySelector('.watch-screen.active');
+    const stateMap = { 'watch-face':'neutral','watch-home':'neutral','watch-set':'active','watch-rest':'rest','watch-pr':'pr','watch-summary':'summary' };
+    const s = active ? (stateMap[active.id] || 'neutral') : 'neutral';
+    tgt = JSON.parse(JSON.stringify(states[s]));
+    cur = JSON.parse(JSON.stringify(states[s]));
+    animT = 1;
+    drawInitial();
+  }
+}
+
+function showScreen(id, btn, state) {
+  document.querySelectorAll('.watch-screen').forEach(s=>s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.remove('active'));
+  document.getElementById('watch-'+id).classList.add('active');
+  if(btn) btn.classList.add('active');
+  document.getElementById('watch-desc').innerHTML = descs[id]||'';
+  transition(state||'neutral');
+}
+</script>
+</body>
+</html>

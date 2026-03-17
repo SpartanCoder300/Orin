@@ -1,0 +1,3439 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Heft — App Wireframes</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --obsidian: #050505;
+    --glass-bg: rgba(255,255,255,0.06);
+    --glass-border: rgba(255,255,255,0.10);
+    --glass-highlight: rgba(255,255,255,0.14);
+    --indigo: #5B5FEF;
+    --violet: #9B59F5;
+    --teal: #2DD4BF;
+    --navy: #1a2744;
+    --text-primary: rgba(255,255,255,0.92);
+    --text-secondary: rgba(255,255,255,0.48);
+    --text-tertiary: rgba(255,255,255,0.28);
+    --accent: #7C7FF5;
+    --accent-rgb: 92,95,239;
+    --accent-secondary-rgb: 155,89,245;
+    --pr-amber: #F59E0B;
+    --green: #34D399;
+    --red: #F87171;
+  }
+
+  /* ── Base theme definitions ── */
+  body[data-theme="midnight"] {
+    --phone-bg: #0C0C14;
+    --accent: #7C7FF5;
+    --accent-rgb: 92,95,239;
+    --accent-secondary-rgb: 124,58,237;
+  }
+  body[data-theme="ember"] {
+    --phone-bg: #0D0905;
+    --accent: #E8622A;
+    --accent-rgb: 232,98,42;
+    --accent-secondary-rgb: 200,55,20;
+    --pr-amber: #E8622A;
+  }
+  body[data-theme="graphite"] {
+    --phone-bg: #0E0F10;
+    --accent: #8E9AAB;
+    --accent-rgb: 142,154,171;
+    --accent-secondary-rgb: 110,122,140;
+  }
+  body[data-theme="abyss"] {
+    --phone-bg: #03060F;
+    --accent: #0A84FF;
+    --accent-rgb: 10,132,255;
+    --accent-secondary-rgb: 0,100,220;
+  }
+
+  body {
+    background: #0A0A0F;
+    font-family: 'DM Sans', sans-serif;
+    color: var(--text-primary);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 40px 20px 60px;
+  }
+
+  /* Header */
+  .header {
+    text-align: center;
+    margin-bottom: 48px;
+  }
+  .header .wordmark {
+    font-size: 13px;
+    letter-spacing: 0.25em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    margin-bottom: 8px;
+  }
+  .header h1 {
+    font-size: 28px;
+    font-weight: 300;
+    color: var(--text-primary);
+    letter-spacing: -0.02em;
+  }
+  .header p {
+    font-size: 14px;
+    color: var(--text-secondary);
+    margin-top: 8px;
+  }
+
+  /* Screen Nav */
+  .screen-nav {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    justify-content: center;
+    margin-bottom: 40px;
+    max-width: 700px;
+  }
+  .nav-btn {
+    background: var(--glass-bg);
+    border: 1px solid var(--glass-border);
+    border-radius: 20px;
+    padding: 7px 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    transition: all 0.2s;
+    backdrop-filter: blur(8px);
+  }
+  .nav-btn:hover { color: var(--text-primary); border-color: var(--glass-highlight); }
+  .nav-btn.active {
+    background: rgba(var(--accent-rgb),0.2);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+
+  /* iPhone Frame */
+  .phone-wrapper {
+    position: relative;
+    display: flex;
+    justify-content: center;
+  }
+  .phone-frame {
+    width: 375px;
+    height: 812px;
+    background: var(--phone-bg, #0C0C14);
+    border-radius: 54px;
+    border: 1.5px solid rgba(255,255,255,0.12);
+    overflow: hidden;
+    position: relative;
+    box-shadow:
+      0 0 0 1px rgba(0,0,0,0.8),
+      0 40px 80px rgba(0,0,0,0.8),
+      inset 0 1px 0 rgba(255,255,255,0.08);
+  }
+
+  /* Status Bar */
+  .status-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 14px 28px 0;
+    position: relative;
+    z-index: 10;
+    height: 44px;
+  }
+  .status-time {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.02em;
+  }
+  .status-icons {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+  }
+  .status-icons span {
+    font-size: 12px;
+    opacity: 0.8;
+  }
+  .dynamic-island {
+    position: absolute;
+    top: 12px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 120px;
+    height: 34px;
+    background: #000;
+    border-radius: 20px;
+    z-index: 20;
+  }
+
+  /* Screen container */
+  .screen {
+    display: none;
+    width: 100%;
+    height: 100%;
+    position: absolute;
+    top: 0; left: 0;
+    overflow: hidden;
+  }
+  .screen.active { display: block; }
+
+  /* Mesh background */
+  .mesh-bg {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    z-index: 0;
+  }
+  .mesh-bg canvas {
+    width: 100%;
+    height: 100%;
+  }
+
+  /* Theme toggle button */
+  /* ── Theme picker panel ── */
+  .theme-picker {
+    position: fixed;
+    top: 16px; right: 16px;
+    z-index: 9999;
+    background: rgba(12,12,22,0.92);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 16px;
+    backdrop-filter: blur(16px);
+    font-family: 'DM Sans', sans-serif;
+    user-select: none;
+    min-width: 200px;
+    overflow: hidden;
+  }
+  .theme-picker-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px;
+    cursor: pointer;
+    gap: 10px;
+  }
+  .theme-picker-header:hover .theme-picker-label { color: rgba(255,255,255,0.5); }
+  .theme-picker-label {
+    font-size: 9px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgba(255,255,255,0.28);
+    transition: color 0.15s;
+    flex: 1;
+  }
+  .theme-picker-current {
+    font-size: 11px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.7);
+    letter-spacing: -0.01em;
+  }
+  .theme-picker-chevron {
+    font-size: 9px;
+    color: rgba(255,255,255,0.3);
+    transition: transform 0.2s;
+    line-height: 1;
+  }
+  .theme-picker.open .theme-picker-chevron { transform: rotate(180deg); }
+  .theme-picker-body {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.25s ease, padding 0.2s;
+    padding: 0 12px;
+    border-top: 1px solid transparent;
+  }
+  .theme-picker.open .theme-picker-body {
+    max-height: 320px;
+    padding: 8px 12px 10px;
+    border-top-color: rgba(255,255,255,0.07);
+  }
+  .theme-options {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .theme-opt {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 7px 10px;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background 0.15s;
+    border: 1px solid transparent;
+  }
+  .theme-opt:hover { background: rgba(255,255,255,0.05); }
+  .theme-opt.active {
+    background: rgba(255,255,255,0.07);
+    border-color: rgba(255,255,255,0.1);
+  }
+  .theme-swatch {
+    width: 22px; height: 22px;
+    border-radius: 6px;
+    flex-shrink: 0;
+    border: 1px solid rgba(255,255,255,0.08);
+  }
+  .theme-opt-info { display: flex; flex-direction: column; gap: 1px; flex: 1; }
+  .theme-opt-name {
+    font-size: 12px; font-weight: 500;
+    color: rgba(255,255,255,0.85);
+    letter-spacing: -0.01em;
+  }
+  .theme-opt-desc {
+    font-size: 10px;
+    color: rgba(255,255,255,0.32);
+  }
+  .theme-opt .theme-check {
+    font-size: 11px;
+    color: var(--accent);
+    opacity: 0;
+    transition: opacity 0.15s;
+  }
+  .theme-opt.active .theme-check { opacity: 1; }
+
+  /* Premium badge */
+  .theme-premium-badge {
+    font-size: 8px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--pr-amber);
+    background: rgba(245,158,11,0.12);
+    border: 1px solid rgba(245,158,11,0.25);
+    border-radius: 5px;
+    padding: 2px 5px;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+
+  /* Divider between base and premium */
+  .theme-divider {
+    height: 1px;
+    background: rgba(255,255,255,0.07);
+    margin: 6px 0;
+  }
+
+  /* Canvas sits inside phone-frame, hidden by default */
+  #mesh-canvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 0;
+    display: none;
+    pointer-events: none;
+  }
+  body.mesh-mode #mesh-canvas { display: block; }
+
+  /* Grain overlay — mesh mode only */
+  #grain-canvas {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 1;
+    display: none;
+    pointer-events: none;
+    opacity: 0.032;
+    mix-blend-mode: overlay;
+  }
+  body.mesh-mode #grain-canvas { display: block; }
+
+  /* Grain annotation — visible in mesh mode only */
+  #grain-annotation {
+    display: none;
+    position: fixed;
+    bottom: 72px;
+    right: 16px;
+    z-index: 9999;
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 0.06em;
+    color: rgba(255,255,255,0.55);
+    background: rgba(12,12,24,0.8);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 8px;
+    padding: 5px 10px;
+    pointer-events: none;
+    line-height: 1.6;
+    text-align: right;
+  }
+  #grain-annotation span {
+    display: block;
+    color: rgba(var(--accent-rgb),0.8);
+    font-size: 8px;
+    margin-top: 1px;
+  }
+  body.mesh-mode #grain-annotation { display: block; }
+  body.mesh-mode .spotlight { display: none; }
+
+  /* Spotlight for Midnight Strength */
+  .spotlight {
+    position: absolute;
+    width: 500px;
+    height: 500px;
+    border-radius: 50%;
+    top: -150px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: radial-gradient(circle, rgba(70,80,140,0.25) 0%, transparent 70%);
+    z-index: 0;
+  }
+  /* Glass card */
+  .glass-card {
+    background: rgba(255,255,255,0.055);
+    border: 1px solid rgba(255,255,255,0.09);
+    border-radius: 20px;
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+  }
+
+  /* Screen content wrapper */
+  .screen-content {
+    position: relative;
+    z-index: 2;
+    height: 100%;
+    overflow-y: auto;
+    padding-top: 44px;
+    scrollbar-width: none;
+  }
+  .screen-content::-webkit-scrollbar { display: none; }
+
+  /* Tab bar */
+  .tab-bar {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 83px;
+    background: rgba(10,10,20,0.85);
+    backdrop-filter: blur(30px);
+    border-top: 1px solid rgba(255,255,255,0.07);
+    display: flex;
+    align-items: flex-start;
+    padding-top: 10px;
+    z-index: 100;
+  }
+  .tab-item {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    cursor: pointer;
+  }
+  .tab-icon {
+    font-size: 22px;
+    line-height: 1;
+  }
+  .tab-label {
+    font-size: 10px;
+    color: var(--text-tertiary);
+  }
+  .tab-item.active .tab-label { color: var(--accent); }
+  .tab-item.active .tab-icon { filter: none; }
+
+  /* ===== SCREEN 1: HOME ===== */
+  #screen-home-idle .greeting {
+    padding: 20px 24px 8px;
+  }
+  #screen-home-idle .greeting .day {
+    font-size: 13px;
+    color: var(--text-secondary);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+  }
+  #screen-home-idle .greeting h2 {
+    font-size: 30px;
+    font-weight: 300;
+    letter-spacing: -0.03em;
+    margin-top: 4px;
+  }
+
+  .section-label {
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+    padding: 20px 24px 10px;
+  }
+
+  .routine-card {
+    margin: 0 16px 12px;
+    padding: 18px 20px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.055);
+    border: 1px solid rgba(255,255,255,0.09);
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    overflow: hidden;
+  }
+  .routine-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+  }
+  .routine-card:active { transform: scale(0.98); }
+  .routine-card .card-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 12px;
+  }
+  .routine-card .card-name {
+    font-size: 17px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+  .routine-card .card-tag {
+    font-size: 11px;
+    color: var(--accent);
+    background: rgba(var(--accent-rgb),0.15);
+    border: 1px solid rgba(var(--accent-rgb),0.25);
+    border-radius: 8px;
+    padding: 3px 8px;
+  }
+  .routine-card .card-meta {
+    display: flex;
+    gap: 16px;
+  }
+  .routine-card .card-meta-item {
+    font-size: 12px;
+    color: var(--text-secondary);
+  }
+  .routine-card .card-meta-item span {
+    color: var(--text-primary);
+    font-weight: 500;
+  }
+  .routine-card.featured {
+    background: linear-gradient(135deg, rgba(var(--accent-rgb),0.18), rgba(var(--accent-secondary-rgb),0.12));
+    border-color: rgba(var(--accent-rgb),0.3);
+  }
+  .routine-card.featured::after {
+    content: 'Last trained';
+    position: absolute;
+    bottom: 18px; right: 20px;
+    font-size: 11px;
+    color: var(--text-tertiary);
+  }
+
+  .start-btn {
+    margin: 8px 16px 24px;
+    width: calc(100% - 32px);
+    height: 54px;
+    background: var(--accent);
+    border: none;
+    border-radius: 16px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 17px;
+    font-weight: 500;
+    color: white;
+    cursor: pointer;
+    letter-spacing: -0.01em;
+    position: relative;
+    overflow: hidden;
+  }
+  .start-btn::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 50%;
+    background: rgba(255,255,255,0.08);
+    border-radius: 16px 16px 0 0;
+  }
+
+  /* ===== SCREEN 2: ACTIVE WORKOUT ===== */
+  .workout-header {
+    padding: 16px 24px 8px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .workout-title {
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+  .workout-timer {
+    font-family: 'DM Mono', monospace;
+    font-size: 15px;
+    color: var(--text-secondary);
+  }
+
+  .exercise-section {
+    margin: 8px 16px;
+    border-radius: 20px;
+    background: rgba(255,255,255,0.055);
+    border: 1px solid rgba(255,255,255,0.09);
+    overflow: hidden;
+  }
+  .exercise-header {
+    padding: 14px 18px 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .exercise-name {
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+  .exercise-menu {
+    width: 28px; height: 28px;
+    background: rgba(255,255,255,0.07);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+
+  .set-row {
+    display: grid;
+    grid-template-columns: 24px 34px 1fr 1fr 44px;
+    gap: 7px;
+    padding: 10px 18px;
+    align-items: center;
+    border-bottom: 1px solid rgba(255,255,255,0.04);
+  }
+  .set-row.logged-row {
+    grid-template-columns: 24px 34px 1fr 1fr 32px 26px;
+  }
+  .set-row:last-child { border-bottom: none; }
+  .set-num {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    font-family: 'DM Mono', monospace;
+  }
+  /* Set type chip: W = warmup (amber), N = normal (dim), D = dropset (teal) */
+  .set-type {
+    font-size: 9px; font-weight: 700; letter-spacing: 0.04em;
+    border-radius: 6px; padding: 3px 5px; text-align: center;
+    border: 1px solid transparent;
+  }
+  .set-type.normal { color: var(--text-tertiary); background: rgba(255,255,255,0.05); border-color: rgba(255,255,255,0.08); }
+  .set-type.warmup { color: var(--pr-amber); background: rgba(245,158,11,0.12); border-color: rgba(245,158,11,0.25); }
+  .set-type.dropset { color: var(--teal); background: rgba(45,212,191,0.1); border-color: rgba(45,212,191,0.22); }
+
+  /* Exercise context menu overlay */
+  .exercise-menu { cursor: pointer; }
+  .exercise-menu-overlay {
+    display: none;
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    z-index: 100;
+    background: rgba(0,0,0,0.6);
+    backdrop-filter: blur(4px);
+    top: 0;
+  }
+  .exercise-menu-overlay.open { display: block; }
+  .exercise-menu-sheet {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(18,18,28,0.97);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 24px 24px 0 0;
+    padding: 10px 0 32px;
+  }
+  .menu-handle {
+    width: 36px; height: 4px; border-radius: 2px;
+    background: rgba(255,255,255,0.18); margin: 0 auto 14px;
+  }
+  .menu-sheet-title {
+    font-size: 12px; font-weight: 600; letter-spacing: -0.01em;
+    padding: 0 20px 10px; color: var(--text-primary);
+  }
+  .menu-row {
+    display: flex; align-items: center; gap: 14px;
+    padding: 13px 20px; cursor: pointer;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .menu-row:last-child { border-bottom: none; }
+  .menu-row:hover { background: rgba(255,255,255,0.04); }
+  .menu-row-icon {
+    width: 32px; height: 32px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px; flex-shrink: 0;
+  }
+  .menu-row-label { font-size: 15px; font-weight: 400; letter-spacing: -0.01em; }
+  .menu-row.destructive .menu-row-label { color: var(--red); }
+  .menu-row.destructive .menu-row-icon { background: rgba(248,113,113,0.12); }
+
+  /* Pro upgrade screen */
+  .pro-upgrade-hero {
+    padding: 24px 20px 16px;
+    text-align: center;
+  }
+  .pro-upgrade-badge {
+    display: inline-flex; align-items: center; gap: 6px;
+    background: rgba(var(--accent-secondary-rgb),0.15);
+    border: 1px solid rgba(var(--accent-secondary-rgb),0.3);
+    border-radius: 20px; padding: 5px 12px; margin-bottom: 14px;
+    font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase;
+    color: rgba(var(--accent-secondary-rgb),1);
+  }
+  .pro-upgrade-title {
+    font-size: 26px; font-weight: 300; letter-spacing: -0.03em;
+    margin-bottom: 6px;
+  }
+  .pro-upgrade-sub {
+    font-size: 13px; color: var(--text-secondary); line-height: 1.4;
+  }
+  .pro-feature-list {
+    margin: 0 16px 16px;
+    background: rgba(255,255,255,0.04);
+    border: 1px solid rgba(255,255,255,0.07);
+    border-radius: 18px;
+    padding: 4px 0;
+  }
+  .pro-feature-row {
+    display: flex; align-items: center; gap: 12px;
+    padding: 11px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .pro-feature-row:last-child { border-bottom: none; }
+  .pro-feature-icon {
+    width: 30px; height: 30px; border-radius: 9px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px; flex-shrink: 0;
+  }
+  .pro-feature-text { flex: 1; }
+  .pro-feature-name { font-size: 13px; font-weight: 500; letter-spacing: -0.01em; }
+  .pro-feature-desc { font-size: 11px; color: var(--text-tertiary); margin-top: 1px; }
+  .pro-feature-check { font-size: 14px; color: var(--green); }
+  .pro-price-row {
+    display: flex; gap: 10px; margin: 0 16px 12px;
+  }
+  .pro-price-card {
+    flex: 1; border-radius: 16px; padding: 14px;
+    background: rgba(255,255,255,0.05);
+    border: 1.5px solid rgba(255,255,255,0.1);
+    text-align: center;
+  }
+  .pro-price-card.featured {
+    background: rgba(var(--accent-rgb),0.15);
+    border-color: rgba(var(--accent-rgb),0.45);
+  }
+  .pro-price-label { font-size: 10px; color: var(--text-tertiary); text-transform: uppercase; letter-spacing: 0.06em; margin-bottom: 4px; }
+  .pro-price-amount { font-family: 'DM Mono', monospace; font-size: 22px; font-weight: 500; letter-spacing: -0.03em; }
+  .pro-price-period { font-size: 10px; color: var(--text-secondary); margin-top: 2px; }
+  .pro-cta-btn {
+    display: block; margin: 0 16px 10px;
+    background: var(--accent); border: none; border-radius: 16px;
+    padding: 16px; font-family: 'DM Sans', sans-serif;
+    font-size: 16px; font-weight: 600; letter-spacing: -0.01em;
+    color: white; cursor: pointer; text-align: center;
+  }
+  .pro-restore-link {
+    text-align: center; font-size: 12px;
+    color: var(--text-tertiary); padding-bottom: 4px; cursor: pointer;
+  }
+  .set-field {
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 10px;
+    padding: 8px 12px;
+    text-align: center;
+    position: relative;
+  }
+  .set-field .field-value {
+    font-size: 17px;
+    font-weight: 500;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: -0.02em;
+  }
+  .set-field .field-label {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    margin-top: 1px;
+  }
+  /* Gesture affordance chevrons — shown on the active (pre-log) set row fields */
+  .set-field.gesture-active {
+    padding: 4px 6px 4px;
+  }
+  .gesture-chevrons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0px;
+  }
+  .gesture-chevron {
+    font-size: 9px;
+    color: rgba(var(--accent-rgb), 0.45);
+    line-height: 1;
+    user-select: none;
+  }
+  .set-check {
+    width: 36px; height: 36px;
+    background: rgba(var(--accent-rgb),0.15);
+    border: 1px solid rgba(var(--accent-rgb),0.3);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+  .set-check.logged {
+    background: rgba(52,211,153,0.15);
+    border-color: rgba(52,211,153,0.3);
+  }
+  .repeat-btn {
+    width: 24px; height: 36px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 13px;
+    color: rgba(255,255,255,0.25);
+    cursor: pointer;
+    border-radius: 7px;
+    transition: all 0.15s;
+  }
+  .repeat-btn:hover { background: rgba(52,211,153,0.12); color: rgba(52,211,153,0.7); }
+
+  .add-set-row {
+    padding: 10px 18px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    color: var(--accent);
+    font-size: 14px;
+    cursor: pointer;
+  }
+
+  /* Floating action area */
+  .floating-bar {
+    position: absolute;
+    bottom: 83px; left: 16px; right: 16px;
+    background: rgba(10,10,22,0.94);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 22px;
+    backdrop-filter: blur(30px);
+    -webkit-backdrop-filter: blur(30px);
+    padding: 12px 14px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    z-index: 50;
+  }
+  /* NL input pill — top row */
+  .fb-nl-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(var(--accent-rgb),0.3);
+    border-radius: 14px;
+    padding: 10px 14px;
+    cursor: pointer;
+    position: relative;
+  }
+  .fb-nl-icon {
+    font-size: 16px;
+    flex-shrink: 0;
+    opacity: 0.7;
+  }
+  .fb-nl-placeholder {
+    flex: 1;
+    font-size: 14px;
+    color: var(--text-tertiary);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: -0.01em;
+  }
+  .fb-nl-placeholder em {
+    font-style: normal;
+    color: rgba(var(--accent-rgb), 0.65);
+  }
+  .fb-nl-badge {
+    font-size: 8px;
+    font-weight: 700;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    background: rgba(245,158,11,0.9);
+    color: rgba(0,0,0,0.85);
+    border-radius: 5px;
+    padding: 2px 6px;
+    flex-shrink: 0;
+  }
+  /* Bottom row — exercise context + log button */
+  .fb-bottom-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .floating-bar .fb-exercise {
+    font-size: 13px;
+    font-weight: 500;
+  }
+  .floating-bar .fb-next {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+  }
+  .floating-bar .fb-btn {
+    background: var(--accent);
+    border: none;
+    border-radius: 12px;
+    padding: 10px 18px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: white;
+    cursor: pointer;
+    flex-shrink: 0;
+  }
+
+  /* ===== SCREEN 3: EXERCISE PICKER ===== */
+  .sheet-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(0,0,0,0.25);
+    z-index: 60;
+  }
+  .bottom-sheet {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 78%;
+    background: rgba(12,12,24,0.55);
+    border: 1px solid rgba(255,255,255,0.12);
+    border-bottom: none;
+    border-radius: 24px 24px 0 0;
+    backdrop-filter: blur(32px);
+    -webkit-backdrop-filter: blur(32px);
+    z-index: 70;
+    overflow: hidden;
+  }
+  .sheet-handle {
+    width: 36px; height: 4px;
+    background: rgba(255,255,255,0.2);
+    border-radius: 2px;
+    margin: 12px auto 0;
+  }
+  .sheet-title {
+    font-size: 17px;
+    font-weight: 500;
+    text-align: center;
+    padding: 12px 0 0;
+    letter-spacing: -0.01em;
+  }
+  .search-bar {
+    margin: 14px 16px 8px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    padding: 11px 16px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-secondary);
+    font-size: 15px;
+  }
+  .muscle-chips {
+    display: flex;
+    gap: 8px;
+    padding: 0 16px 10px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+  .chip {
+    white-space: nowrap;
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12px;
+    border: 1px solid rgba(255,255,255,0.1);
+    background: rgba(255,255,255,0.05);
+    color: var(--text-secondary);
+  }
+  .chip.active {
+    background: rgba(var(--accent-rgb),0.2);
+    border-color: var(--accent);
+    color: var(--accent);
+  }
+  .recents-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 6px;
+    padding: 4px 16px 12px;
+  }
+  .recent-item {
+    background: rgba(255,255,255,0.055);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 12px;
+    padding: 9px 10px;
+  }
+  .recent-item .ri-name {
+    font-size: 11px;
+    font-weight: 500;
+    margin-bottom: 3px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .recent-item .ri-meta {
+    font-size: 10px;
+    color: var(--text-tertiary);
+  }
+  .exercise-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 13px 16px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .eli-name {
+    font-size: 15px;
+    font-weight: 500;
+  }
+  .eli-muscle {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    margin-top: 2px;
+  }
+  .eli-pr {
+    font-size: 12px;
+    color: var(--text-secondary);
+    font-family: 'DM Mono', monospace;
+  }
+
+  /* ===== SCREEN 4: REST TIMER — .fullScreenCover modal ===== */
+
+  /* Dimmed workout visible behind the sheet */
+  .rest-bg-peek {
+    position: absolute;
+    inset: 0;
+    z-index: 0;
+    overflow: hidden;
+  }
+  .rest-bg-peek::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: rgba(10,10,20,0.45);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+
+  /* The sheet itself — slides up from bottom, covers ~92% */
+  .rest-sheet {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 92%;
+    background: rgba(12,12,24,0.55);
+    backdrop-filter: blur(32px);
+    -webkit-backdrop-filter: blur(32px);
+    border-radius: 20px 20px 0 0;
+    border-top: 1px solid rgba(255,255,255,0.12);
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 24px 32px;
+  }
+
+  /* Grab handle + swipe hint */
+  .rest-handle-row {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 0 6px;
+    gap: 6px;
+    width: 100%;
+    flex-shrink: 0;
+  }
+  .rest-handle {
+    width: 36px; height: 4px;
+    background: rgba(255,255,255,0.18);
+    border-radius: 2px;
+  }
+  .rest-swipe-hint {
+    font-size: 9px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: rgba(255,255,255,0.2);
+  }
+
+  /* Annotation badge */
+  .modal-annotation {
+    align-self: flex-end;
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: rgba(var(--accent-rgb),0.55);
+    letter-spacing: 0.05em;
+    margin-bottom: 4px;
+  }
+
+  .rest-ring-wrap {
+    position: relative;
+    width: 200px; height: 200px;
+    margin: 4px 0 18px;
+    flex-shrink: 0;
+  }
+  .rest-ring-wrap svg {
+    width: 100%; height: 100%;
+    transform: rotate(-90deg);
+  }
+  .rest-ring-track {
+    fill: none;
+    stroke: rgba(255,255,255,0.06);
+    stroke-width: 10;
+  }
+  .rest-ring-progress {
+    fill: none;
+    stroke: var(--accent);
+    stroke-width: 10;
+    stroke-linecap: round;
+    stroke-dasharray: 565.5;
+    stroke-dashoffset: 67;
+  }
+  .rest-ring-inner {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 2px;
+  }
+  .rest-label {
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+  }
+  .rest-time {
+    font-family: 'DM Mono', monospace;
+    font-size: 50px;
+    font-weight: 400;
+    letter-spacing: -0.04em;
+    color: var(--text-primary);
+    line-height: 1;
+  }
+  .rest-time span { color: var(--accent); }
+  .rest-subtitle {
+    font-size: 11px;
+    color: var(--text-tertiary);
+    margin-top: 3px;
+  }
+  .rest-next-card {
+    width: 100%;
+    background: rgba(var(--accent-rgb),0.14);
+    border: 1px solid rgba(var(--accent-rgb),0.35);
+    border-radius: 18px;
+    padding: 14px 18px;
+    margin-bottom: 18px;
+  }
+  .rest-next-label {
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: rgba(var(--accent-rgb),0.7);
+    margin-bottom: 6px;
+  }
+  .rest-next-name {
+    font-size: 16px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+    margin-bottom: 10px;
+  }
+  .rest-next-stats { display: flex; gap: 12px; align-items: center; }
+  .rest-next-stat { display: flex; flex-direction: column; gap: 1px; }
+  .rest-next-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+  .rest-next-unit {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  /* Stepper row: − value unit + */
+  .rest-stepper {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  .rest-stepper-btn {
+    width: 36px; height: 44px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 18px;
+    color: var(--text-secondary);
+    cursor: pointer;
+    flex-shrink: 0;
+    user-select: none;
+  }
+  .rest-stepper-btn:active { background: rgba(255,255,255,0.08); }
+  .rest-stepper-val {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 0 6px;
+    min-width: 52px;
+  }
+  .rest-stepper-num {
+    font-family: 'DM Mono', monospace;
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+  .rest-stepper-unit {
+    font-size: 9px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+  }
+  .rest-stepper-divider {
+    width: 1px;
+    height: 28px;
+    background: rgba(255,255,255,0.08);
+    flex-shrink: 0;
+  }
+  .rest-controls {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+    width: 100%;
+  }
+  .rest-btn-sm {
+    flex: 1;
+    height: 50px;
+    background: rgba(255,255,255,0.07);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 14px;
+    font-weight: 500;
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+  .rest-btn-skip {
+    flex: 1.4;
+    height: 50px;
+    background: transparent;
+    border: 1px solid rgba(45,212,191,0.35);
+    border-radius: 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 14px;
+    font-weight: 500;
+    color: rgba(45,212,191,0.9);
+    cursor: pointer;
+  }
+
+  /* ===== SCREEN 5: PR ===== */
+  .pr-overlay {
+    position: absolute;
+    top: 0; left: 0; right: 0; bottom: 0;
+    background: rgba(8,4,2,0.35);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 90;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+  }
+  .pr-card {
+    background: linear-gradient(135deg, rgba(245,158,11,0.18), rgba(245,158,11,0.06));
+    border: 1px solid rgba(245,158,11,0.4);
+    border-radius: 28px;
+    padding: 36px 32px;
+    width: calc(100% - 48px);
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .pr-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(245,158,11,0.6), transparent);
+  }
+  .pr-badge {
+    font-size: 12px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--pr-amber);
+    margin-bottom: 16px;
+  }
+  .pr-lift {
+    font-size: 17px;
+    font-weight: 500;
+    margin-bottom: 24px;
+    color: var(--text-primary);
+  }
+  .pr-number {
+    font-family: 'DM Mono', monospace;
+    font-size: 56px;
+    font-weight: 400;
+    letter-spacing: -0.04em;
+    color: var(--pr-amber);
+    line-height: 1;
+    margin-bottom: 4px;
+  }
+  .pr-unit {
+    font-size: 20px;
+    color: rgba(245,158,11,0.6);
+    font-family: 'DM Mono', monospace;
+  }
+  .pr-prev {
+    font-size: 13px;
+    color: var(--text-secondary);
+    margin-top: 8px;
+    margin-bottom: 28px;
+  }
+  .pr-prev strong { color: var(--text-primary); }
+  .pr-dismiss {
+    width: 100%;
+    padding: 14px;
+    background: var(--pr-amber);
+    border: none;
+    border-radius: 14px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 16px;
+    font-weight: 500;
+    color: rgba(0,0,0,0.85);
+    cursor: pointer;
+  }
+
+  /* ===== SCREEN 6: ANALYTICS ===== */
+  .analytics-header {
+    padding: 20px 24px 0;
+  }
+  .analytics-header h2 {
+    font-size: 28px;
+    font-weight: 300;
+    letter-spacing: -0.03em;
+  }
+  .period-selector {
+    display: flex;
+    gap: 6px;
+    margin: 16px 24px;
+    background: rgba(255,255,255,0.05);
+    border-radius: 12px;
+    padding: 3px;
+  }
+  .period-btn {
+    flex: 1;
+    padding: 7px 0;
+    border-radius: 10px;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 12px;
+    font-weight: 500;
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+  }
+  .period-btn.active {
+    background: rgba(255,255,255,0.1);
+    color: var(--text-primary);
+  }
+  .stat-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 8px;
+    margin: 0 16px 12px;
+  }
+  .stat-tile {
+    background: rgba(255,255,255,0.055);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 16px;
+    padding: 14px 14px 12px;
+  }
+  .stat-value {
+    font-size: 22px;
+    font-weight: 500;
+    font-family: 'DM Mono', monospace;
+    letter-spacing: -0.03em;
+    margin-bottom: 4px;
+  }
+  .stat-label {
+    font-size: 10px;
+    color: var(--text-tertiary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .stat-delta {
+    font-size: 11px;
+    color: var(--green);
+    margin-top: 2px;
+  }
+  .chart-card {
+    margin: 0 16px 12px;
+    background: rgba(255,255,255,0.055);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+    padding: 16px 18px;
+  }
+  .chart-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 16px;
+  }
+  .chart-card-title {
+    font-size: 14px;
+    font-weight: 500;
+  }
+  .chart-card-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--accent);
+  }
+  .chart-area {
+    height: 80px;
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+  }
+  .chart-bar {
+    flex: 1;
+    background: linear-gradient(to top, rgba(var(--accent-rgb),0.6), rgba(var(--accent-rgb),0.2));
+    border-radius: 3px 3px 0 0;
+    transition: height 0.3s;
+  }
+  .chart-bar.highlight {
+    background: linear-gradient(to top, var(--accent), rgba(var(--accent-rgb),0.5));
+  }
+  .chart-line {
+    width: 100%;
+    height: 80px;
+    position: relative;
+    overflow: hidden;
+  }
+  .chart-line svg {
+    width: 100%;
+    height: 100%;
+  }
+  .pr-list-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 11px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .pr-list-item:last-child { border-bottom: none; }
+  .pli-name { font-size: 14px; font-weight: 500; }
+  .pli-date { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+  .pli-weight {
+    font-family: 'DM Mono', monospace;
+    font-size: 16px;
+    color: var(--pr-amber);
+  }
+
+  /* ===== SCREEN 7: EXERCISE DETAIL ===== */
+  .ex-detail-header {
+    padding: 16px 24px 0;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  .back-btn {
+    width: 32px; height: 32px;
+    background: rgba(255,255,255,0.07);
+    border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+    cursor: pointer;
+  }
+  .ex-detail-header h2 {
+    font-size: 20px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+  .muscle-badge {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 8px;
+    background: rgba(var(--accent-rgb),0.15);
+    border: 1px solid rgba(var(--accent-rgb),0.25);
+    color: var(--accent);
+    margin-left: auto;
+  }
+  .pr-banner {
+    margin: 14px 16px;
+    background: linear-gradient(135deg, rgba(245,158,11,0.12), rgba(245,158,11,0.05));
+    border: 1px solid rgba(245,158,11,0.25);
+    border-radius: 16px;
+    padding: 14px 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+  .pr-banner-label { font-size: 12px; color: var(--text-secondary); }
+  .pr-banner-value {
+    font-family: 'DM Mono', monospace;
+    font-size: 20px;
+    font-weight: 500;
+    color: var(--pr-amber);
+  }
+  .pr-banner-date { font-size: 11px; color: var(--text-tertiary); margin-top: 2px; }
+
+  /* ===== SCREEN 8: SETTINGS ===== */
+  .settings-header {
+    padding: 24px 24px 8px;
+  }
+  .settings-header h2 {
+    font-size: 28px;
+    font-weight: 300;
+    letter-spacing: -0.03em;
+  }
+  .settings-group {
+    margin: 0 16px 12px;
+    background: rgba(255,255,255,0.055);
+    border: 1px solid rgba(255,255,255,0.08);
+    border-radius: 20px;
+    overflow: hidden;
+  }
+  .settings-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 18px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    cursor: pointer;
+  }
+  .settings-row:last-child { border-bottom: none; }
+  .settings-row-left { display: flex; align-items: center; gap: 12px; }
+  .settings-icon {
+    width: 30px; height: 30px;
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 15px;
+  }
+  .settings-label { font-size: 15px; }
+  .settings-value { font-size: 14px; color: var(--text-secondary); }
+  .toggle {
+    width: 44px; height: 26px;
+    border-radius: 13px;
+    position: relative;
+  }
+  .toggle.on { background: var(--accent); }
+  .toggle.off { background: rgba(255,255,255,0.15); }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    top: 3px;
+    width: 20px; height: 20px;
+    background: white;
+    border-radius: 50%;
+    transition: left 0.2s;
+  }
+  .toggle.on::after { left: 21px; }
+  .toggle.off::after { left: 3px; }
+
+  /* Pro badge */
+  .pro-banner {
+    margin: 0 16px 20px;
+    background: linear-gradient(135deg, rgba(var(--accent-rgb),0.2), rgba(var(--accent-secondary-rgb),0.15));
+    border: 1px solid rgba(var(--accent-rgb),0.3);
+    border-radius: 20px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  .pro-banner-title {
+    font-size: 17px;
+    font-weight: 500;
+    letter-spacing: -0.01em;
+  }
+  .pro-banner-sub {
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+  .pro-banner-price {
+    font-family: 'DM Mono', monospace;
+    font-size: 13px;
+    color: var(--accent);
+    margin-top: 8px;
+  }
+
+  /* Labels for wireframe annotation */
+  .annotation {
+    position: absolute;
+    font-family: 'DM Mono', monospace;
+    font-size: 9px;
+    color: rgba(var(--accent-rgb),0.6);
+    letter-spacing: 0.05em;
+    pointer-events: none;
+    right: -2px;
+    white-space: nowrap;
+  }
+
+  /* Screen label */
+  .screen-label {
+    text-align: center;
+    margin-top: 20px;
+    font-size: 11px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-tertiary);
+  }
+  .screen-label strong {
+    color: var(--text-secondary);
+    font-weight: 500;
+  }
+
+  /* transition animation */
+  @keyframes slideUp {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+  .screen.active .screen-content { animation: slideUp 0.3s ease; }
+</style>
+</head>
+<body data-theme="midnight">
+
+<div class="header">
+  <div class="wordmark">Heft</div>
+  <h1>App Wireframes</h1>
+  <p>8 screens — Midnight Strength theme — iOS 26 Liquid Glass</p>
+</div>
+
+<div class="screen-nav">
+  <button class="nav-btn active" onclick="showScreen('home-idle', this)">① Home</button>
+  <button class="nav-btn" onclick="showScreen('home-active', this)">② Home — active workout</button>
+  <button class="nav-btn" onclick="showScreen('nl', this)">② NL Input</button>
+  <button class="nav-btn" onclick="showScreen('picker', this)">③ Exercise Picker</button>
+  <button class="nav-btn" onclick="showScreen('rest', this)">④ Rest Timer</button>
+  <button class="nav-btn" onclick="showScreen('pr', this)">⑤ PR Moment</button>
+  <button class="nav-btn" onclick="showScreen('summary', this)">⑤b Post-Workout Summary</button>
+  <button class="nav-btn" onclick="showScreen('liveactivity', this)">Live Activity</button>
+  <button class="nav-btn" onclick="showScreen('analytics', this)">⑥ Analytics</button>
+  <button class="nav-btn" onclick="showScreen('history', this)">⑦ History</button>
+  <button class="nav-btn" onclick="showScreen('detail', this)">⑧ Exercise Detail</button>
+  <button class="nav-btn" onclick="showScreen('routinebuilder', this)">Routine Builder</button>
+  <button class="nav-btn" onclick="showScreen('settings', this)">⑨ Settings</button>
+  <button class="nav-btn" onclick="showScreen('exerciseconfig', this)">Exercise Config</button>
+  <button class="nav-btn" onclick="showScreen('proupgrade', this)">Pro Upgrade</button>
+</div>
+
+<div class="theme-picker" id="theme-picker">
+  <div class="theme-picker-header" onclick="togglePicker()">
+    <span class="theme-picker-label">Theme</span>
+    <span class="theme-picker-current" id="theme-current-name">Midnight Strength</span>
+    <span class="theme-picker-chevron">▼</span>
+  </div>
+  <div class="theme-picker-body">
+  <div class="theme-options">
+
+    <!-- Base themes -->
+    <div class="theme-opt active" id="opt-midnight" onclick="setTheme('midnight')">
+      <div class="theme-swatch" style="background:linear-gradient(135deg,#1a1a2e,#0c0c14);"></div>
+      <div class="theme-opt-info">
+        <div class="theme-opt-name">Midnight Strength</div>
+        <div class="theme-opt-desc">Deep indigo · default</div>
+      </div>
+      <span class="theme-check">✓</span>
+    </div>
+
+    <div class="theme-opt" id="opt-ember" onclick="setTheme('ember')">
+      <div class="theme-swatch" style="background:linear-gradient(135deg,#3a1a08,#0d0905);"></div>
+      <div class="theme-opt-info">
+        <div class="theme-opt-name">Ember</div>
+        <div class="theme-opt-desc">Hot iron · dark forge</div>
+      </div>
+      <span class="theme-check">✓</span>
+    </div>
+
+    <div class="theme-opt" id="opt-graphite" onclick="setTheme('graphite')">
+      <div class="theme-swatch" style="background:linear-gradient(135deg,#1c1e20,#0e0f10);"></div>
+      <div class="theme-opt-info">
+        <div class="theme-opt-name">Graphite</div>
+        <div class="theme-opt-desc">Cool silver · no color cast</div>
+      </div>
+      <span class="theme-check">✓</span>
+    </div>
+
+    <div class="theme-opt" id="opt-abyss" onclick="setTheme('abyss')">
+      <div class="theme-swatch" style="background:linear-gradient(135deg,#03183a,#03060f);"></div>
+      <div class="theme-opt-info">
+        <div class="theme-opt-name">Abyss</div>
+        <div class="theme-opt-desc">Deep ocean · system blue</div>
+      </div>
+      <span class="theme-check">✓</span>
+    </div>
+
+    <div class="theme-divider"></div>
+
+    <!-- Premium -->
+    <div class="theme-opt" id="opt-mesh" onclick="setTheme('mesh')">
+      <div class="theme-swatch" style="background:linear-gradient(135deg,#3d1a60,#06040f);"></div>
+      <div class="theme-opt-info">
+        <div class="theme-opt-name">Dynamic Mesh</div>
+        <div class="theme-opt-desc">State-aware gradient · violet</div>
+      </div>
+      <span class="theme-premium-badge">Pro</span>
+      <span class="theme-check">✓</span>
+    </div>
+
+  </div>
+  </div><!-- /theme-picker-body -->
+</div>
+
+<div id="grain-annotation">
+  GRAIN OVERLAY APPLIED
+  <span>mix-blend-mode: overlay · opacity: ~3%</span>
+  <span>Static — generated once at launch</span>
+</div>
+
+<div class="phone-wrapper">
+  <div class="phone-frame">
+    <div class="dynamic-island"></div>
+
+    <!-- Mesh canvas (hidden until mesh-mode) -->
+    <canvas id="mesh-canvas" width="375" height="812"></canvas>
+    <canvas id="grain-canvas" width="375" height="812"></canvas>
+
+    <!-- Shared background -->
+    <div class="spotlight"></div>
+    <div style="position:absolute;width:400px;height:400px;bottom:-100px;right:-100px;border-radius:50%;background:radial-gradient(circle, rgba(40,30,80,0.3) 0%, transparent 70%);z-index:0;pointer-events:none;"></div>
+
+    <!-- ===== SCREEN 1: HOME (IDLE) ===== -->
+    <div id="screen-home-idle" class="screen active">
+
+      <!-- IDLE STATE -->
+      <div class="screen-content" id="home-idle">
+        <div class="status-bar">
+          <span class="status-time">9:41</span><span></span>
+          <div class="status-icons"><span>●●●</span><span>WiFi</span><span>🔋</span></div>
+        </div>
+        <div class="greeting">
+          <div class="day">Thursday</div>
+          <h2>Ready to lift?</h2>
+        </div>
+
+        <!-- Weekly snapshot -->
+        <div style="display:flex;gap:8px;padding:0 20px 16px;">
+          <div style="flex:1;background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:12px 14px;">
+            <div style="font-family:'DM Mono',monospace;font-size:20px;font-weight:500;letter-spacing:-0.03em;">5</div>
+            <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">Day streak</div>
+          </div>
+          <div style="flex:1;background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:12px 14px;">
+            <div style="font-family:'DM Mono',monospace;font-size:20px;font-weight:500;letter-spacing:-0.03em;">3</div>
+            <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">This week</div>
+          </div>
+          <div style="flex:1;background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.08);border-radius:16px;padding:12px 14px;">
+            <div style="font-family:'DM Mono',monospace;font-size:20px;font-weight:500;letter-spacing:-0.03em;color:var(--pr-amber);">2</div>
+            <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">PRs this wk</div>
+          </div>
+        </div>
+
+        <div class="section-label">Quick Start</div>
+        <div class="routine-card featured" onclick="showScreen('home-active', document.querySelectorAll('.nav-btn')[1])">
+          <div class="card-top"><div class="card-name">Push A</div><div class="card-tag">Yesterday</div></div>
+          <div class="card-meta">
+            <div class="card-meta-item"><span>6</span> exercises</div>
+            <div class="card-meta-item"><span>52</span> min avg</div>
+            <div class="card-meta-item"><span>18</span> sets</div>
+          </div>
+        </div>
+        <div class="section-label">All Routines</div>
+        <div class="routine-card">
+          <div class="card-top"><div class="card-name">Pull A</div><div class="card-tag">Back · Biceps</div></div>
+          <div class="card-meta"><div class="card-meta-item"><span>5</span> exercises</div><div class="card-meta-item"><span>48</span> min avg</div></div>
+        </div>
+        <div class="routine-card">
+          <div class="card-top"><div class="card-name">Legs</div><div class="card-tag">Lower</div></div>
+          <div class="card-meta"><div class="card-meta-item"><span>7</span> exercises</div><div class="card-meta-item"><span>65</span> min avg</div></div>
+        </div>
+        <div class="routine-card">
+          <div class="card-top"><div class="card-name">Push B</div><div class="card-tag">Chest · Shoulders</div></div>
+          <div class="card-meta"><div class="card-meta-item"><span>6</span> exercises</div><div class="card-meta-item"><span>55</span> min avg</div></div>
+        </div>
+        <!-- New Routine entry point -->
+        <div class="routine-card" onclick="showScreen('routinebuilder', document.querySelectorAll('.nav-btn')[11])"
+          style="border:1.5px dashed rgba(var(--accent-rgb),0.3);background:rgba(var(--accent-rgb),0.04);display:flex;align-items:center;justify-content:center;gap:10px;cursor:pointer;padding:14px 16px;">
+          <div style="font-size:20px;color:var(--accent);">+</div>
+          <div style="font-size:14px;font-weight:500;color:var(--accent);">New Routine</div>
+        </div>
+        <div style="height:100px;"></div>
+      </div>
+
+      <div class="tab-bar">
+        <div class="tab-item active"><div class="tab-icon">⊞</div><div class="tab-label">Home</div></div>
+        <div class="tab-item" onclick="showScreen('history', document.querySelectorAll('.nav-btn')[6])"><div class="tab-icon">⟳</div><div class="tab-label">History</div></div>
+        <div class="tab-item" onclick="showScreen('analytics', document.querySelectorAll('.nav-btn')[5])"><div class="tab-icon">↗</div><div class="tab-label">Progress</div></div>
+        <div class="tab-item" onclick="showScreen('settings', document.querySelectorAll('.nav-btn')[8])"><div class="tab-icon">⚙</div><div class="tab-label">Settings</div></div>
+      </div>
+    </div>
+
+    <!-- ===== SCREEN 2: HOME — ACTIVE WORKOUT ===== -->
+    <div id="screen-home-active" class="screen">
+      <div class="screen-content" id="home-active-content">
+        <div class="status-bar">
+          <span class="status-time">10:14</span>
+          <span></span>
+          <div class="status-icons"><span>●●●</span><span>🔋</span></div>
+        </div>
+        <div class="workout-header">
+          <div>
+            <div class="workout-title">Push A</div>
+            <div style="font-size:11px;color:rgba(var(--accent-rgb),0.85);letter-spacing:0.08em;margin-top:2px;">● LIVE</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:10px;">
+            <div class="workout-timer">32:14</div>
+            <div onclick="showScreen('summary', document.querySelectorAll('.nav-btn')[6])"
+              style="font-size:11px;font-weight:600;letter-spacing:0.04em;color:var(--red);background:rgba(248,113,113,0.12);border:1px solid rgba(248,113,113,0.28);border-radius:10px;padding:5px 10px;cursor:pointer;white-space:nowrap;">End</div>
+          </div>
+        </div>
+
+        <!-- Exercise 1 -->
+        <div class="exercise-section" style="margin-top:8px;">
+          <div class="exercise-header">
+            <div class="exercise-name">Bench Press</div>
+            <div class="exercise-menu" onclick="openExerciseMenu('Bench Press')">···</div>
+          </div>
+          <div class="set-row logged-row">
+            <div class="set-num">1</div>
+            <div class="set-type warmup">W</div>
+            <div class="set-field"><div class="field-value">60</div><div class="field-label">kg</div></div>
+            <div class="set-field"><div class="field-value">10</div><div class="field-label">reps</div></div>
+            <div class="set-check logged">✓</div>
+            <div class="repeat-btn" title="Repeat set">↩</div>
+          </div>
+          <div class="set-row logged-row">
+            <div class="set-num">2</div>
+            <div class="set-type normal">N</div>
+            <div class="set-field"><div class="field-value">80</div><div class="field-label">kg</div></div>
+            <div class="set-field"><div class="field-value">8</div><div class="field-label">reps</div></div>
+            <div class="set-check logged">✓</div>
+            <div class="repeat-btn" title="Repeat set">↩</div>
+          </div>
+          <div class="set-row">
+            <div class="set-num">3</div>
+            <div class="set-type normal">N</div>
+            <div class="set-field gesture-active" style="border-color:rgba(var(--accent-rgb),0.4);background:rgba(var(--accent-rgb),0.08)">
+              <div class="gesture-chevrons">
+                <div class="gesture-chevron">▲</div>
+                <div class="field-value" style="color:var(--accent)">82.5</div>
+                <div class="field-label" style="color:rgba(var(--accent-rgb),0.55);">+2.5 kg ↑</div>
+                <div class="gesture-chevron">▼</div>
+              </div>
+            </div>
+            <div class="set-field gesture-active" style="border-color:rgba(var(--accent-rgb),0.4);background:rgba(var(--accent-rgb),0.08)">
+              <div class="gesture-chevrons">
+                <div class="gesture-chevron">▲</div>
+                <div class="field-value" style="color:var(--accent)">6</div>
+                <div class="field-label">reps</div>
+                <div class="gesture-chevron">▼</div>
+              </div>
+            </div>
+            <div class="set-check">→</div>
+          </div>
+          <div class="add-set-row">+ Add Set</div>
+        </div>
+
+        <!-- Exercise 2 -->
+        <div class="exercise-section">
+          <div class="exercise-header">
+            <div class="exercise-name">Overhead Press</div>
+            <div class="exercise-menu" onclick="openExerciseMenu('Overhead Press')">···</div>
+          </div>
+          <div class="set-row">
+            <div class="set-num">1</div>
+            <div class="set-type warmup">W</div>
+            <div class="set-field"><div class="field-value">40</div><div class="field-label">kg</div></div>
+            <div class="set-field"><div class="field-value">8</div><div class="field-label">reps</div></div>
+            <div class="set-check" style="opacity:0.4">○</div>
+          </div>
+          <div class="set-row">
+            <div class="set-num">2</div>
+            <div class="set-type normal">N</div>
+            <div class="set-field"><div class="field-value">50</div><div class="field-label">kg</div></div>
+            <div class="set-field"><div class="field-value">8</div><div class="field-label">reps</div></div>
+            <div class="set-check" style="opacity:0.4">○</div>
+          </div>
+          <div class="add-set-row">+ Add Set</div>
+        </div>
+
+        <div style="height:200px;"></div>
+      </div>
+
+      <!-- Exercise context menu overlay (shared, shown on ··· tap) -->
+      <div class="exercise-menu-overlay" id="exercise-menu-overlay" onclick="closeExerciseMenu()">
+        <div class="exercise-menu-sheet" onclick="event.stopPropagation()">
+          <div class="menu-handle"></div>
+          <div class="menu-sheet-title" id="menu-sheet-title">Bench Press</div>
+          <div class="menu-row" onclick="closeExerciseMenu()">
+            <div class="menu-row-icon" style="background:rgba(var(--accent-rgb),0.12);">📊</div>
+            <div class="menu-row-label">View Exercise History</div>
+          </div>
+          <div class="menu-row" onclick="closeExerciseMenu()">
+            <div class="menu-row-icon" style="background:rgba(45,212,191,0.12);">⊕</div>
+            <div class="menu-row-label">Add Superset</div>
+          </div>
+          <div class="menu-row" onclick="closeExerciseMenu()">
+            <div class="menu-row-icon" style="background:rgba(155,89,245,0.12);">↓</div>
+            <div class="menu-row-label">Add Dropset</div>
+          </div>
+          <div class="menu-row" onclick="closeExerciseMenu()">
+            <div class="menu-row-icon" style="background:rgba(255,255,255,0.07);">✕</div>
+            <div class="menu-row-label" style="color:var(--text-secondary);">Remove from Workout</div>
+          </div>
+          <div class="menu-row destructive" onclick="showScreen('summary', document.querySelectorAll('.nav-btn')[6]); closeExerciseMenu();">
+            <div class="menu-row-icon">■</div>
+            <div class="menu-row-label">End Workout</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Floating bar always visible on active screen -->
+      <div class="floating-bar">
+        <!-- Top row: NL input — full width, prominent -->
+        <div class="fb-nl-row" onclick="showScreen('nl', document.querySelectorAll('.nav-btn')[2])">
+          <span class="fb-nl-icon">🎙</span>
+          <span class="fb-nl-placeholder">"<em>225 for 5</em>" · type or say a set...</span>
+          <span class="fb-nl-badge">Pro</span>
+        </div>
+        <!-- Bottom row: exercise context + log button -->
+        <div class="fb-bottom-row">
+          <div>
+            <div class="fb-exercise">Bench Press — Set 3</div>
+            <div class="fb-next">Next: Overhead Press</div>
+          </div>
+          <button class="fb-btn" onclick="showScreen('rest', document.querySelectorAll('.nav-btn')[4])">Log Set</button>
+        </div>
+      </div>
+
+      <div class="tab-bar">
+        <div class="tab-item active">
+          <div class="tab-icon">●</div>
+          <div class="tab-label" style="color:rgba(var(--accent-rgb),0.9);">Active</div>
+        </div>
+        <div class="tab-item" onclick="showScreen('history', document.querySelectorAll('.nav-btn')[6])"><div class="tab-icon">⟳</div><div class="tab-label">History</div></div>
+        <div class="tab-item" onclick="showScreen('analytics', document.querySelectorAll('.nav-btn')[5])"><div class="tab-icon">↗</div><div class="tab-label">Progress</div></div>
+        <div class="tab-item" onclick="showScreen('settings', document.querySelectorAll('.nav-btn')[8])"><div class="tab-icon">⚙</div><div class="tab-label">Settings</div></div>
+      </div>
+    </div>
+
+    <!-- ===== SCREEN 3: EXERCISE PICKER ===== -->
+    <div id="screen-picker" class="screen">
+      <div class="screen-content">
+        <div class="status-bar" style="position:relative;z-index:80;">
+          <span class="status-time">10:03</span>
+          <span></span>
+          <div class="status-icons"><span>●●●</span><span>🔋</span></div>
+        </div>
+        <!-- Dimmed workout behind -->
+        <div style="padding:8px 16px;opacity:0.3;">
+          <div class="exercise-section">
+            <div class="exercise-header">
+              <div class="exercise-name">Bench Press</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="sheet-overlay"></div>
+      <div class="bottom-sheet">
+        <div class="sheet-handle"></div>
+        <div class="sheet-title">Add Exercise</div>
+        <div class="search-bar">
+          <span>🔍</span>
+          <span>Search exercises...</span>
+        </div>
+        <div class="muscle-chips">
+          <div class="chip active">All</div>
+          <div class="chip">Chest</div>
+          <div class="chip">Back</div>
+          <div class="chip">Legs</div>
+          <div class="chip">Shoulders</div>
+          <div class="chip">Arms</div>
+          <div class="chip">Core</div>
+        </div>
+        <div class="section-label" style="padding:8px 16px 6px;">Recents</div>
+        <div class="recents-grid">
+          <div class="recent-item"><div class="ri-name">Incline Press</div><div class="ri-meta">80kg × 8</div></div>
+          <div class="recent-item"><div class="ri-name">Lateral Raise</div><div class="ri-meta">15kg × 12</div></div>
+          <div class="recent-item"><div class="ri-name">Cable Fly</div><div class="ri-meta">20kg × 12</div></div>
+          <div class="recent-item"><div class="ri-name">Tricep Dip</div><div class="ri-meta">BW × 10</div></div>
+          <div class="recent-item"><div class="ri-name">Skull Crusher</div><div class="ri-meta">30kg × 10</div></div>
+          <div class="recent-item"><div class="ri-name">Face Pull</div><div class="ri-meta">25kg × 15</div></div>
+          <div class="recent-item"><div class="ri-name">Chest Dip</div><div class="ri-meta">BW × 12</div></div>
+          <div class="recent-item"><div class="ri-name">Pec Deck</div><div class="ri-meta">60kg × 12</div></div>
+        </div>
+        <div class="section-label" style="padding:4px 16px 6px;">All Exercises</div>
+        <div class="exercise-list-item">
+          <div><div class="eli-name">Bench Press</div><div class="eli-muscle">Chest · Pectorals</div></div>
+          <div class="eli-pr">82.5 kg PR</div>
+        </div>
+        <div class="exercise-list-item">
+          <div><div class="eli-name">Cable Crossover</div><div class="eli-muscle">Chest · Upper</div></div>
+          <div class="eli-pr">25 kg</div>
+        </div>
+        <div class="exercise-list-item">
+          <div><div class="eli-name">Chest Fly</div><div class="eli-muscle">Chest · Inner</div></div>
+          <div class="eli-pr">22 kg</div>
+        </div>
+      </div>
+      <div class="tab-bar" style="z-index:5;">
+        <div class="tab-item active">
+          <div class="tab-icon">●</div>
+          <div class="tab-label" style="color:rgba(var(--accent-rgb),0.9);">Active</div>
+        </div>
+        <div class="tab-item"><div class="tab-icon">⟳</div><div class="tab-label">History</div></div>
+        <div class="tab-item"><div class="tab-icon">↗</div><div class="tab-label">Progress</div></div>
+        <div class="tab-item"><div class="tab-icon">⚙</div><div class="tab-label">Settings</div></div>
+      </div>
+    </div>
+
+    <!-- ===== SCREEN 4: REST TIMER — .fullScreenCover presentation ===== -->
+    <div id="screen-rest" class="screen">
+
+      <!-- Workout content dimmed behind the modal -->
+      <div class="rest-bg-peek">
+        <div class="status-bar" style="position:relative;z-index:1;padding:12px 20px 0;">
+          <span class="status-time">10:16</span><span></span>
+          <div class="status-icons"><span>●●●</span><span>🔋</span></div>
+        </div>
+        <div class="workout-header" style="position:relative;z-index:1;">
+          <div class="workout-title">Push A</div>
+          <div class="workout-timer">34:02</div>
+        </div>
+        <div class="exercise-section" style="margin:8px 16px 0;position:relative;z-index:1;">
+          <div class="exercise-header"><div class="exercise-name">Bench Press</div></div>
+          <div class="set-row">
+            <div class="set-num">3</div>
+            <div class="set-field"><div class="field-value">82.5</div><div class="field-label">kg</div></div>
+            <div class="set-field"><div class="field-value">6</div><div class="field-label">reps</div></div>
+            <div class="set-check logged">✓</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- .fullScreenCover sheet slides up -->
+      <div class="rest-sheet">
+
+        <!-- Handle + swipe hint -->
+        <div class="rest-handle-row">
+          <div class="rest-handle"></div>
+          <div class="rest-swipe-hint">swipe down to dismiss</div>
+        </div>
+
+        <!-- Annotation -->
+        <div class="modal-annotation">.fullScreenCover</div>
+
+        <!-- Arc ring -->
+        <div class="rest-ring-wrap">
+          <svg viewBox="0 0 200 200">
+            <circle class="rest-ring-track" cx="100" cy="100" r="90"/>
+            <circle class="rest-ring-progress" cx="100" cy="100" r="90"/>
+          </svg>
+          <div class="rest-ring-inner">
+            <div class="rest-label">Rest</div>
+            <div class="rest-time">1<span>:</span>47</div>
+            <div class="rest-subtitle">Bench Press · Set 3</div>
+          </div>
+        </div>
+
+        <!-- Next set card -->
+        <div class="rest-next-card">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+            <div>
+              <div class="rest-next-label">Next Set</div>
+              <div class="rest-next-name">Bench Press</div>
+            </div>
+            <div style="text-align:right;">
+              <div style="font-size:11px;color:var(--text-tertiary);margin-bottom:4px;">Set 4 of 5</div>
+              <div style="width:72px;height:4px;background:rgba(255,255,255,0.08);border-radius:2px;overflow:hidden;">
+                <div style="width:60%;height:100%;background:var(--accent);border-radius:2px;"></div>
+              </div>
+            </div>
+          </div>
+          <div class="rest-next-stats">
+            <!-- Weight stepper -->
+            <div class="rest-stepper">
+              <div class="rest-stepper-btn">−</div>
+              <div class="rest-stepper-val">
+                <div class="rest-stepper-num">82.5</div>
+                <div class="rest-stepper-unit">kg</div>
+              </div>
+              <div class="rest-stepper-btn">+</div>
+            </div>
+
+            <div class="rest-stepper-divider" style="height:44px;background:transparent;"></div>
+
+            <!-- Reps stepper -->
+            <div class="rest-stepper">
+              <div class="rest-stepper-btn">−</div>
+              <div class="rest-stepper-val">
+                <div class="rest-stepper-num">6</div>
+                <div class="rest-stepper-unit">reps</div>
+              </div>
+              <div class="rest-stepper-btn">+</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- −30s · Skip Rest · +30s -->
+        <div class="rest-controls">
+          <div class="rest-btn-sm">−30s</div>
+          <button class="rest-btn-skip" onclick="showScreen('home-active', document.querySelectorAll('.nav-btn')[1])">Skip Rest</button>
+          <div class="rest-btn-sm">+30s</div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- ===== SCREEN 5: PR MOMENT ===== -->
+    <div id="screen-pr" class="screen">
+      <div class="screen-content" style="opacity:0.25;">
+        <div class="status-bar">
+          <span class="status-time">10:22</span>
+        </div>
+        <div class="workout-header"><div class="workout-title">Push A</div></div>
+      </div>
+      <div class="pr-overlay">
+        <div class="pr-card">
+          <div class="pr-badge">🏆 Personal Record</div>
+          <div class="pr-lift">Bench Press</div>
+          <div>
+            <div class="pr-number">85<span class="pr-unit"> kg</span></div>
+          </div>
+          <div class="pr-prev">Previous best: <strong>82.5 kg</strong> on Jan 14</div>
+          <button class="pr-dismiss" onclick="showScreen('home-active', document.querySelectorAll('.nav-btn')[1])">Keep Going →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SCREEN 6: ANALYTICS ===== -->
+    <div id="screen-analytics" class="screen">
+      <div class="screen-content">
+        <div class="status-bar">
+          <span class="status-time">9:41</span>
+          <span></span>
+          <div class="status-icons"><span>●●●</span><span>🔋</span></div>
+        </div>
+        <div class="analytics-header">
+          <h2>Progress</h2>
+        </div>
+        <div class="period-selector">
+          <button class="period-btn">1M</button>
+          <button class="period-btn active">3M</button>
+          <button class="period-btn">6M</button>
+          <button class="period-btn">1Y</button>
+          <button class="period-btn">All</button>
+        </div>
+        <div class="stat-row">
+          <div class="stat-tile">
+            <div class="stat-value">28</div>
+            <div class="stat-label">Sessions</div>
+            <div class="stat-delta">+4</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-value">42h</div>
+            <div class="stat-label">Volume</div>
+            <div class="stat-delta">+12%</div>
+          </div>
+          <div class="stat-tile">
+            <div class="stat-value">11</div>
+            <div class="stat-label">PRs</div>
+            <div class="stat-delta">+3</div>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div class="chart-card-title">Weekly Volume</div>
+            <div class="chart-card-value">↑ 12%</div>
+          </div>
+          <div class="chart-area">
+            <div class="chart-bar" style="height:55%"></div>
+            <div class="chart-bar" style="height:62%"></div>
+            <div class="chart-bar" style="height:48%"></div>
+            <div class="chart-bar" style="height:70%"></div>
+            <div class="chart-bar" style="height:58%"></div>
+            <div class="chart-bar" style="height:75%"></div>
+            <div class="chart-bar" style="height:65%"></div>
+            <div class="chart-bar" style="height:82%"></div>
+            <div class="chart-bar" style="height:72%"></div>
+            <div class="chart-bar" style="height:88%"></div>
+            <div class="chart-bar" style="height:80%"></div>
+            <div class="chart-bar highlight" style="height:95%"></div>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div class="chart-card-title">Bench Press — 1RM</div>
+            <div class="chart-card-value">85 kg</div>
+          </div>
+          <div class="chart-line">
+            <svg viewBox="0 0 320 80" preserveAspectRatio="none">
+              <defs>
+                <linearGradient id="lineGrad" x1="0" y1="0" x2="0" y2="1">
+                  <stop offset="0%" stop-color="rgba(var(--accent-rgb),0.3)"/>
+                  <stop offset="100%" stop-color="rgba(var(--accent-rgb),0)"/>
+                </linearGradient>
+              </defs>
+              <path d="M0,72 L30,68 L60,65 L90,60 L120,58 L150,52 L180,50 L210,44 L240,40 L270,30 L300,18 L320,8"
+                stroke="rgba(var(--accent-rgb),0.8)" stroke-width="2" fill="none"/>
+              <path d="M0,72 L30,68 L60,65 L90,60 L120,58 L150,52 L180,50 L210,44 L240,40 L270,30 L300,18 L320,8 L320,80 L0,80Z"
+                fill="url(#lineGrad)"/>
+              <circle cx="320" cy="8" r="3" fill="var(--accent)"/>
+            </svg>
+          </div>
+        </div>
+
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div class="chart-card-title">Recent PRs</div>
+          </div>
+          <div class="pr-list-item">
+            <div><div class="pli-name">Bench Press</div><div class="pli-date">Today</div></div>
+            <div class="pli-weight">85 kg</div>
+          </div>
+          <div class="pr-list-item">
+            <div><div class="pli-name">Squat</div><div class="pli-date">Jan 28</div></div>
+            <div class="pli-weight">120 kg</div>
+          </div>
+          <div class="pr-list-item">
+            <div><div class="pli-name">Overhead Press</div><div class="pli-date">Jan 21</div></div>
+            <div class="pli-weight">62.5 kg</div>
+          </div>
+        </div>
+
+        <!-- Frequency heatmap card -->
+        <div class="chart-card" style="margin:0 16px 12px;">
+          <div class="chart-card-header" style="margin-bottom:12px;">
+            <div class="chart-card-title">Training Frequency</div>
+            <div class="chart-card-value">3.2 / wk avg</div>
+          </div>
+          <svg viewBox="0 0 240 132" style="width:100%;display:block;">
+<text x="14" y="11" font-size="9" fill="rgba(255,255,255,0.35)" font-family="DM Sans,sans-serif">Nov</text>
+<text x="70" y="11" font-size="9" fill="rgba(255,255,255,0.35)" font-family="DM Sans,sans-serif">Dec</text>
+<text x="126" y="11" font-size="9" fill="rgba(255,255,255,0.35)" font-family="DM Sans,sans-serif">Jan</text>
+<text x="182" y="11" font-size="9" fill="rgba(255,255,255,0.35)" font-family="DM Sans,sans-serif">Feb</text>
+<text x="10" y="23" font-size="8" fill="rgba(255,255,255,0.35)" font-family="DM Sans,sans-serif" text-anchor="middle">M</text>
+<text x="10" y="51" font-size="8" fill="rgba(255,255,255,0.35)" font-family="DM Sans,sans-serif" text-anchor="middle">W</text>
+<text x="10" y="79" font-size="8" fill="rgba(255,255,255,0.35)" font-family="DM Sans,sans-serif" text-anchor="middle">F</text>
+<rect x="14" y="14" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="14" y="28" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.30)"/><rect x="14" y="42" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="14" y="56" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.30)"/><rect x="14" y="70" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="14" y="84" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="14" y="98" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/>
+<rect x="28" y="14" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="28" y="28" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.30)"/><rect x="28" y="42" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="28" y="56" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.60)"/><rect x="28" y="70" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="28" y="84" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.30)"/><rect x="28" y="98" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/>
+<rect x="42" y="14" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.30)"/><rect x="42" y="28" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="42" y="42" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.30)"/><rect x="42" y="56" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="42" y="70" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.60)"/><rect x="42" y="84" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="42" y="98" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/>
+<rect x="56" y="14" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="56" y="28" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.60)"/><rect x="56" y="42" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="56" y="56" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.30)"/><rect x="56" y="70" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="56" y="84" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="56" y="98" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.30)"/>
+<rect x="70" y="14" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="70" y="28" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.30)"/><rect x="70" y="42" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="70" y="56" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="70" y="70" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.90)"/><rect x="70" y="84" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="70" y="98" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/>
+<rect x="84" y="14" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.30)"/><rect x="84" y="28" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="84" y="42" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.60)"/><rect x="84" y="56" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="84" y="70" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.30)"/><rect x="84" y="84" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="84" y="98" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/>
+<rect x="98" y="14" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="98" y="28" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.90)"/><rect x="98" y="42" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="98" y="56" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.30)"/><rect x="98" y="70" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="98" y="84" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="98" y="98" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/>
+<rect x="112" y="14" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="112" y="28" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.30)"/><rect x="112" y="42" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="112" y="56" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.60)"/><rect x="112" y="70" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="112" y="84" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.30)"/><rect x="112" y="98" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/>
+<rect x="126" y="14" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.30)"/><rect x="126" y="28" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="126" y="42" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.30)"/><rect x="126" y="56" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="126" y="70" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.90)"/><rect x="126" y="84" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="126" y="98" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/>
+<rect x="140" y="14" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="140" y="28" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.60)"/><rect x="140" y="42" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="140" y="56" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.30)"/><rect x="140" y="70" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="140" y="84" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="140" y="98" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/>
+<rect x="154" y="14" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="154" y="28" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.30)"/><rect x="154" y="42" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="154" y="56" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.90)"/><rect x="154" y="70" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="154" y="84" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.30)"/><rect x="154" y="98" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/>
+<rect x="168" y="14" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.30)"/><rect x="168" y="28" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="168" y="42" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.60)"/><rect x="168" y="56" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="168" y="70" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.30)"/><rect x="168" y="84" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="168" y="98" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/>
+<rect x="182" y="14" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="182" y="28" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.90)"/><rect x="182" y="42" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="182" y="56" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.30)"/><rect x="182" y="70" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="182" y="84" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="182" y="98" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.30)"/>
+<rect x="196" y="14" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="196" y="28" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.30)"/><rect x="196" y="42" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="196" y="56" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.60)"/><rect x="196" y="70" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="196" y="84" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="196" y="98" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/>
+<rect x="210" y="14" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.30)"/><rect x="210" y="28" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="210" y="42" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.30)"/><rect x="210" y="56" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="210" y="70" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.90)"/><rect x="210" y="84" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="210" y="98" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/>
+<rect x="224" y="14" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="224" y="28" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.60)"/><rect x="224" y="42" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="224" y="56" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.30)"/><rect x="224" y="70" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="224" y="84" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.30)"/><rect x="224" y="98" width="12" height="12" rx="2" fill="rgba(var(--accent-rgb),0.07)"/>
+<text x="150" y="127" font-size="9" fill="rgba(255,255,255,0.35)" font-family="DM Sans,sans-serif">Less</text>
+<rect x="178" y="119" width="10" height="10" rx="2" fill="rgba(var(--accent-rgb),0.07)"/><rect x="191" y="119" width="10" height="10" rx="2" fill="rgba(var(--accent-rgb),0.30)"/><rect x="204" y="119" width="10" height="10" rx="2" fill="rgba(var(--accent-rgb),0.60)"/><rect x="217" y="119" width="10" height="10" rx="2" fill="rgba(var(--accent-rgb),0.90)"/>
+<text x="230" y="127" font-size="9" fill="rgba(255,255,255,0.35)" font-family="DM Sans,sans-serif">More</text>
+          </svg>
+        </div>
+
+        <!-- Muscle group radar card -->
+        <div class="chart-card" style="margin:0 16px 12px;">
+          <div class="chart-card-header" style="margin-bottom:4px;">
+            <div class="chart-card-title">Muscle Balance</div>
+            <div class="chart-card-value" style="font-size:11px;color:var(--text-tertiary);">This month</div>
+          </div>
+          <div style="display:flex;align-items:center;gap:12px;">
+            <!-- Radar SVG -->
+            <svg viewBox="0 0 160 160" style="width:140px;height:140px;flex-shrink:0;">
+              <defs>
+                <radialGradient id="radarFill" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stop-color="rgba(var(--accent-rgb),0.35)"/>
+                  <stop offset="100%" stop-color="rgba(var(--accent-rgb),0.08)"/>
+                </radialGradient>
+              </defs>
+              <!-- Grid rings -->
+              <polygon points="80,20 122,50 122,110 80,140 38,110 38,50" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+              <polygon points="80,35 112,57.5 112,102.5 80,125 48,102.5 48,57.5" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+              <polygon points="80,50 101,65 101,95 80,110 59,95 59,65" fill="none" stroke="rgba(255,255,255,0.06)" stroke-width="1"/>
+              <!-- Axis spokes -->
+              <line x1="80" y1="80" x2="80" y2="20" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+              <line x1="80" y1="80" x2="122" y2="50" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+              <line x1="80" y1="80" x2="122" y2="110" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+              <line x1="80" y1="80" x2="80" y2="140" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+              <line x1="80" y1="80" x2="38" y2="110" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+              <line x1="80" y1="80" x2="38" y2="50" stroke="rgba(255,255,255,0.07)" stroke-width="1"/>
+              <!-- Data polygon: Chest 90%, Back 70%, Shoulders 55%, Legs 45%, Core 30%, Arms 80% -->
+              <!-- Each axis: N=Chest, NE=Arms, SE=Shoulders, S=Legs, SW=Core, NW=Back -->
+              <!-- Scale: outer ring = 100%. Point = center + (value * axis_vector) -->
+              <!-- Chest (top, 90%): 80, 80 + (0,-60)*0.9 = 80, 26 -->
+              <!-- Arms (NE, 80%): 80 + (42,−30)*0.8 = 113.6, 56 -->
+              <!-- Shoulders (SE, 55%): 80 + (42,30)*0.55 = 103.1, 96.5 -->
+              <!-- Legs (bottom, 45%): 80, 80 + (0,60)*0.45 = 80, 107 -->
+              <!-- Core (SW, 30%): 80 + (−42,30)*0.30 = 67.4, 89 -->
+              <!-- Back (NW, 70%): 80 + (−42,−30)*0.70 = 50.6, 59 -->
+              <polygon
+                points="80,26 113.6,56 103.1,96.5 80,107 67.4,89 50.6,59"
+                fill="url(#radarFill)"
+                stroke="rgba(var(--accent-rgb),0.7)"
+                stroke-width="1.5"
+                stroke-linejoin="round"/>
+              <!-- Data points -->
+              <circle cx="80" cy="26" r="2.5" fill="var(--accent)"/>
+              <circle cx="113.6" cy="56" r="2.5" fill="var(--accent)"/>
+              <circle cx="103.1" cy="96.5" r="2.5" fill="var(--accent)"/>
+              <circle cx="80" cy="107" r="2.5" fill="var(--accent)"/>
+              <circle cx="67.4" cy="89" r="2.5" fill="var(--accent)"/>
+              <circle cx="50.6" cy="59" r="2.5" fill="var(--accent)"/>
+              <!-- Labels -->
+              <text x="80" y="13" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.6)" font-family="DM Sans,sans-serif">Chest</text>
+              <text x="128" y="53" text-anchor="start" font-size="9" fill="rgba(255,255,255,0.6)" font-family="DM Sans,sans-serif">Arms</text>
+              <text x="128" y="103" text-anchor="start" font-size="9" fill="rgba(255,255,255,0.6)" font-family="DM Sans,sans-serif">Shldr</text>
+              <text x="80" y="153" text-anchor="middle" font-size="9" fill="rgba(255,255,255,0.4)" font-family="DM Sans,sans-serif">Legs</text>
+              <text x="32" y="103" text-anchor="end" font-size="9" fill="rgba(255,255,255,0.4)" font-family="DM Sans,sans-serif">Core</text>
+              <text x="32" y="53" text-anchor="end" font-size="9" fill="rgba(255,255,255,0.6)" font-family="DM Sans,sans-serif">Back</text>
+            </svg>
+            <!-- Legend bars -->
+            <div style="display:flex;flex-direction:column;gap:7px;flex:1;">
+              <div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="font-size:10px;color:var(--text-secondary);">Chest</span><span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--accent);">90%</span></div>
+                <div style="height:3px;background:rgba(255,255,255,0.07);border-radius:2px;"><div style="width:90%;height:100%;background:var(--accent);border-radius:2px;"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="font-size:10px;color:var(--text-secondary);">Arms</span><span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--accent);">80%</span></div>
+                <div style="height:3px;background:rgba(255,255,255,0.07);border-radius:2px;"><div style="width:80%;height:100%;background:var(--accent);border-radius:2px;"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="font-size:10px;color:var(--text-secondary);">Back</span><span style="font-size:10px;font-family:'DM Mono',monospace;color:var(--accent);">70%</span></div>
+                <div style="height:3px;background:rgba(255,255,255,0.07);border-radius:2px;"><div style="width:70%;height:100%;background:var(--accent);border-radius:2px;"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="font-size:10px;color:var(--text-secondary);">Shoulders</span><span style="font-size:10px;font-family:'DM Mono',monospace;color:rgba(255,255,255,0.45);">55%</span></div>
+                <div style="height:3px;background:rgba(255,255,255,0.07);border-radius:2px;"><div style="width:55%;height:100%;background:rgba(255,255,255,0.25);border-radius:2px;"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="font-size:10px;color:var(--text-secondary);">Legs</span><span style="font-size:10px;font-family:'DM Mono',monospace;color:rgba(255,255,255,0.35);">45%</span></div>
+                <div style="height:3px;background:rgba(255,255,255,0.07);border-radius:2px;"><div style="width:45%;height:100%;background:rgba(255,255,255,0.2);border-radius:2px;"></div></div>
+              </div>
+              <div>
+                <div style="display:flex;justify-content:space-between;margin-bottom:3px;"><span style="font-size:10px;color:var(--text-secondary);">Core</span><span style="font-size:10px;font-family:'DM Mono',monospace;color:rgba(255,255,255,0.25);">30%</span></div>
+                <div style="height:3px;background:rgba(255,255,255,0.07);border-radius:2px;"><div style="width:30%;height:100%;background:rgba(255,255,255,0.15);border-radius:2px;"></div></div>
+              </div>
+              <!-- Insight -->
+              <div style="margin-top:2px;font-size:10px;color:rgba(248,113,113,0.8);line-height:1.4;">⚠ Legs undertrained<br>vs. upper body</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="height:90px;"></div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab-item"><div class="tab-icon">⊞</div><div class="tab-label">Home</div></div>
+        <div class="tab-item"><div class="tab-icon">⟳</div><div class="tab-label">History</div></div>
+        <div class="tab-item active"><div class="tab-icon">↗</div><div class="tab-label">Progress</div></div>
+        <div class="tab-item"><div class="tab-icon">⚙</div><div class="tab-label">Settings</div></div>
+      </div>
+    </div>
+
+    <!-- ===== SCREEN 7: HISTORY ===== -->
+    <div id="screen-history" class="screen">
+      <div class="screen-content">
+        <div class="status-bar">
+          <span class="status-time">9:41</span><span></span>
+          <div class="status-icons"><span>●●●</span><span>🔋</span></div>
+        </div>
+        <div style="padding:20px 24px 8px;">
+          <h2 style="font-size:28px;font-weight:300;letter-spacing:-0.03em;">History</h2>
+        </div>
+
+        <!-- This week header -->
+        <div class="section-label">This Week</div>
+
+        <!-- Session card -->
+        <div style="margin:0 16px 8px;background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.08);border-radius:20px;overflow:hidden;">
+          <div style="position:relative;padding:14px 16px 0;">
+            <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.1),transparent);"></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+              <div style="font-size:16px;font-weight:500;letter-spacing:-0.01em;">Push A</div>
+              <div style="font-size:11px;color:var(--text-tertiary);">Today · 9:14 AM</div>
+            </div>
+            <div style="display:flex;gap:14px;margin-bottom:12px;">
+              <div style="font-size:12px;color:var(--text-secondary);">52 min</div>
+              <div style="font-size:12px;color:var(--text-secondary);">18 sets</div>
+              <div style="font-size:12px;color:var(--text-secondary);">8,420 kg vol</div>
+              <div style="font-size:12px;color:var(--pr-amber);">1 PR 🏆</div>
+            </div>
+          </div>
+          <!-- Exercise chips -->
+          <div style="display:flex;gap:6px;padding:0 16px 14px;flex-wrap:wrap;">
+            <div style="font-size:10px;background:rgba(var(--accent-rgb),0.12);border:1px solid rgba(var(--accent-rgb),0.2);border-radius:8px;padding:3px 9px;color:var(--accent);">Bench Press</div>
+            <div style="font-size:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:3px 9px;color:var(--text-secondary);">OHP</div>
+            <div style="font-size:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:3px 9px;color:var(--text-secondary);">Incline DB</div>
+            <div style="font-size:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:3px 9px;color:var(--text-secondary);">+3 more</div>
+          </div>
+        </div>
+
+        <!-- Session card 2 -->
+        <div style="margin:0 16px 8px;background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.08);border-radius:20px;overflow:hidden;">
+          <div style="position:relative;padding:14px 16px 0;">
+            <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.1),transparent);"></div>
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px;">
+              <div style="font-size:16px;font-weight:500;letter-spacing:-0.01em;">Pull A</div>
+              <div style="font-size:11px;color:var(--text-tertiary);">Tue · 8:40 AM</div>
+            </div>
+            <div style="display:flex;gap:14px;margin-bottom:12px;">
+              <div style="font-size:12px;color:var(--text-secondary);">48 min</div>
+              <div style="font-size:12px;color:var(--text-secondary);">16 sets</div>
+              <div style="font-size:12px;color:var(--text-secondary);">6,180 kg vol</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;padding:0 16px 14px;flex-wrap:wrap;">
+            <div style="font-size:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:3px 9px;color:var(--text-secondary);">Deadlift</div>
+            <div style="font-size:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:3px 9px;color:var(--text-secondary);">Barbell Row</div>
+            <div style="font-size:10px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.08);border-radius:8px;padding:3px 9px;color:var(--text-secondary);">+3 more</div>
+          </div>
+        </div>
+
+        <div class="section-label">Last Week</div>
+
+        <!-- Session card 3 — collapsed -->
+        <div style="margin:0 16px 8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:13px 16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <div style="font-size:15px;font-weight:500;letter-spacing:-0.01em;margin-bottom:3px;">Legs</div>
+              <div style="display:flex;gap:12px;"><div style="font-size:11px;color:var(--text-tertiary);">Fri · 65 min</div><div style="font-size:11px;color:var(--text-tertiary);">20 sets</div></div>
+            </div>
+            <div style="font-size:18px;color:var(--text-tertiary);">›</div>
+          </div>
+        </div>
+        <div style="margin:0 16px 8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:13px 16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <div style="font-size:15px;font-weight:500;letter-spacing:-0.01em;margin-bottom:3px;">Push A</div>
+              <div style="display:flex;gap:12px;"><div style="font-size:11px;color:var(--text-tertiary);">Wed · 54 min</div><div style="font-size:11px;color:var(--text-tertiary);">18 sets</div></div>
+            </div>
+            <div style="font-size:18px;color:var(--text-tertiary);">›</div>
+          </div>
+        </div>
+        <div style="margin:0 16px 8px;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:20px;padding:13px 16px;">
+          <div style="display:flex;align-items:center;justify-content:space-between;">
+            <div>
+              <div style="font-size:15px;font-weight:500;letter-spacing:-0.01em;margin-bottom:3px;">Pull A</div>
+              <div style="display:flex;gap:12px;"><div style="font-size:11px;color:var(--text-tertiary);">Mon · 46 min</div><div style="font-size:11px;color:var(--text-tertiary);">15 sets</div></div>
+            </div>
+            <div style="font-size:18px;color:var(--text-tertiary);">›</div>
+          </div>
+        </div>
+
+        <div style="height:90px;"></div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab-item" onclick="showScreen('home-idle', document.querySelectorAll('.nav-btn')[0])"><div class="tab-icon">⊞</div><div class="tab-label">Home</div></div>
+        <div class="tab-item active"><div class="tab-icon">⟳</div><div class="tab-label">History</div></div>
+        <div class="tab-item" onclick="showScreen('analytics', document.querySelectorAll('.nav-btn')[5])"><div class="tab-icon">↗</div><div class="tab-label">Progress</div></div>
+        <div class="tab-item" onclick="showScreen('settings', document.querySelectorAll('.nav-btn')[8])"><div class="tab-icon">⚙</div><div class="tab-label">Settings</div></div>
+      </div>
+    </div>
+
+    <!-- ===== SCREEN 8: EXERCISE DETAIL ===== -->
+    <div id="screen-detail" class="screen">
+      <div class="screen-content">
+        <div class="status-bar">
+          <span class="status-time">9:41</span>
+          <span></span>
+          <div class="status-icons"><span>●●●</span><span>🔋</span></div>
+        </div>
+        <div class="ex-detail-header">
+          <div class="back-btn" onclick="showScreen('analytics', document.querySelectorAll('.nav-btn')[5])">←</div>
+          <h2>Bench Press</h2>
+          <div class="muscle-badge">Chest</div>
+        </div>
+        <div class="pr-banner">
+          <div>
+            <div class="pr-banner-label">Personal Record</div>
+            <div class="pr-banner-value">85 kg</div>
+            <div class="pr-banner-date">Set today · Jan 30, 2026</div>
+          </div>
+          <div style="font-size:28px;opacity:0.6;">🏆</div>
+        </div>
+        <div class="chart-card">
+          <div class="chart-card-header">
+            <div class="chart-card-title">Estimated 1RM</div>
+            <div class="chart-card-value">+4.9%</div>
+          </div>
+          <div class="chart-line">
+            <svg viewBox="0 0 320 80" preserveAspectRatio="none">
+              <path d="M0,72 L30,68 L60,64 L90,60 L120,57 L150,52 L180,49 L210,44 L240,38 L270,28 L300,16 L320,6"
+                stroke="rgba(var(--accent-rgb),0.8)" stroke-width="2" fill="none"/>
+              <path d="M0,72 L30,68 L60,64 L90,60 L120,57 L150,52 L180,49 L210,44 L240,38 L270,28 L300,16 L320,6 L320,80 L0,80Z"
+                fill="url(#lineGrad)"/>
+              <circle cx="320" cy="6" r="3" fill="var(--accent)"/>
+            </svg>
+          </div>
+        </div>
+        <div class="section-label">All Sessions</div>
+        <div class="exercise-section">
+          <div class="set-row" style="grid-template-columns: 80px 1fr 1fr 1fr;">
+            <div style="font-size:11px;color:var(--text-tertiary);">Jan 30</div>
+            <div class="set-field"><div class="field-value">85</div><div class="field-label">kg</div></div>
+            <div class="set-field"><div class="field-value">5</div><div class="field-label">reps</div></div>
+            <div class="set-field"><div class="field-value" style="color:var(--pr-amber);font-size:12px;">PR 🏆</div><div class="field-label">1RM: 98</div></div>
+          </div>
+          <div class="set-row" style="grid-template-columns: 80px 1fr 1fr 1fr;">
+            <div style="font-size:11px;color:var(--text-tertiary);">Jan 14</div>
+            <div class="set-field"><div class="field-value">82.5</div><div class="field-label">kg</div></div>
+            <div class="set-field"><div class="field-value">6</div><div class="field-label">reps</div></div>
+            <div class="set-field"><div class="field-value" style="font-size:12px;color:var(--text-secondary);">1RM: 95</div><div class="field-label"></div></div>
+          </div>
+          <div class="set-row" style="grid-template-columns: 80px 1fr 1fr 1fr;">
+            <div style="font-size:11px;color:var(--text-tertiary);">Jan 7</div>
+            <div class="set-field"><div class="field-value">80</div><div class="field-label">kg</div></div>
+            <div class="set-field"><div class="field-value">8</div><div class="field-label">reps</div></div>
+            <div class="set-field"><div class="field-value" style="font-size:12px;color:var(--text-secondary);">1RM: 96</div><div class="field-label"></div></div>
+          </div>
+        </div>
+        <div style="height:90px;"></div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab-item"><div class="tab-icon">⊞</div><div class="tab-label">Home</div></div>
+        <div class="tab-item"><div class="tab-icon">⟳</div><div class="tab-label">History</div></div>
+        <div class="tab-item active"><div class="tab-icon">↗</div><div class="tab-label">Progress</div></div>
+        <div class="tab-item"><div class="tab-icon">⚙</div><div class="tab-label">Settings</div></div>
+      </div>
+    </div>
+
+    <!-- ===== SCREEN 8: SETTINGS ===== -->
+    <div id="screen-settings" class="screen">
+      <div class="screen-content">
+        <div class="status-bar">
+          <span class="status-time">9:41</span>
+          <span></span>
+          <div class="status-icons"><span>●●●</span><span>🔋</span></div>
+        </div>
+        <div class="settings-header">
+          <h2>Settings</h2>
+        </div>
+
+        <div class="pro-banner" style="cursor:pointer;" onclick="showScreen('proupgrade', document.querySelectorAll('.nav-btn')[14])">
+          <div class="pro-banner-title">Heft Pro</div>
+          <div class="pro-banner-sub">State-Aware Mesh · Advanced Analytics · Apple Watch</div>
+          <div class="pro-banner-price">$49.99 lifetime · $14.99/yr  →</div>
+        </div>
+
+        <div class="section-label">Appearance</div>
+        <div class="settings-group">
+          <div class="settings-row">
+            <div class="settings-row-left">
+              <div class="settings-icon" style="background:rgba(var(--accent-rgb),0.2);">🎨</div>
+              <div class="settings-label">Theme</div>
+            </div>
+            <div class="settings-value">Midnight Strength</div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-left">
+              <div class="settings-icon" style="background:rgba(45,212,191,0.2);">⬛</div>
+              <div class="settings-label">True Black</div>
+            </div>
+            <div class="toggle on"></div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-left">
+              <div class="settings-icon" style="background:rgba(var(--accent-secondary-rgb),0.2);">✦</div>
+              <div class="settings-label">Dynamic Mesh (Pro)</div>
+            </div>
+            <div class="toggle off"></div>
+          </div>
+        </div>
+
+        <div class="section-label">Logging</div>
+        <div class="settings-group">
+          <div class="settings-row">
+            <div class="settings-row-left">
+              <div class="settings-icon" style="background:rgba(52,211,153,0.2);">⚖</div>
+              <div class="settings-label">Weight Unit</div>
+            </div>
+            <div class="settings-value">kg</div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-left">
+              <div class="settings-icon" style="background:rgba(52,211,153,0.2);">⊞</div>
+              <div class="settings-label">Plate Increments</div>
+            </div>
+            <div class="settings-value">2.5 kg</div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-left">
+              <div class="settings-icon" style="background:rgba(248,113,113,0.2);">⏱</div>
+              <div class="settings-label">Default Rest Timer</div>
+            </div>
+            <div class="settings-value">2:00</div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-left">
+              <div class="settings-icon" style="background:rgba(var(--accent-secondary-rgb),0.2);">🎙</div>
+              <div class="settings-label">Natural Language Input (Pro)</div>
+            </div>
+            <div class="toggle on"></div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-left">
+              <div class="settings-icon" style="background:rgba(245,158,11,0.2);">📳</div>
+              <div class="settings-label">Haptic Intensity</div>
+            </div>
+            <div class="settings-value">High</div>
+          </div>
+        </div>
+
+        <div class="section-label">Apple Watch</div>
+        <div class="settings-group">
+          <div class="settings-row">
+            <div class="settings-row-left">
+              <div class="settings-icon" style="background:rgba(var(--accent-rgb),0.2);">⌚</div>
+              <div class="settings-label">Watch Pairing</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <div style="width:7px;height:7px;border-radius:50%;background:var(--green);flex-shrink:0;"></div>
+              <div class="settings-value" style="color:var(--green);">Connected</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="section-label">Data</div>
+        <div class="settings-group">
+          <div class="settings-row">
+            <div class="settings-row-left">
+              <div class="settings-icon" style="background:rgba(var(--accent-rgb),0.2);">☁</div>
+              <div class="settings-label">iCloud Sync</div>
+            </div>
+            <div class="toggle on"></div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-left">
+              <div class="settings-icon" style="background:rgba(52,211,153,0.2);">♡</div>
+              <div class="settings-label">Health App</div>
+            </div>
+            <div class="toggle on"></div>
+          </div>
+          <div class="settings-row">
+            <div class="settings-row-left">
+              <div class="settings-icon" style="background:rgba(255,255,255,0.1);">⬇</div>
+              <div class="settings-label">Export Data</div>
+            </div>
+            <span style="font-size:12px;color:var(--text-tertiary);">›</span>
+          </div>
+        </div>
+        <div style="height:100px;"></div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab-item"><div class="tab-icon">⊞</div><div class="tab-label">Home</div></div>
+        <div class="tab-item"><div class="tab-icon">⟳</div><div class="tab-label">History</div></div>
+        <div class="tab-item"><div class="tab-icon">↗</div><div class="tab-label">Progress</div></div>
+        <div class="tab-item active"><div class="tab-icon">⚙</div><div class="tab-label">Settings</div></div>
+      </div>
+    </div>
+
+  </div><!-- /phone-frame -->
+
+    <!-- ===== SCREEN: POST-WORKOUT SUMMARY ===== -->
+    <div id="screen-summary" class="screen">
+      <div class="screen-content">
+        <div class="status-bar">
+          <span class="status-time">11:06</span>
+          <span></span>
+          <div class="status-icons"><span>●●●</span><span>🔋</span></div>
+        </div>
+
+        <!-- Header -->
+        <div style="padding:16px 24px 0;">
+          <div style="font-size:12px;color:rgba(var(--accent-rgb),0.8);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:4px;">Workout Complete</div>
+          <div style="font-size:26px;font-weight:300;letter-spacing:-0.03em;">Push A</div>
+          <div style="font-size:13px;color:var(--text-secondary);margin-top:2px;">Thursday · 9:14 → 11:06 AM</div>
+        </div>
+
+        <!-- Stat tiles row -->
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:6px;padding:16px 16px 0;">
+          <div style="background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:10px 10px 8px;text-align:center;">
+            <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:500;letter-spacing:-0.03em;">52m</div>
+            <div style="font-size:9px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">Duration</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:10px 10px 8px;text-align:center;">
+            <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:500;letter-spacing:-0.03em;">18</div>
+            <div style="font-size:9px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">Sets</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.08);border-radius:14px;padding:10px 10px 8px;text-align:center;">
+            <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:500;letter-spacing:-0.03em;">8.4t</div>
+            <div style="font-size:9px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">Volume</div>
+          </div>
+          <div style="background:rgba(255,255,255,0.055);border:1px solid rgba(245,158,11,0.25);border-radius:14px;padding:10px 10px 8px;text-align:center;">
+            <div style="font-family:'DM Mono',monospace;font-size:18px;font-weight:500;letter-spacing:-0.03em;color:var(--pr-amber);">1 PR</div>
+            <div style="font-size:9px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.06em;margin-top:2px;">Records</div>
+          </div>
+        </div>
+
+        <!-- PR highlight card -->
+        <div style="margin:12px 16px 0;background:linear-gradient(135deg,rgba(245,158,11,0.14),rgba(245,158,11,0.05));border:1px solid rgba(245,158,11,0.3);border-radius:18px;padding:14px 16px;display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-size:10px;color:var(--pr-amber);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:4px;">🏆 New Personal Record</div>
+            <div style="font-size:16px;font-weight:500;letter-spacing:-0.01em;">Bench Press</div>
+            <div style="font-size:12px;color:var(--text-secondary);margin-top:2px;">Prev: 82.5 kg · Jan 14</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-family:'DM Mono',monospace;font-size:32px;font-weight:400;letter-spacing:-0.04em;color:var(--pr-amber);line-height:1;">85</div>
+            <div style="font-size:12px;color:rgba(245,158,11,0.55);">kg</div>
+          </div>
+        </div>
+
+        <!-- Volume chart card (shareable) -->
+        <div class="chart-card" style="margin:12px 16px 0;">
+          <div class="chart-card-header">
+            <div>
+              <div class="chart-card-title">Session Volume</div>
+              <div style="font-size:11px;color:var(--text-tertiary);margin-top:1px;">by exercise</div>
+            </div>
+            <div style="font-size:11px;color:var(--accent);background:rgba(var(--accent-rgb),0.12);border:1px solid rgba(var(--accent-rgb),0.25);border-radius:8px;padding:4px 10px;cursor:pointer;">Share ↗</div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:6px;margin-top:4px;">
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="font-size:11px;color:var(--text-secondary);width:80px;flex-shrink:0;">Bench Press</div>
+              <div style="flex:1;height:8px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;"><div style="width:92%;height:100%;background:linear-gradient(90deg,var(--accent),rgba(var(--accent-rgb),0.5));border-radius:4px;"></div></div>
+              <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text-secondary);width:44px;text-align:right;">3,240kg</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="font-size:11px;color:var(--text-secondary);width:80px;flex-shrink:0;">OHP</div>
+              <div style="flex:1;height:8px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;"><div style="width:58%;height:100%;background:linear-gradient(90deg,var(--accent),rgba(var(--accent-rgb),0.5));border-radius:4px;"></div></div>
+              <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text-secondary);width:44px;text-align:right;">2,040kg</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="font-size:11px;color:var(--text-secondary);width:80px;flex-shrink:0;">Incline DB</div>
+              <div style="flex:1;height:8px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;"><div style="width:41%;height:100%;background:linear-gradient(90deg,var(--accent),rgba(var(--accent-rgb),0.5));border-radius:4px;"></div></div>
+              <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text-secondary);width:44px;text-align:right;">1,440kg</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="font-size:11px;color:var(--text-secondary);width:80px;flex-shrink:0;">Cable Fly</div>
+              <div style="flex:1;height:8px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;"><div style="width:24%;height:100%;background:linear-gradient(90deg,var(--accent),rgba(var(--accent-rgb),0.5));border-radius:4px;"></div></div>
+              <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text-secondary);width:44px;text-align:right;">840kg</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="font-size:11px;color:var(--text-secondary);width:80px;flex-shrink:0;">Tricep Dip</div>
+              <div style="flex:1;height:8px;background:rgba(255,255,255,0.06);border-radius:4px;overflow:hidden;"><div style="width:18%;height:100%;background:linear-gradient(90deg,var(--accent),rgba(var(--accent-rgb),0.5));border-radius:4px;"></div></div>
+              <div style="font-size:11px;font-family:'DM Mono',monospace;color:var(--text-secondary);width:44px;text-align:right;">600kg</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- AI summary card -->
+        <div style="margin:12px 16px 0;background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.08);border-radius:18px;padding:14px 16px;">
+          <div style="font-size:10px;color:var(--text-tertiary);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">✦ Session Insight</div>
+          <div style="font-size:13px;color:var(--text-secondary);line-height:1.55;">Strongest Push A in 6 weeks. Bench volume up 8% and you finally broke 85 kg. OHP reps held — consider bumping weight next session.</div>
+        </div>
+
+        <!-- Done button -->
+        <div style="padding:16px 16px 0;">
+          <button style="width:100%;height:52px;background:var(--accent);border:none;border-radius:16px;font-family:'DM Sans',sans-serif;font-size:17px;font-weight:500;color:white;cursor:pointer;letter-spacing:-0.01em;">Done</button>
+        </div>
+
+        <div style="height:100px;"></div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab-item"><div class="tab-icon">⊞</div><div class="tab-label">Home</div></div>
+        <div class="tab-item"><div class="tab-icon">⟳</div><div class="tab-label">History</div></div>
+        <div class="tab-item"><div class="tab-icon">↗</div><div class="tab-label">Progress</div></div>
+        <div class="tab-item"><div class="tab-icon">⚙</div><div class="tab-label">Settings</div></div>
+      </div>
+    </div>
+
+    <!-- ===== SCREEN: NL INPUT OVERLAY ===== -->
+    <div id="screen-nl" class="screen">
+      <!-- Dimmed workout behind -->
+      <div style="position:absolute;inset:0;z-index:0;overflow:hidden;">
+        <div class="screen-content" style="opacity:0.22;pointer-events:none;">
+          <div class="status-bar"><span class="status-time">10:14</span></div>
+          <div class="workout-header"><div class="workout-title">Push A</div><div class="workout-timer">32:14</div></div>
+          <div class="exercise-section" style="margin:8px 16px 0;">
+            <div class="exercise-header"><div class="exercise-name">Bench Press</div></div>
+            <div class="set-row logged-row">
+              <div class="set-num">1</div>
+              <div class="set-field"><div class="field-value">80</div><div class="field-label">kg</div></div>
+              <div class="set-field"><div class="field-value">8</div><div class="field-label">reps</div></div>
+              <div class="set-check logged">✓</div>
+              <div class="repeat-btn">↩</div>
+            </div>
+          </div>
+        </div>
+        <div style="position:absolute;inset:0;background:rgba(4,4,14,0.55);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);"></div>
+      </div>
+
+      <!-- NL sheet rises from bottom -->
+      <div style="position:absolute;bottom:0;left:0;right:0;z-index:10;background:rgba(10,10,20,0.92);border:1px solid rgba(255,255,255,0.12);border-bottom:none;border-radius:24px 24px 0 0;backdrop-filter:blur(32px);padding:0 20px 40px;">
+        <div style="width:36px;height:4px;background:rgba(255,255,255,0.18);border-radius:2px;margin:12px auto 16px;"></div>
+
+        <!-- Context label -->
+        <div style="font-size:11px;color:var(--text-tertiary);letter-spacing:0.08em;text-transform:uppercase;text-align:center;margin-bottom:14px;">Bench Press — Set 3</div>
+
+        <!-- Parsed result card — shown after input -->
+        <div style="background:rgba(var(--accent-rgb),0.12);border:1px solid rgba(var(--accent-rgb),0.3);border-radius:16px;padding:14px 16px;margin-bottom:14px;">
+          <div style="font-size:10px;color:var(--accent);text-transform:uppercase;letter-spacing:0.1em;margin-bottom:8px;">✦ Parsed</div>
+          <div style="display:flex;align-items:baseline;gap:6px;">
+            <div style="font-family:'DM Mono',monospace;font-size:36px;font-weight:400;letter-spacing:-0.04em;color:var(--text-primary);line-height:1;">225</div>
+            <div style="font-size:14px;color:var(--text-secondary);">lbs</div>
+            <div style="font-size:20px;color:var(--text-tertiary);margin:0 2px;">×</div>
+            <div style="font-family:'DM Mono',monospace;font-size:36px;font-weight:400;letter-spacing:-0.04em;color:var(--text-primary);line-height:1;">5</div>
+            <div style="font-size:14px;color:var(--text-secondary);">reps</div>
+          </div>
+        </div>
+
+        <!-- Text input field -->
+        <div style="background:rgba(255,255,255,0.07);border:1px solid rgba(var(--accent-rgb),0.4);border-radius:14px;padding:12px 16px;display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+          <div style="font-size:15px;color:var(--text-primary);flex:1;font-family:'DM Mono',monospace;letter-spacing:-0.01em;">225 for 5</div>
+          <div style="font-size:18px;opacity:0.6;">🎙</div>
+        </div>
+
+        <!-- Example hints -->
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:18px;">
+          <div style="font-size:11px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:4px 10px;color:var(--text-tertiary);">"225 for 5"</div>
+          <div style="font-size:11px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:4px 10px;color:var(--text-tertiary);">"three plates for 3"</div>
+          <div style="font-size:11px;background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);border-radius:8px;padding:4px 10px;color:var(--text-tertiary);">"curls 35s 12 reps"</div>
+        </div>
+
+        <!-- Log / cancel -->
+        <div style="display:flex;gap:10px;">
+          <button style="flex:1;height:50px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:14px;font-family:'DM Sans',sans-serif;font-size:15px;color:var(--text-secondary);cursor:pointer;">Cancel</button>
+          <button style="flex:2;height:50px;background:var(--accent);border:none;border-radius:14px;font-family:'DM Sans',sans-serif;font-size:15px;font-weight:500;color:white;cursor:pointer;">Log Set →</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ===== SCREEN: LIVE ACTIVITY / DYNAMIC ISLAND ===== -->
+    <div id="screen-liveactivity" class="screen">
+      <div class="screen-content">
+        <div class="status-bar">
+          <span class="status-time">10:16</span>
+          <span></span>
+          <div class="status-icons"><span>●●●</span><span>🔋</span></div>
+        </div>
+
+        <!-- Annotation label -->
+        <div style="font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-tertiary);text-align:center;padding:6px 0 12px;">Live Activity States</div>
+
+        <!-- 1. Dynamic Island — compact (rest timer in pill) -->
+        <div style="margin:0 16px 20px;">
+          <div style="font-size:10px;color:var(--text-tertiary);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;">Dynamic Island — compact</div>
+          <div style="background:rgba(255,255,255,0.04);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:12px 14px;display:flex;align-items:center;justify-content:space-between;">
+            <!-- Simulated phone top with dynamic island pill containing timer -->
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="background:#000;border-radius:12px;padding:5px 12px;display:flex;align-items:center;gap:8px;">
+                <div style="width:6px;height:6px;border-radius:50%;background:rgba(var(--accent-rgb),0.9);"></div>
+                <div style="font-family:'DM Mono',monospace;font-size:13px;font-weight:500;color:white;letter-spacing:-0.02em;">1:47</div>
+              </div>
+              <div style="font-size:11px;color:var(--text-tertiary);">rest timer always visible</div>
+            </div>
+            <div style="font-size:10px;color:var(--text-tertiary);">compact</div>
+          </div>
+        </div>
+
+        <!-- 2. Dynamic Island — expanded (long press) -->
+        <div style="margin:0 16px 20px;">
+          <div style="font-size:10px;color:var(--text-tertiary);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;">Dynamic Island — expanded (long press)</div>
+          <div style="background:#000;border-radius:22px;padding:14px 16px;">
+            <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+              <div style="display:flex;align-items:center;gap:8px;">
+                <div style="width:8px;height:8px;border-radius:50%;background:rgba(var(--accent-rgb),0.9);"></div>
+                <div style="font-size:13px;font-weight:500;color:white;letter-spacing:-0.01em;">Bench Press</div>
+              </div>
+              <div style="font-size:11px;color:rgba(255,255,255,0.45);">Set 3 of 5</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div style="flex:1;">
+                <div style="font-family:'DM Mono',monospace;font-size:26px;font-weight:400;color:white;letter-spacing:-0.04em;line-height:1;">82.5<span style="font-size:14px;color:rgba(255,255,255,0.4);"> kg</span></div>
+                <div style="font-size:10px;color:rgba(255,255,255,0.35);margin-top:2px;">× 6 reps</div>
+              </div>
+              <div style="width:1px;height:36px;background:rgba(255,255,255,0.1);"></div>
+              <div style="text-align:center;">
+                <div style="font-size:9px;color:rgba(var(--accent-rgb),0.8);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:4px;">Rest</div>
+                <div style="font-family:'DM Mono',monospace;font-size:22px;font-weight:400;color:white;letter-spacing:-0.04em;">1:47</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- 3. Lock Screen Live Activity card -->
+        <div style="margin:0 16px 8px;">
+          <div style="font-size:10px;color:var(--text-tertiary);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:8px;">Lock Screen — glass card</div>
+          <!-- Simulated lock screen background -->
+          <div style="background:linear-gradient(160deg,#0a0a18,#141428);border-radius:24px;padding:16px;position:relative;overflow:hidden;">
+            <!-- Subtle blurred wallpaper suggestion -->
+            <div style="position:absolute;inset:0;background:radial-gradient(ellipse at 30% 20%,rgba(70,80,180,0.25),transparent 60%);pointer-events:none;"></div>
+            <!-- Lock screen time -->
+            <div style="text-align:center;margin-bottom:14px;position:relative;">
+              <div style="font-size:11px;color:rgba(255,255,255,0.5);letter-spacing:0.04em;text-transform:uppercase;">Thursday, January 30</div>
+              <div style="font-family:'DM Mono',monospace;font-size:52px;font-weight:300;color:white;letter-spacing:-0.04em;line-height:1.1;">10:16</div>
+            </div>
+            <!-- Live Activity glass card -->
+            <div style="background:rgba(255,255,255,0.1);border:1px solid rgba(255,255,255,0.18);border-radius:20px;backdrop-filter:blur(24px);padding:14px 16px;position:relative;">
+              <div style="position:absolute;top:0;left:0;right:0;height:1px;background:linear-gradient(90deg,transparent,rgba(255,255,255,0.25),transparent);border-radius:20px 20px 0 0;"></div>
+              <!-- Top row -->
+              <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+                <div style="display:flex;align-items:center;gap:6px;">
+                  <div style="width:7px;height:7px;border-radius:50%;background:rgba(var(--accent-rgb),0.9);"></div>
+                  <div style="font-size:12px;font-weight:500;color:white;letter-spacing:-0.01em;">Heft · Push A</div>
+                </div>
+                <div style="font-size:11px;color:rgba(255,255,255,0.45);">32:14</div>
+              </div>
+              <!-- Current exercise + set info -->
+              <div style="display:flex;align-items:center;gap:0;margin-bottom:10px;">
+                <div style="flex:1;">
+                  <div style="font-size:13px;font-weight:500;color:white;letter-spacing:-0.01em;margin-bottom:2px;">Bench Press</div>
+                  <div style="font-size:11px;color:rgba(255,255,255,0.45);">Set 3 · 82.5 kg × 6 reps</div>
+                </div>
+                <!-- Rest timer arc -->
+                <div style="position:relative;width:48px;height:48px;flex-shrink:0;">
+                  <svg width="48" height="48">
+                    <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="3"/>
+                    <circle cx="24" cy="24" r="20" fill="none" stroke="rgba(var(--accent-rgb),0.8)" stroke-width="3"
+                      stroke-dasharray="125.7" stroke-dashoffset="31" stroke-linecap="round"
+                      transform="rotate(-90 24 24)"/>
+                  </svg>
+                  <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;">
+                    <div style="font-family:'DM Mono',monospace;font-size:11px;font-weight:500;color:white;letter-spacing:-0.02em;">1:47</div>
+                  </div>
+                </div>
+              </div>
+              <!-- Next set row -->
+              <div style="background:rgba(var(--accent-rgb),0.15);border:1px solid rgba(var(--accent-rgb),0.25);border-radius:12px;padding:8px 12px;display:flex;align-items:center;justify-content:space-between;">
+                <div style="font-size:11px;color:rgba(var(--accent-rgb),0.8);text-transform:uppercase;letter-spacing:0.08em;">Next Set</div>
+                <div style="font-size:13px;font-weight:500;color:white;letter-spacing:-0.01em;">82.5 kg × 6 reps</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div style="height:100px;"></div>
+      </div>
+      <div class="tab-bar">
+        <div class="tab-item"><div class="tab-icon">⊞</div><div class="tab-label">Home</div></div>
+        <div class="tab-item"><div class="tab-icon">⟳</div><div class="tab-label">History</div></div>
+        <div class="tab-item"><div class="tab-icon">↗</div><div class="tab-label">Progress</div></div>
+        <div class="tab-item"><div class="tab-icon">⚙</div><div class="tab-label">Settings</div></div>
+      </div>
+    </div>
+
+    <!-- ===== SCREEN: ROUTINE BUILDER ===== -->
+    <div id="screen-routinebuilder" class="screen">
+      <div class="screen-content">
+        <div class="status-bar">
+          <span class="status-time">9:41</span>
+          <span></span>
+          <div class="status-icons"><span>●●●</span><span>🔋</span></div>
+        </div>
+
+        <!-- Header row -->
+        <div style="display:flex;align-items:center;gap:12px;padding:14px 20px 0;">
+          <div class="back-btn" onclick="showScreen('home-idle', document.querySelectorAll('.nav-btn')[0])">←</div>
+          <div style="flex:1;">
+            <div style="font-size:11px;color:var(--text-tertiary);letter-spacing:0.08em;text-transform:uppercase;margin-bottom:2px;">New Routine</div>
+          </div>
+          <div style="font-size:14px;font-weight:500;color:var(--accent);cursor:pointer;">Save</div>
+        </div>
+
+        <!-- Routine name field -->
+        <div style="margin:14px 16px 0;background:rgba(255,255,255,0.055);border:1px solid rgba(var(--accent-rgb),0.35);border-radius:16px;padding:14px 18px;">
+          <div style="font-size:11px;color:var(--text-tertiary);letter-spacing:0.06em;text-transform:uppercase;margin-bottom:6px;">Routine Name</div>
+          <div style="font-size:20px;font-weight:300;letter-spacing:-0.02em;color:var(--text-primary);">Push A<span style="opacity:0.3;margin-left:1px;">|</span></div>
+        </div>
+
+        <!-- Exercises section -->
+        <div class="section-label" style="padding:18px 24px 10px;">Exercises <span style="color:var(--text-tertiary);font-weight:400;">4</span></div>
+
+        <!-- Exercise rows — reorderable -->
+        <div style="margin:0 16px;background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.08);border-radius:20px;overflow:hidden;">
+
+          <!-- Exercise 1 -->
+          <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer;" onclick="showScreen('exerciseconfig', document.querySelectorAll('.nav-btn')[13])">
+            <div style="font-size:18px;color:var(--text-tertiary);cursor:grab;">⠿</div>
+            <div style="flex:1;">
+              <div style="font-size:15px;font-weight:500;letter-spacing:-0.01em;margin-bottom:2px;">Bench Press</div>
+              <div style="font-size:12px;color:var(--text-secondary);">4 sets · 6–8 reps · 2:00 rest</div>
+            </div>
+            <div style="font-size:18px;color:var(--text-tertiary);">›</div>
+          </div>
+
+          <!-- Exercise 2 -->
+          <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer;" onclick="showScreen('exerciseconfig', document.querySelectorAll('.nav-btn')[13])">
+            <div style="font-size:18px;color:var(--text-tertiary);cursor:grab;">⠿</div>
+            <div style="flex:1;">
+              <div style="font-size:15px;font-weight:500;letter-spacing:-0.01em;margin-bottom:2px;">Overhead Press</div>
+              <div style="font-size:12px;color:var(--text-secondary);">3 sets · 8–10 reps · 1:30 rest</div>
+            </div>
+            <div style="font-size:18px;color:var(--text-tertiary);">›</div>
+          </div>
+
+          <!-- Exercise 3 -->
+          <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;border-bottom:1px solid rgba(255,255,255,0.05);cursor:pointer;" onclick="showScreen('exerciseconfig', document.querySelectorAll('.nav-btn')[13])">
+            <div style="font-size:18px;color:var(--text-tertiary);cursor:grab;">⠿</div>
+            <div style="flex:1;">
+              <div style="font-size:15px;font-weight:500;letter-spacing:-0.01em;margin-bottom:2px;">Incline Dumbbell Press</div>
+              <div style="font-size:12px;color:var(--text-secondary);">3 sets · 10–12 reps · 1:30 rest</div>
+            </div>
+            <div style="font-size:18px;color:var(--text-tertiary);">›</div>
+          </div>
+
+          <!-- Exercise 4 -->
+          <div style="display:flex;align-items:center;gap:12px;padding:13px 16px;cursor:pointer;" onclick="showScreen('exerciseconfig', document.querySelectorAll('.nav-btn')[13])">
+            <div style="font-size:18px;color:var(--text-tertiary);cursor:grab;">⠿</div>
+            <div style="flex:1;">
+              <div style="font-size:15px;font-weight:500;letter-spacing:-0.01em;margin-bottom:2px;">Cable Fly</div>
+              <div style="font-size:12px;color:var(--text-secondary);">3 sets · 12–15 reps · 1:00 rest</div>
+            </div>
+            <div style="font-size:18px;color:var(--text-tertiary);">›</div>
+          </div>
+        </div>
+
+        <!-- Add exercise button -->
+        <div onclick="showScreen('picker', document.querySelectorAll('.nav-btn')[3])"
+          style="margin:10px 16px 0;border:1.5px dashed rgba(var(--accent-rgb),0.3);border-radius:16px;padding:14px;display:flex;align-items:center;justify-content:center;gap:8px;cursor:pointer;">
+          <div style="font-size:18px;color:var(--accent);">+</div>
+          <div style="font-size:14px;font-weight:500;color:var(--accent);">Add Exercise</div>
+        </div>
+
+        <!-- Import from history shortcut -->
+        <div style="margin:10px 16px 0;background:rgba(255,255,255,0.035);border:1px solid rgba(255,255,255,0.07);border-radius:14px;padding:12px 16px;display:flex;align-items:center;justify-content:space-between;">
+          <div>
+            <div style="font-size:13px;font-weight:500;letter-spacing:-0.01em;margin-bottom:2px;">Import from last session</div>
+            <div style="font-size:11px;color:var(--text-tertiary);">Push A · Jan 30 · 6 exercises</div>
+          </div>
+          <div style="font-size:12px;color:var(--accent);font-weight:500;background:rgba(var(--accent-rgb),0.12);border:1px solid rgba(var(--accent-rgb),0.25);border-radius:8px;padding:4px 10px;">Import</div>
+        </div>
+
+        <div style="height:100px;"></div>
+      </div>
+
+      <div class="tab-bar">
+        <div class="tab-item active" onclick="showScreen('home-idle', document.querySelectorAll('.nav-btn')[0])"><div class="tab-icon">⊞</div><div class="tab-label">Home</div></div>
+        <div class="tab-item"><div class="tab-icon">⟳</div><div class="tab-label">History</div></div>
+        <div class="tab-item"><div class="tab-icon">↗</div><div class="tab-label">Progress</div></div>
+        <div class="tab-item"><div class="tab-icon">⚙</div><div class="tab-label">Settings</div></div>
+      </div>
+    </div>
+
+
+    <!-- ===== SCREEN: PRO UPGRADE ===== -->
+    <div id="screen-proupgrade" class="screen">
+      <div class="screen-content" style="overflow-y:auto;">
+        <div class="status-bar">
+          <span class="status-time">9:41</span>
+          <span></span>
+          <div class="status-icons"><span>●●●</span><span>🔋</span></div>
+        </div>
+
+        <!-- Back + close -->
+        <div style="display:flex;align-items:center;padding:10px 20px 0;gap:12px;">
+          <div class="back-btn" onclick="showScreen('settings', document.querySelectorAll('.nav-btn')[12])">←</div>
+          <div style="flex:1;"></div>
+        </div>
+
+        <!-- Hero -->
+        <div class="pro-upgrade-hero">
+          <div class="pro-upgrade-badge">✦ Heft Pro</div>
+          <div class="pro-upgrade-title">Everything you<br>need to train better.</div>
+          <div class="pro-upgrade-sub">One purchase. No subscription required.</div>
+        </div>
+
+        <!-- Feature list -->
+        <div class="pro-feature-list">
+          <div class="pro-feature-row">
+            <div class="pro-feature-icon" style="background:rgba(var(--accent-secondary-rgb),0.15);">✦</div>
+            <div class="pro-feature-text">
+              <div class="pro-feature-name">Dynamic Mesh Themes</div>
+              <div class="pro-feature-desc">State-aware gradient shifts as you train</div>
+            </div>
+            <div class="pro-feature-check">✓</div>
+          </div>
+          <div class="pro-feature-row">
+            <div class="pro-feature-icon" style="background:rgba(var(--accent-secondary-rgb),0.15);">🎙</div>
+            <div class="pro-feature-text">
+              <div class="pro-feature-name">Natural Language Input</div>
+              <div class="pro-feature-desc">"225 for 5" · type or say any set</div>
+            </div>
+            <div class="pro-feature-check">✓</div>
+          </div>
+          <div class="pro-feature-row">
+            <div class="pro-feature-icon" style="background:rgba(45,212,191,0.15);">⌚</div>
+            <div class="pro-feature-text">
+              <div class="pro-feature-name">Apple Watch Companion</div>
+              <div class="pro-feature-desc">Auto rep detection · crown adjust</div>
+            </div>
+            <div class="pro-feature-check">✓</div>
+          </div>
+          <div class="pro-feature-row">
+            <div class="pro-feature-icon" style="background:rgba(var(--accent-rgb),0.15);">↗</div>
+            <div class="pro-feature-text">
+              <div class="pro-feature-name">Advanced Analytics</div>
+              <div class="pro-feature-desc">1RM trends · muscle balance · frequency</div>
+            </div>
+            <div class="pro-feature-check">✓</div>
+          </div>
+          <div class="pro-feature-row">
+            <div class="pro-feature-icon" style="background:rgba(52,211,153,0.15);">☁</div>
+            <div class="pro-feature-text">
+              <div class="pro-feature-name">iCloud Sync</div>
+              <div class="pro-feature-desc">All devices, always in sync</div>
+            </div>
+            <div class="pro-feature-check">✓</div>
+          </div>
+        </div>
+
+        <!-- Pricing cards -->
+        <div class="pro-price-row">
+          <div class="pro-price-card">
+            <div class="pro-price-label">Annual</div>
+            <div class="pro-price-amount">$14.99</div>
+            <div class="pro-price-period">per year</div>
+          </div>
+          <div class="pro-price-card featured">
+            <div class="pro-price-label" style="color:rgba(var(--accent-rgb),0.7);">Lifetime ★ Best</div>
+            <div class="pro-price-amount" style="color:var(--accent);">$49.99</div>
+            <div class="pro-price-period">one-time purchase</div>
+          </div>
+        </div>
+
+        <!-- CTA -->
+        <div class="pro-cta-btn">Get Heft Pro — $49.99</div>
+        <div class="pro-restore-link">Restore Purchases</div>
+
+        <div style="height:80px;"></div>
+      </div>
+
+      <div class="tab-bar">
+        <div class="tab-item" onclick="showScreen('home-idle', document.querySelectorAll('.nav-btn')[0])"><div class="tab-icon">⊞</div><div class="tab-label">Home</div></div>
+        <div class="tab-item"><div class="tab-icon">⟳</div><div class="tab-label">History</div></div>
+        <div class="tab-item"><div class="tab-icon">↗</div><div class="tab-label">Progress</div></div>
+        <div class="tab-item active" onclick="showScreen('settings', document.querySelectorAll('.nav-btn')[12])"><div class="tab-icon">⚙</div><div class="tab-label">Settings</div></div>
+      </div>
+    </div>
+
+    <!-- ===== SCREEN: EXERCISE CONFIG (sheet from Routine Builder) ===== -->
+    <div id="screen-exerciseconfig" class="screen">
+      <div class="screen-content">
+        <div class="status-bar">
+          <span class="status-time">9:41</span>
+          <span></span>
+          <div class="status-icons"><span>●●●</span><span>🔋</span></div>
+        </div>
+
+        <!-- Sheet handle + header -->
+        <div style="display:flex;flex-direction:column;align-items:center;padding:10px 20px 0;">
+          <div style="width:36px;height:4px;background:rgba(255,255,255,0.18);border-radius:2px;margin-bottom:16px;"></div>
+          <div style="display:flex;align-items:center;width:100%;gap:12px;margin-bottom:2px;">
+            <div class="back-btn" onclick="showScreen('routinebuilder', document.querySelectorAll('.nav-btn')[11])">←</div>
+            <div style="flex:1;font-size:18px;font-weight:500;letter-spacing:-0.02em;">Bench Press</div>
+            <div style="font-size:14px;font-weight:500;color:var(--accent);cursor:pointer;">Done</div>
+          </div>
+        </div>
+
+        <!-- Config rows -->
+        <div style="margin:18px 16px 0;background:rgba(255,255,255,0.055);border:1px solid rgba(255,255,255,0.08);border-radius:20px;overflow:hidden;">
+
+          <!-- Sets -->
+          <div style="display:flex;align-items:center;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.05);">
+            <div style="flex:1;font-size:15px;font-weight:500;letter-spacing:-0.01em;">Sets</div>
+            <div style="display:flex;align-items:center;gap:12px;">
+              <div style="width:32px;height:32px;border-radius:50%;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--text-secondary);cursor:pointer;">−</div>
+              <div style="font-family:'DM Mono',monospace;font-size:22px;font-weight:500;letter-spacing:-0.03em;min-width:20px;text-align:center;">4</div>
+              <div style="width:32px;height:32px;border-radius:50%;background:rgba(var(--accent-rgb),0.12);border:1px solid rgba(var(--accent-rgb),0.3);display:flex;align-items:center;justify-content:center;font-size:18px;color:var(--accent);cursor:pointer;">+</div>
+            </div>
+          </div>
+
+          <!-- Rep range -->
+          <div style="display:flex;align-items:center;padding:14px 18px;border-bottom:1px solid rgba(255,255,255,0.05);">
+            <div style="flex:1;">
+              <div style="font-size:15px;font-weight:500;letter-spacing:-0.01em;margin-bottom:2px;">Rep Range</div>
+              <div style="font-size:11px;color:var(--text-tertiary);">min – max</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:8px;">
+              <div style="background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.12);border-radius:10px;padding:6px 14px;font-family:'DM Mono',monospace;font-size:18px;font-weight:500;letter-spacing:-0.02em;">6</div>
+              <div style="font-size:14px;color:var(--text-tertiary);">–</div>
+              <div style="background:rgba(var(--accent-rgb),0.1);border:1px solid rgba(var(--accent-rgb),0.3);border-radius:10px;padding:6px 14px;font-family:'DM Mono',monospace;font-size:18px;font-weight:500;letter-spacing:-0.02em;color:var(--accent);">8</div>
+            </div>
+          </div>
+
+          <!-- Rest time -->
+          <div style="display:flex;align-items:center;padding:14px 18px;">
+            <div style="flex:1;">
+              <div style="font-size:15px;font-weight:500;letter-spacing:-0.01em;margin-bottom:2px;">Rest Time</div>
+              <div style="font-size:11px;color:var(--text-tertiary);">between sets</div>
+            </div>
+            <div style="display:flex;align-items:center;gap:6px;">
+              <div style="font-size:11px;color:var(--text-tertiary);background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.09);border-radius:8px;padding:3px 8px;cursor:pointer;">1:30</div>
+              <div style="font-size:11px;font-weight:500;color:var(--accent);background:rgba(var(--accent-rgb),0.12);border:1px solid rgba(var(--accent-rgb),0.28);border-radius:8px;padding:3px 8px;cursor:pointer;">2:00</div>
+              <div style="font-size:11px;color:var(--text-tertiary);background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.09);border-radius:8px;padding:3px 8px;cursor:pointer;">3:00</div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Remove exercise -->
+        <div style="margin:12px 16px 0;background:rgba(248,113,113,0.06);border:1px solid rgba(248,113,113,0.18);border-radius:14px;padding:14px 18px;display:flex;align-items:center;justify-content:center;cursor:pointer;">
+          <div style="font-size:14px;font-weight:500;color:var(--red);">Remove from Routine</div>
+        </div>
+
+        <div style="height:120px;"></div>
+      </div>
+
+      <div class="tab-bar">
+        <div class="tab-item active" onclick="showScreen('home-idle', document.querySelectorAll('.nav-btn')[0])"><div class="tab-icon">⊞</div><div class="tab-label">Home</div></div>
+        <div class="tab-item"><div class="tab-icon">⟳</div><div class="tab-label">History</div></div>
+        <div class="tab-item"><div class="tab-icon">↗</div><div class="tab-label">Progress</div></div>
+        <div class="tab-item"><div class="tab-icon">⚙</div><div class="tab-label">Settings</div></div>
+      </div>
+    </div>
+
+</div><!-- /phone-wrapper -->
+
+<div class="screen-label" id="screen-desc">
+  <strong>① Home</strong> — Routine selection with featured last session
+</div>
+
+<script>
+const descriptions = {
+  'home-idle':    '<strong>① Home</strong> — Idle: streak tiles, quick start routine cards',
+  'home-active':  '<strong>② Home — active workout</strong> — Same tab, content transforms · live timer, set rows, floating Log Set bar · tab label → ● Active',
+  home_active:    '<strong>② Home — active workout</strong> — Same tab, content transforms: title + live timer, set rows, floating Log Set bar',
+  nl:             '<strong>② NL Input</strong> — Mic tap opens overlay · text/voice field · on-device parse shows result before logging · "225 for 5", "three plates for 3", "curls 35s 12 reps"',
+  picker:         '<strong>③ Exercise Picker</strong> — Bottom sheet · 8-tile 4×2 recents grid · muscle chips · fuzzy search',
+  rest:           '<strong>④ Rest Timer</strong> — Arc ring · next set shown · crown adjusts weight/reps · skip button',
+  pr:             '<strong>⑤ PR Moment</strong> — Full-screen interrupt with amber glass card and previous best',
+  summary:        '<strong>⑤b Post-Workout Summary</strong> — Stats row · PR highlight · volume breakdown by exercise · AI session insight · shareable chart',
+  liveactivity:   '<strong>Live Activity</strong> — Three states: Dynamic Island compact (pill with timer) · expanded (long press, full set detail) · Lock Screen glass card (exercise + arc timer + next set)',
+  analytics:      '<strong>⑥ Analytics</strong> — Scroll down: Volume bars · 1RM trend · Recent PRs · Frequency heatmap (GitHub calendar) · Muscle balance radar with per-group bars and imbalance callout',
+  history:        '<strong>⑦ History</strong> — Chronological session log · this week expanded · older sessions collapsed',
+  detail:         '<strong>⑧ Exercise Detail</strong> — Per-exercise 1RM chart, PR banner, session history',
+  routinebuilder: '<strong>Routine Builder</strong> — Editable routine name · exercise list with drag-to-reorder handles · sets/reps/rest per exercise · Add Exercise opens picker · Import from last session shortcut · Save in header',
+  settings:       '<strong>⑨ Settings</strong> — Pro unlock banner (taps to upgrade sheet), appearance, logging, data preferences',
+  proupgrade:     '<strong>Pro Upgrade</strong> — Full-screen IAP sheet · feature list (Dynamic Mesh, NL Input, Watch, Analytics, iCloud Sync) · Annual $14.99 vs Lifetime $49.99 · Get Pro CTA · Restore Purchases',
+  exerciseconfig: '<strong>Exercise Config</strong> — Sheet opened from › tap in Routine Builder · set count stepper · rep-range min/max fields · rest time chip selector · Remove from Routine destructive action'
+};
+
+function showScreen(id, btn) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-' + id).classList.add('active');
+  if (btn) btn.classList.add('active');
+  document.getElementById('screen-desc').innerHTML = descriptions[id] || '';
+  // Transition mesh state based on screen
+  const meshMap = {
+    'home-idle': 'neutral', 'home-active': 'active',
+    'nl': 'active', 'picker': 'active', 'rest': 'rest', 'pr': 'pr',
+    'summary': 'summary', 'liveactivity': 'rest',
+    'analytics': 'neutral', 'history': 'neutral',
+    'detail': 'neutral', 'routinebuilder': 'neutral', 'settings': 'neutral',
+    'proupgrade': 'neutral', 'exerciseconfig': 'neutral'
+  };
+  if (window.meshReady) transitionMesh(meshMap[id] || 'neutral');
+}
+
+function openExerciseMenu(exerciseName) {
+  document.getElementById('menu-sheet-title').textContent = exerciseName;
+  document.getElementById('exercise-menu-overlay').classList.add('open');
+}
+function closeExerciseMenu() {
+  document.getElementById('exercise-menu-overlay').classList.remove('open');
+}
+
+// ── Dynamic Mesh Engine (static — transitions only, no idle animation) ────────
+const meshCanvas = document.getElementById('mesh-canvas');
+const mctx = meshCanvas.getContext('2d');
+
+// Richer, more saturated color points
+const meshStates = {
+  neutral: {
+    points: [
+      { x: 0.08, y: 0.05, r:  72, g: 52,  b: 168 },
+      { x: 0.92, y: 0.10, r:  52, g: 36,  b: 148 },
+      { x: 0.5,  y: 0.35, r:  42, g: 28,  b: 128 },
+      { x: 0.12, y: 0.72, r:  26, g: 16,  b:  92 },
+      { x: 0.88, y: 0.70, r:  62, g: 45,  b: 155 },
+      { x: 0.5,  y: 1.0,  r:  13, g:  7,  b:  45 },
+    ], bg: [4, 3, 12]
+  },
+  active: {
+    points: [
+      { x: 0.12, y: 0.04, r:  36, g:  92, b: 198 },
+      { x: 0.88, y: 0.08, r:  26, g:  76, b: 182 },
+      { x: 0.5,  y: 0.26, r:  42, g: 105, b: 212 },
+      { x: 0.08, y: 0.62, r:  16, g:  55, b: 150 },
+      { x: 0.92, y: 0.58, r:  32, g:  88, b: 192 },
+      { x: 0.5,  y: 0.96, r:   9, g:  28, b:  92 },
+    ], bg: [4, 6, 16]
+  },
+  summary: {
+    points: [
+      { x: 0.12, y: 0.08, r:  13, g: 118, b:  94 },
+      { x: 0.88, y: 0.15, r:   9, g:  92, b:  74 },
+      { x: 0.5,  y: 0.35, r:   7, g:  72, b:  58 },
+      { x: 0.15, y: 0.68, r:   4, g:  54, b:  44 },
+      { x: 0.85, y: 0.65, r:  16, g: 126, b: 100 },
+      { x: 0.5,  y: 1.0,  r:   3, g:  28, b:  22 },
+    ], bg: [3, 10, 8]
+  },
+  rest: {
+    points: [
+      { x: 0.12, y: 0.08, r:  15, g: 160, b: 180 },
+      { x: 0.88, y: 0.15, r:  10, g: 130, b: 160 },
+      { x: 0.5,  y: 0.35, r:   8, g: 100, b: 140 },
+      { x: 0.15, y: 0.68, r:   5, g:  80, b: 120 },
+      { x: 0.85, y: 0.65, r:  20, g: 170, b: 190 },
+      { x: 0.5,  y: 1.0,  r:   3, g:  45, b:  80 },
+    ], bg: [3, 10, 18]
+  },
+  pr: {
+    points: [
+      { x: 0.18, y: 0.06, r: 255, g: 185, b:  20 },
+      { x: 0.82, y: 0.10, r: 230, g: 150, b:  10 },
+      { x: 0.5,  y: 0.30, r: 200, g: 120, b:   8 },
+      { x: 0.08, y: 0.58, r: 140, g:  75, b:  20 },
+      { x: 0.92, y: 0.60, r: 245, g: 165, b:  15 },
+      { x: 0.5,  y: 1.0,  r:  60, g:  30, b:   5 },
+    ], bg: [16, 9, 2]
+  }
+};
+
+let mCurrent  = JSON.parse(JSON.stringify(meshStates.neutral));
+let mTarget   = JSON.parse(JSON.stringify(meshStates.neutral));
+let mAnimT    = 1;
+let mRafId    = null;
+window.meshReady = false;
+
+function lerp(a, b, t) { return a + (b - a) * t; }
+function easeInOut(t)  { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
+
+function drawMeshFrame(pts, bg) {
+  const W = meshCanvas.width, H = meshCanvas.height;
+  mctx.fillStyle = `rgb(${Math.round(bg[0])},${Math.round(bg[1])},${Math.round(bg[2])})`;
+  mctx.fillRect(0, 0, W, H);
+  pts.forEach(p => {
+    const grd = mctx.createRadialGradient(p.x*W, p.y*H, 0, p.x*W, p.y*H, W * 0.75);
+    grd.addColorStop(0, `rgba(${Math.round(p.r)},${Math.round(p.g)},${Math.round(p.b)},0.65)`);
+    grd.addColorStop(1, `rgba(${Math.round(p.r)},${Math.round(p.g)},${Math.round(p.b)},0)`);
+    mctx.globalCompositeOperation = 'screen';
+    mctx.fillStyle = grd;
+    mctx.fillRect(0, 0, W, H);
+  });
+  mctx.globalCompositeOperation = 'source-over';
+}
+
+// Transition loop — runs only during navigation, stops when settled
+function meshTransitionLoop() {
+  mAnimT = Math.min(mAnimT + 0.018, 1); // ~55 frames = ~0.9s at 60fps
+  const e = easeInOut(mAnimT);
+  const pts = mCurrent.points.map((cp, i) => ({
+    x: lerp(cp.x, mTarget.points[i].x, e),
+    y: lerp(cp.y, mTarget.points[i].y, e),
+    r: lerp(cp.r, mTarget.points[i].r, e),
+    g: lerp(cp.g, mTarget.points[i].g, e),
+    b: lerp(cp.b, mTarget.points[i].b, e),
+  }));
+  const bg = mCurrent.bg.map((v, i) => lerp(v, mTarget.bg[i], e));
+  drawMeshFrame(pts, bg);
+  if (mAnimT < 1) {
+    mRafId = requestAnimationFrame(meshTransitionLoop);
+  } else {
+    // Transition complete — settle and stop
+    mCurrent = JSON.parse(JSON.stringify(mTarget));
+    mRafId = null;
+  }
+}
+
+function transitionMesh(stateName) {
+  if (mRafId) cancelAnimationFrame(mRafId);
+  // Snapshot current visual position
+  const e = easeInOut(mAnimT);
+  mCurrent = {
+    points: mCurrent.points.map((cp, i) => ({
+      x: lerp(cp.x, mTarget.points[i].x, e),
+      y: lerp(cp.y, mTarget.points[i].y, e),
+      r: lerp(cp.r, mTarget.points[i].r, e),
+      g: lerp(cp.g, mTarget.points[i].g, e),
+      b: lerp(cp.b, mTarget.points[i].b, e),
+    })),
+    bg: mCurrent.bg.map((v, i) => lerp(v, mTarget.bg[i], e))
+  };
+  mTarget = JSON.parse(JSON.stringify(meshStates[stateName] || meshStates.neutral));
+  mAnimT  = 0;
+  mRafId  = requestAnimationFrame(meshTransitionLoop);
+}
+
+// ── Grain (static, generated once) ──────────────────────────────────────────
+(function generateGrain() {
+  const gc   = document.getElementById('grain-canvas');
+  const gctx = gc.getContext('2d');
+  const W = gc.width, H = gc.height;
+  const img = gctx.createImageData(W, H);
+  const d   = img.data;
+  for (let i = 0; i < d.length; i += 4) {
+    const v = Math.random() * 255 | 0;
+    d[i] = d[i+1] = d[i+2] = v;
+    d[i+3] = 255;
+  }
+  gctx.putImageData(img, 0, 0);
+})();
+
+// Theme accent overrides
+const themeAccents = {
+  midnight: { accent:'#7C7FF5', accentRgb:'92,95,239',   accentSecRgb:'124,58,237',  phoneBg:'#0C0C14', spotlightColor:'rgba(70,80,140,0.25)',  prAmber:null },
+  ember:    { accent:'#E8622A', accentRgb:'232,98,42',   accentSecRgb:'200,55,20',   phoneBg:'#0D0905', spotlightColor:'rgba(200,70,20,0.22)',   prAmber:'#E8622A' },
+  graphite: { accent:'#8E9AAB', accentRgb:'142,154,171', accentSecRgb:'110,122,140', phoneBg:'#0E0F10', spotlightColor:'rgba(100,112,130,0.16)', prAmber:null },
+  abyss:    { accent:'#0A84FF', accentRgb:'10,132,255',  accentSecRgb:'0,100,220',   phoneBg:'#03060F', spotlightColor:'rgba(10,80,200,0.30)',   prAmber:null },
+  mesh:     { accent:'#BF5AF2', accentRgb:'191,90,242',  accentSecRgb:'160,50,220',  phoneBg:'#06040f', spotlightColor:null,                     prAmber:null },
+};
+
+let currentTheme = 'midnight';
+
+function togglePicker() {
+  document.getElementById('theme-picker').classList.toggle('open');
+}
+
+function setTheme(name) {
+  // Deactivate all opts
+  document.querySelectorAll('.theme-opt').forEach(o => o.classList.remove('active'));
+  document.getElementById('opt-' + name).classList.add('active');
+
+  const isMesh = name === 'mesh';
+  document.body.classList.toggle('mesh-mode', isMesh);
+
+  const t = themeAccents[name] || themeAccents.midnight;
+  const root = document.documentElement;
+  root.style.setProperty('--accent', t.accent);
+  root.style.setProperty('--accent-rgb', t.accentRgb);
+  root.style.setProperty('--accent-secondary-rgb', t.accentSecRgb);
+  root.style.setProperty('--phone-bg', t.phoneBg);
+  if (t.prAmber) root.style.setProperty('--pr-amber', t.prAmber);
+  else root.style.setProperty('--pr-amber', '#F59E0B');
+
+  // Update spotlight color + phone-frame bg
+  document.body.setAttribute('data-theme', name === 'mesh' ? 'midnight' : name);
+  const spotlight = document.querySelector('.spotlight');
+  if (spotlight) {
+    spotlight.style.background = t.spotlightColor
+      ? `radial-gradient(circle, ${t.spotlightColor} 0%, transparent 70%)`
+      : 'none';
+  }
+
+  currentTheme = name;
+  window.meshReady = isMesh;
+  const nameLabels = { midnight:'Midnight Strength', ember:'Ember', graphite:'Graphite', abyss:'Abyss', mesh:'Dynamic Mesh ✦' };
+  document.getElementById('theme-current-name').textContent = nameLabels[name] || name;
+  document.getElementById('theme-picker').classList.remove('open');
+
+  if (isMesh) {
+    const active = document.querySelector('.screen.active');
+    if (active) {
+      const id = active.id.replace('screen-', '');
+      const meshMap = { 'home-idle':'neutral','home-active':'active','picker':'active','rest':'rest','pr':'pr','summary':'summary' };
+      transitionMesh(meshMap[id] || 'neutral');
+    }
+  }
+}
+</script>
+</body>
+</html>

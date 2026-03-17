@@ -13,7 +13,7 @@ This file gives any AI agent working in this folder the context needed to make g
 Heft is a premium app built for the current platform and forward. Older iOS versions are not supported and never will be. Any agent working in this project must operate under the following constraints at all times:
 
 - **Always reference iOS 26+ documentation.** If an API or pattern exists in an older form and was updated or replaced in iOS 26, use the iOS 26 version.
-- **Liquid Glass is the only material.** Every surface — cards, sheets, modals, overlays, pickers — uses Apple's Liquid Glass. No fallback materials (`UIMaterial`, plain `Color`, opaque backgrounds) are ever used. No conditional `if #available` checks for Liquid Glass — it is always available.
+- **Liquid Glass is the material for controls and chrome.** Tab bars, navigation bars, toolbars, and buttons get Liquid Glass automatically when you use standard SwiftUI components — do not fight it or disable it. For content surfaces (cards, sheets, modals, custom overlays), use the standard material hierarchy: `.ultraThinMaterial`, `.thinMaterial`, `.regularMaterial`, or `.thickMaterial`. Never use opaque backgrounds or plain `Color` fills for any surface. No conditional `if #available` checks — these materials are always available on iOS 26.
 - **No backward-compatibility shims.** Do not write `if #available(iOS 26, *)` guards. Do not write `@available` fallback branches. The deployment target enforces iOS 26 — compatibility code is dead weight and must never be added.
 - **SwiftUI-first, latest idioms only.** Use the most current SwiftUI APIs. If something was deprecated or superseded in iOS 26, use the replacement. Do not reference UIKit patterns unless no SwiftUI equivalent exists.
 - **SwiftData only.** CoreData is not used anywhere in this project. All persistence goes through SwiftData with CloudKit sync.
@@ -32,7 +32,7 @@ The market is crowded with apps that add social feeds, AI-generated programs, ga
 
 **Three Pillars:**
 1. **Speed Above All** — sub-2-second set logging, always
-2. **Satisfying by Default** — Liquid Glass throughout, haptic feedback, 60fps animations, makes effort feel physical
+2. **Satisfying by Default** — Liquid Glass on controls, standard materials on content surfaces, haptic feedback, 60fps animations, makes effort feel physical
 3. **Intelligence Removes Friction** — smart auto-fill, natural language input, suggests next weight, asked exactly once
 
 ---
@@ -43,15 +43,9 @@ The market is crowded with apps that add social feeds, AI-generated programs, ga
 |------|-----------|
 | `heft_wireframes.html` | iOS app wireframe — open in any browser, fully interactive |
 | `heft_watchos.html` | watchOS companion wireframe — open in any browser |
-| `Heft_Product_Spec.pages` | Full product spec (binary Apple Pages — read via `strings` extraction) |
-| `Heft_Build_Order_Guide.pages` | Original build order (binary Apple Pages) |
-| `Heft_Build_Order_Guide.docx` | **Updated build order** — use this one, it reflects current wireframe state |
-| `Heft_SwiftData_Architecture.pages` | Data layer spec (binary Apple Pages — read via `strings` extraction) |
-
-The `.pages` files are binary IWA format with Snappy compression. They cannot be opened directly on Linux. Extract readable content with:
-```bash
-strings "filename.pages" | grep -E "[A-Za-z][A-Za-z ]{8,}" | grep -v "JFIF\|Photoshop\|CDEFG\|cdefg"
-```
+| `Heft_Product_Spec.docx` | Full product specification |
+| `Heft_Build_Order_Guide.docx` | Developer build order — 26 sections, hand one at a time to a developer |
+| `Heft_SwiftData_Architecture.docx` | SwiftData model and data layer spec |
 
 ---
 
@@ -117,7 +111,7 @@ Core principle: **the UI never performs calculations.** Every number displayed i
 
 **PR detection** — `currentPR`, `previousPR`, `prDate` are updated **synchronously on main actor** immediately when a set is logged, before any background processing. This guarantees the PR Moment screen renders with zero latency.
 
-**Sync:** SwiftData + CloudKit, iOS 26+, SQLite backend, zero-configuration.
+**Sync:** SwiftData for all users (local SQLite). CloudKit sync is a **Pro-only feature** — free tier stores data locally only. Pro users get zero-configuration CloudKit sync via SwiftData ModelConfiguration with cloudKitDatabase. Never enable CloudKit for a free entitlement.
 
 ---
 
@@ -147,27 +141,57 @@ Full detail in `Heft_Build_Order_Guide.docx`. Phase summary:
 
 ## Design Tokens (approximate)
 
-```swift
-// Theme accents — all dark, Apple system-color aligned
-// Midnight Strength (default): #7C7FF5  — deep indigo
-// Ember:                        #E8622A  — hot iron orange
-// Graphite:                     #8E9AAB  — cool silver-slate, no hue cast
-// Abyss:                        #0A84FF  — Apple system blue (dark mode)
-// Dynamic Mesh (Pro):           #BF5AF2  — Apple system purple (dark mode)
+Colors are defined as named **Color Sets in Assets.xcassets** (not as Swift hex constants). A `Color+Tokens.swift` extension exposes them type-safely as `Color.heftBackground`, `Color.heftAccent`, etc. Non-color tokens live in `DesignTokens.swift`. See §2 of the Build Order Guide for the full spec.
 
-// Shared tokens
-background:  #050505   // near-black "Obsidian"
-surface:     #0F1117   // card / glass surface
-textPrimary: rgba(255,255,255,0.92)
-textMuted:   rgba(255,255,255,0.48)
-textFaint:   rgba(255,255,255,0.28)
-red:         #FF453A   // Apple system red (dark)
-green:       #34D399   // success / PR
-amber:       #F59E0B   // warmup set chip
+### Background system — three layers
 
-// Motion
-standard transition: 300ms ease
-fast transition:     150ms ease
+Each theme has its own subtly hue-shifted background base (not a single flat `#050505`). When the user switches theme, both `heftAccent` and `heftBackground` swap together from `@AppStorage`.
+
+On top of the background base sits a **spotlight layer** — a single radial gradient tinted from `heftAccent.opacity(0.2)`, positioned slightly off-centre. This is derived in code, not a Color Set. For Pro users with Dynamic Mesh enabled, the spotlight is replaced by a `MeshGradient` whose control-point colors are defined in `MeshTheme.swift` (not in the asset catalog — they are runtime-animated `Color` values).
+
+```
+// Per-theme background bases — Color Set names in Assets.xcassets
+BackgroundMidnight   #0C0C14   default — dark with indigo cast
+BackgroundEmber      #0D0905   dark with warm brown cast
+BackgroundGraphite   #0E0F10   dark neutral
+BackgroundAbyss      #03060F   dark with navy cast
+BackgroundMesh       #06040F   dark with purple cast
+
+// Theme accents — Color Set names in Assets.xcassets
+Accent               #7C7FF5   Midnight Strength (default)
+AccentEmber          #E8622A   hot iron orange
+AccentGraphite       #8E9AAB   cool silver-slate
+AccentAbyss          #0A84FF   Apple system blue (dark)
+AccentMesh           #BF5AF2   Apple system purple (dark)
+
+// Shared surface Color Sets
+Surface              #0F1117   card / sheet surface (same across all themes)
+SurfaceElevated      #161B25   cards nested on top of other cards
+
+// Semantic Color Sets
+HeftRed              #FF453A   errors, destructive actions, rest timer final phase
+HeftGreen            #34D399   PR badges, success, rest timer start phase
+HeftAmber            #F59E0B   warmup set chips, rest timer mid phase
+HeftGold             #FFD60A   Pro "Best Value" badge, workout complete glow, streak milestones
+
+// UI structure Color Sets
+Separator            #1E2530   1pt lines between list rows, section dividers
+Border               #252E40   card outlines, input field edges
+
+// Charts Color Set
+ChartSecondary       #2DD4BF   second data series (teal reads cleanly on dark)
+
+// NOT Color Sets — derived in code
+textPrimary:      Color.white.opacity(0.92)
+textMuted:        Color.white.opacity(0.48)
+textFaint:        Color.white.opacity(0.28)
+spotlight:        Color.heftAccent.opacity(0.2)  radial gradient, free-tier background layer
+heatmap levels:   Color.heftAccent.opacity(0.2 / 0.4 / 0.7 / 1.0)
+MeshGradient states: defined in MeshTheme.swift as SwiftUI Color constants
+
+// Motion — ALL animations use .spring() physics, never .linear or .easeInOut
+standard spring: Animation.spring(response: 0.3, dampingFraction: 0.75)
+fast spring:     Animation.spring(response: 0.15, dampingFraction: 0.75)
 ```
 
 ---
@@ -191,5 +215,4 @@ fast transition:     150ms ease
 - Never reuse stable identifiers across records
 - New nav buttons always go at the end of `.screen-nav`
 - When modifying wireframe screens, register new screen IDs in `meshMap` inside `showScreen()`
-- The `.pages` files are read-only from this environment — make documentation changes in `.docx` format
-- Do not surface the internal `/sessions/...` path to the user; refer to "the folder you selected" instead
+- Documentation changes go in `.docx` format — the `.pages` files are the original binary sources and should not be edited

@@ -2,6 +2,8 @@
 
 import SwiftUI
 
+/// A content container with a thin material background — used for placeholder and informational panels.
+/// Not for chrome/overlay controls; those use system-provided Liquid Glass automatically.
 struct GlassPanel<Content: View>: View {
     @ViewBuilder private let content: Content
 
@@ -14,10 +16,6 @@ struct GlassPanel<Content: View>: View {
             .padding(Spacing.lg)
             .frame(maxWidth: .infinity)
             .frame(minHeight: DesignTokens.Layout.placeholderPanelHeight)
-            .background {
-                RoundedRectangle(cornerRadius: Radius.sheet, style: .continuous)
-                    .fill(.clear)
-                    .glassEffect(.regular.tint(.heftSurface.opacity(DesignTokens.Opacity.glassTint)))
-            }
+            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: Radius.sheet, style: .continuous))
     }
 }

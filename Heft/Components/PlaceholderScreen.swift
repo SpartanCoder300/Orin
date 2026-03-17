@@ -2,34 +2,32 @@
 
 import SwiftUI
 
+/// A centred informational panel used as a placeholder until a screen is built out.
+/// Sets no background of its own — callers apply `.themedBackground()`.
 struct PlaceholderScreen: View {
     let title: String
     let subtitle: String
     let systemImage: String
 
     var body: some View {
-        ZStack {
-            Color.heftBackground
-                .ignoresSafeArea()
+        GlassPanel {
+            VStack(spacing: Spacing.md) {
+                Image(systemName: systemImage)
+                    .font(.system(size: DesignTokens.Icon.placeholder))
+                    .foregroundStyle(Color.heftAccent)
 
-            GlassPanel {
-                VStack(spacing: Spacing.md) {
-                    Image(systemName: systemImage)
-                        .font(.system(size: DesignTokens.Icon.placeholder))
-                        .foregroundStyle(Color.heftAccent)
+                Text(title)
+                    .font(Typography.title)
+                    .foregroundStyle(Color.textPrimary)
 
-                    Text(title)
-                        .font(Typography.title)
-                        .foregroundStyle(Color.textPrimary)
-
-                    Text(subtitle)
-                        .font(Typography.body)
-                        .foregroundStyle(Color.textMuted)
-                        .multilineTextAlignment(.center)
-                }
-                .frame(maxWidth: DesignTokens.Layout.placeholderContentWidth)
+                Text(subtitle)
+                    .font(Typography.body)
+                    .foregroundStyle(Color.textMuted)
+                    .multilineTextAlignment(.center)
             }
-            .padding(.horizontal, Spacing.lg)
+            .frame(maxWidth: DesignTokens.Layout.placeholderContentWidth)
         }
+        .padding(.horizontal, Spacing.lg)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }

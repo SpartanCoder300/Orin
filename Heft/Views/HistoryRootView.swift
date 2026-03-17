@@ -10,5 +10,6 @@ struct HistoryRootView: View {
             systemImage: "chart.bar.fill"
         )
         .navigationTitle("History")
+        .themedBackground()
     }
 }
