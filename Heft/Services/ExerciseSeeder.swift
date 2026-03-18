@@ -67,9 +67,6 @@ enum ExerciseSeeder {
         ExerciseDefinition(name: "Hanging Leg Raise", muscleGroups: ["Core"], equipmentType: "Bodyweight"),
         ExerciseDefinition(name: "Cable Crunch", muscleGroups: ["Core"], equipmentType: "Cable"),
         ExerciseDefinition(name: "Ab Wheel Rollout", muscleGroups: ["Core"], equipmentType: "Bodyweight"),
-        ExerciseDefinition(name: "Treadmill Run", muscleGroups: ["Cardio"], equipmentType: "Machine"),
-        ExerciseDefinition(name: "Rowing Erg", muscleGroups: ["Cardio", "Back"], equipmentType: "Machine"),
-        ExerciseDefinition(name: "Air Bike Sprint", muscleGroups: ["Cardio"], equipmentType: "Machine"),
         ExerciseDefinition(name: "Farmer Carry", muscleGroups: ["Core", "Arms"], equipmentType: "Dumbbell"),
         ExerciseDefinition(name: "Hip Thrust", muscleGroups: ["Legs"], equipmentType: "Barbell"),
     ]

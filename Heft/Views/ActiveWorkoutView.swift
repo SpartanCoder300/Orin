@@ -49,7 +49,9 @@ struct ActiveWorkoutView: View {
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .topBarLeading) {
-                    RestTimerPlaceholder()
+                    Button("End") { vm.isShowingEndConfirm = true }
+                        .fontWeight(.semibold)
+                        .foregroundStyle(Color.heftRed)
                 }
                 ToolbarItem(placement: .principal) {
                     TimelineView(.periodic(from: vm.openedAt, by: 1.0)) { ctx in
@@ -59,9 +61,12 @@ struct ActiveWorkoutView: View {
                     }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button("End") { vm.isShowingEndConfirm = true }
-                        .fontWeight(.semibold)
-                        .foregroundStyle(Color.heftRed)
+                    RestTimerToolbarIndicator(restTimer: vm.restTimer)
+                        .onTapGesture {
+                            if vm.restTimer.isActive {
+                                vm.isShowingRestTimer = true
+                            }
+                        }
                 }
             }
             .safeAreaInset(edge: .bottom) {
@@ -97,6 +102,20 @@ struct ActiveWorkoutView: View {
             .sheet(isPresented: $vm.isShowingExercisePicker) {
                 ExercisePicker { exercise in
                     vm.addExercise(named: exercise.name)
+                }
+            }
+            .sheet(isPresented: $vm.isShowingRestTimer) {
+                RestTimerSheet(restTimer: vm.restTimer, vm: vm)
+                    .presentationDetents([.fraction(0.92)])
+                    .presentationDragIndicator(.hidden)
+                    .presentationCornerRadius(Radius.large)
+                    .presentationBackground(.clear)
+            }
+            .onChange(of: vm.restTimer.isActive) { _, isActive in
+                if isActive {
+                    vm.isShowingRestTimer = true
+                } else {
+                    vm.isShowingRestTimer = false
                 }
             }
         }
@@ -149,7 +168,7 @@ private struct ActiveExerciseCard: View {
             // ── Column headers ────────────────────────────────────────
             HStack(spacing: Spacing.sm) {
                 Text("SET").frame(width: 20, alignment: .center)
-                Text("").frame(width: 30)
+                Text("TYPE").frame(width: 30, alignment: .center)
                 Text("WEIGHT").frame(maxWidth: .infinity)
                 Text("REPS").frame(maxWidth: .infinity)
                 Text("").frame(width: 36)
@@ -159,12 +178,34 @@ private struct ActiveExerciseCard: View {
             .textCase(.uppercase)
             .tracking(0.5)
             .padding(.top, Spacing.md)
+
+            // ── Set type legend ───────────────────────────────────────
+            HStack(spacing: 0) {
+                Spacer().frame(width: 20 + Spacing.sm)
+                HStack(spacing: 5) {
+                    Text("W").foregroundStyle(Color.heftAmber)
+                    Text("warmup").foregroundStyle(Color.textFaint)
+                    Text("·").foregroundStyle(Color.textFaint.opacity(0.4))
+                    Text("N").foregroundStyle(Color.textFaint)
+                    Text("normal").foregroundStyle(Color.textFaint)
+                    Text("·").foregroundStyle(Color.textFaint.opacity(0.4))
+                    Text("D").foregroundStyle(Color.heftAccentAbyss)
+                    Text("drop").foregroundStyle(Color.textFaint)
+                }
+                .font(.system(size: 9, weight: .medium))
+                Spacer()
+            }
+            .padding(.top, 3)
             .padding(.bottom, Spacing.xs)
 
             Divider().overlay(Color.white.opacity(0.08))
 
             // ── Set rows ──────────────────────────────────────────────
             ForEach(exercise.sets.indices, id: \.self) { sIdx in
+                let isDropset = exercise.sets[sIdx].setType == .dropset
+                let nextIsDropset = sIdx + 1 < exercise.sets.count
+                    && exercise.sets[sIdx + 1].setType == .dropset
+
                 SetRow(
                     setNumber: sIdx + 1,
                     weightText: Binding(
@@ -176,15 +217,15 @@ private struct ActiveExerciseCard: View {
                         set: { vm.draftExercises[exerciseIndex].sets[sIdx].repsText = $0 }
                     ),
                     setType: exercise.sets[sIdx].setType,
+                    isDropset: isDropset,
                     isLogged: exercise.sets[sIdx].isLogged,
                     accentColor: theme.accentColor,
                     onCycleType: { vm.cycleSetType(exerciseIndex: exerciseIndex, setIndex: sIdx) },
-                    onLog: { vm.logSet(exerciseIndex: exerciseIndex, setIndex: sIdx) },
-                    onAdjustWeight: { vm.adjustWeight(exerciseIndex: exerciseIndex, setIndex: sIdx, increment: $0) },
-                    onAdjustReps: { vm.adjustReps(exerciseIndex: exerciseIndex, setIndex: sIdx, increment: $0) }
+                    onLog: { vm.logSet(exerciseIndex: exerciseIndex, setIndex: sIdx) }
                 )
 
-                if sIdx < exercise.sets.count - 1 {
+                // Suppress divider between a set and its chained dropset
+                if sIdx < exercise.sets.count - 1 && !nextIsDropset {
                     Divider().overlay(Color.white.opacity(0.05))
                 }
             }
@@ -218,46 +259,31 @@ private struct SetRow: View {
     @Binding var weightText: String
     @Binding var repsText: String
     let setType: SetType
+    let isDropset: Bool
     let isLogged: Bool
     let accentColor: Color
     let onCycleType: () -> Void
     let onLog: () -> Void
-    let onAdjustWeight: (Bool) -> Void
-    let onAdjustReps: (Bool) -> Void
 
     var body: some View {
         HStack(spacing: Spacing.sm) {
-            // Set number
-            Text("\(setNumber)")
-                .font(.system(size: 13, weight: .medium, design: .rounded))
-                .foregroundStyle(Color.textFaint)
+            // Set number — dropsets show a chain indicator instead
+            Text(isDropset ? "↳" : "\(setNumber)")
+                .font(.system(size: isDropset ? 14 : 13, weight: .medium, design: .rounded))
+                .foregroundStyle(isDropset ? Color.heftAccentAbyss.opacity(0.7) : Color.textFaint)
                 .frame(width: 20, alignment: .center)
 
             // Set type chip
             SetTypeChip(setType: setType, onTap: isLogged ? nil : onCycleType)
                 .frame(width: 30)
 
-            // Weight field
-            SwipeAdjustField(
-                text: $weightText,
-                keyboardType: .decimalPad,
-                placeholder: "—",
-                isLogged: isLogged,
-                onIncrement: { onAdjustWeight(true) },
-                onDecrement: { onAdjustWeight(false) }
-            )
-            .frame(maxWidth: .infinity)
+            // Weight adjuster
+            FieldAdjuster(text: $weightText, step: 1, minValue: 0, maxValue: 999, isInteger: false, isLogged: isLogged)
+                .frame(maxWidth: .infinity)
 
-            // Reps field
-            SwipeAdjustField(
-                text: $repsText,
-                keyboardType: .numberPad,
-                placeholder: "—",
-                isLogged: isLogged,
-                onIncrement: { onAdjustReps(true) },
-                onDecrement: { onAdjustReps(false) }
-            )
-            .frame(maxWidth: .infinity)
+            // Reps adjuster
+            FieldAdjuster(text: $repsText, step: 1, minValue: 0, maxValue: 50, isInteger: true, isLogged: isLogged)
+                .frame(maxWidth: .infinity)
 
             // Log checkmark
             Button(action: onLog) {
@@ -269,61 +295,137 @@ private struct SetRow: View {
             .frame(width: 36)
             .disabled(isLogged)
         }
-        .padding(.vertical, 10)
+        .padding(.vertical, Spacing.sm)
+        .padding(.leading, isDropset ? 10 : 0)
         .opacity(isLogged ? 0.55 : 1.0)
         .animation(Motion.standardSpring, value: isLogged)
     }
 }
 
-// MARK: - Swipe Adjust Field
+// MARK: - Field Adjuster (wheel + ± tappers)
 
-private struct SwipeAdjustField: View {
+private struct FieldAdjuster: View {
     @Binding var text: String
-    var keyboardType: UIKeyboardType = .numberPad
-    var placeholder: String = "0"
+    let step: Double
+    let minValue: Double
+    let maxValue: Double
+    let isInteger: Bool
     var isLogged: Bool = false
-    let onIncrement: () -> Void
-    let onDecrement: () -> Void
 
-    @State private var lastDragY: CGFloat = 0
-    @State private var dragging: Bool = false
+    @State private var showingWheel = false
+    @State private var wheelValue: Double = 0
+
+    private var current: Double { Double(text) ?? minValue }
+
+    private var wheelValues: [Double] {
+        stride(from: minValue, through: maxValue + 0.001, by: step).map { $0 }
+    }
+
+    private func snapped(_ v: Double) -> Double {
+        let steps = ((v - minValue) / step).rounded()
+        return Swift.min(maxValue, Swift.max(minValue, minValue + steps * step))
+    }
+
+    private func formatted(_ v: Double) -> String {
+        if isInteger { return "\(Int(v.rounded()))" }
+        let r = (v * 10).rounded() / 10
+        return r.truncatingRemainder(dividingBy: 1) == 0 ? "\(Int(r))" : String(format: "%.1f", r)
+    }
 
     var body: some View {
-        TextField(placeholder, text: $text)
-            .keyboardType(keyboardType)
-            .multilineTextAlignment(.center)
-            .font(.system(size: 17, weight: .medium, design: .rounded))
-            .foregroundStyle(Color.textPrimary)
-            .disabled(isLogged)
-            .padding(.vertical, 6)
-            .padding(.horizontal, 4)
-            .background(
-                RoundedRectangle(cornerRadius: Radius.small, style: .continuous)
-                    .fill(Color.white.opacity(isLogged ? 0 : 0.07))
-            )
-            .simultaneousGesture(
-                DragGesture(minimumDistance: 10, coordinateSpace: .global)
-                    .onChanged { value in
-                        if !dragging {
-                            dragging = true
-                            lastDragY = value.startLocation.y
-                        }
-                        let delta = lastDragY - value.location.y
-                        if delta >= 10 {
-                            onIncrement()
-                            lastDragY = value.location.y
-                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        } else if delta <= -10 {
-                            onDecrement()
-                            lastDragY = value.location.y
-                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                        }
+        VStack(spacing: 4) {
+            // Value — tap to open wheel
+            Button {
+                guard !isLogged else { return }
+                wheelValue = snapped(current)
+                showingWheel = true
+            } label: {
+                Text(text.isEmpty ? "—" : formatted(current))
+                    .font(.system(size: 19, weight: .semibold, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(isLogged ? Color.textFaint : Color.textPrimary)
+                    .frame(minWidth: 54, minHeight: 28, alignment: .center)
+            }
+            .buttonStyle(.plain)
+
+            // ± tappers
+            if !isLogged {
+                HStack(spacing: 0) {
+                    Button {
+                        text = formatted(snapped(current - step))
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    } label: {
+                        Image(systemName: "minus")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(Color.textMuted)
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
                     }
-                    .onEnded { _ in
-                        dragging = false
-                        lastDragY = 0
+                    .buttonStyle(.plain)
+
+                    Button {
+                        text = formatted(snapped(current + step))
+                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                    } label: {
+                        Image(systemName: "plus")
+                            .font(.system(size: 11, weight: .bold))
+                            .foregroundStyle(Color.textMuted)
+                            .frame(width: 44, height: 44)
+                            .contentShape(Rectangle())
                     }
+                    .buttonStyle(.plain)
+                }
+            }
+        }
+        .sheet(isPresented: $showingWheel) {
+            WheelPickerSheet(
+                value: $wheelValue,
+                values: wheelValues,
+                format: formatted,
+                onDone: {
+                    text = formatted(wheelValue)
+                    showingWheel = false
+                    UISelectionFeedbackGenerator().selectionChanged()
+                },
+                onCancel: { showingWheel = false }
             )
+            .presentationDetents([.height(260)])
+            .presentationDragIndicator(.visible)
+            .presentationCornerRadius(Radius.large)
+        }
+    }
+}
+
+// MARK: - Wheel Picker Sheet
+
+private struct WheelPickerSheet: View {
+    @Binding var value: Double
+    let values: [Double]
+    let format: (Double) -> String
+    let onDone: () -> Void
+    let onCancel: () -> Void
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack {
+                Button("Cancel", action: onCancel)
+                    .foregroundStyle(Color.textMuted)
+                Spacer()
+                Button("Done", action: onDone)
+                    .fontWeight(.semibold)
+            }
+            .padding(.horizontal, Spacing.md)
+            .padding(.top, Spacing.md)
+            .padding(.bottom, Spacing.xs)
+
+            Picker("", selection: $value) {
+                ForEach(values, id: \.self) { v in
+                    Text(format(v)).tag(v)
+                }
+            }
+            .pickerStyle(.wheel)
+            .frame(height: 180)
+        }
     }
 }
 
@@ -345,6 +447,7 @@ private struct SetTypeChip: View {
         }
         .buttonStyle(.plain)
         .disabled(onTap == nil)
+        .sensoryFeedback(.selection, trigger: setType)
     }
 
     private var label: String {
@@ -433,22 +536,6 @@ private struct ExerciseListRow: View {
         let total = exercise.sets.count
         let logged = exercise.sets.filter { $0.isLogged }.count
         return "\(total) sets · \(logged) logged"
-    }
-}
-
-// MARK: - Rest Timer Placeholder
-
-private struct RestTimerPlaceholder: View {
-    var body: some View {
-        ZStack {
-            Circle()
-                .stroke(Color.white.opacity(0.15), lineWidth: 2)
-            Circle()
-                .trim(from: 0, to: 0.0) // §9 — arc driven by rest countdown
-                .stroke(Color.heftGreen, style: StrokeStyle(lineWidth: 2, lineCap: .round))
-                .rotationEffect(.degrees(-90))
-        }
-        .frame(width: 30, height: 30)
     }
 }
 

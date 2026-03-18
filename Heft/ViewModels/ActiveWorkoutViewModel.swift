@@ -28,6 +28,7 @@ final class ActiveWorkoutViewModel {
         var sets: [DraftSet]
         var previousSets: [PreviousSet] = []
         var snapshot: ExerciseSnapshot? = nil
+        var restSeconds: Int = 90
     }
 
     // MARK: - State
@@ -37,8 +38,10 @@ final class ActiveWorkoutViewModel {
     var openedAt: Date = .now
     var isShowingEndConfirm: Bool = false
     var isShowingExercisePicker: Bool = false
+    var isShowingRestTimer: Bool = false
 
     private(set) var session: WorkoutSession? = nil
+    let restTimer = RestTimerState()
 
     var isSessionStarted: Bool { session != nil }
 
@@ -47,6 +50,7 @@ final class ActiveWorkoutViewModel {
     private let modelContext: ModelContext
     private let pendingRoutineID: UUID?
     private let weightStep: Double = 2.5
+    private var zeroTask: Task<Void, Never>? = nil
 
     // MARK: - Init
 
@@ -79,7 +83,7 @@ final class ActiveWorkoutViewModel {
                 let sets = (0 ..< entry.targetSets).map { _ in
                     DraftSet(repsText: "\(entry.targetRepsMin)")
                 }
-                return DraftExercise(exerciseName: def.name, sets: sets)
+                return DraftExercise(exerciseName: def.name, sets: sets, restSeconds: entry.restSeconds)
             }
     }
 
@@ -160,13 +164,33 @@ final class ActiveWorkoutViewModel {
         modelContext.insert(record)
         snapshot.sets.append(record)
 
-        checkPR(exerciseName: draftExercises[eIdx].exerciseName, weight: weight, record: record)
+        if draft.setType != .warmup {
+            checkPR(exerciseName: draftExercises[eIdx].exerciseName, weight: weight, record: record)
+        }
 
         draftExercises[eIdx].sets[sIdx].isLogged = true
 
         try? modelContext.save()
 
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+
+        startRestTimer(duration: TimeInterval(draftExercises[eIdx].restSeconds))
+    }
+
+    func startRestTimer(duration: TimeInterval) {
+        zeroTask?.cancel()
+        restTimer.start(duration: duration)
+        let deadline = restTimer.targetEndDate!
+        zeroTask = Task { @MainActor [weak self] in
+            guard let self else { return }
+            let delay = deadline.timeIntervalSinceNow
+            if delay > 0 {
+                try? await Task.sleep(for: .seconds(delay))
+            }
+            guard !Task.isCancelled else { return }
+            // Let tick() handle the reset and pulse if the timer actually expired
+            self.restTimer.tick(at: .now)
+        }
     }
 
     func cycleSetType(exerciseIndex eIdx: Int, setIndex sIdx: Int) {
