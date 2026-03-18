@@ -132,8 +132,11 @@ struct HomeRootView: View {
                 }
             }
         }
-        .sheet(isPresented: $appState.isShowingActiveWorkout) {
-            ActiveWorkoutPlaceholder()
+        .fullScreenCover(isPresented: $appState.isShowingActiveWorkout) {
+            ActiveWorkoutView(
+                modelContext: modelContext,
+                pendingRoutineID: appState.pendingRoutineID
+            )
         }
         .sheet(isPresented: $isShowingRoutineBuilder) {
             RoutineBuilderView(existingRoutine: routineToEdit)
@@ -430,79 +433,6 @@ private struct EmptyRoutinesPrompt: View {
     }
 }
 
-// MARK: - Active Workout Placeholder (§8 shell)
-
-private struct ActiveWorkoutPlaceholder: View {
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.heftTheme) private var theme
-
-    @State private var isShowingExercisePicker = false
-
-    var body: some View {
-        NavigationStack {
-            ZStack {
-                Color.heftBackground.ignoresSafeArea()
-                LinearGradient(
-                    colors: [theme.accentColor.opacity(0.18), Color.clear],
-                    startPoint: .top,
-                    endPoint: UnitPoint(x: 0.5, y: 0.42)
-                )
-                .ignoresSafeArea()
-
-                VStack(spacing: Spacing.lg) {
-                    Image(systemName: "figure.strengthtraining.traditional")
-                        .font(.system(size: DesignTokens.Icon.placeholder))
-                        .foregroundStyle(theme.accentColor)
-
-                    Text("Active Workout")
-                        .font(Typography.title)
-                        .foregroundStyle(Color.textPrimary)
-
-                    Text("§8 — full logging UI coming next")
-                        .font(Typography.caption)
-                        .foregroundStyle(Color.textFaint)
-
-                    Button {
-                        isShowingExercisePicker = true
-                    } label: {
-                        Label("Add Exercise", systemImage: "plus")
-                            .font(Typography.body)
-                            .fontWeight(.semibold)
-                            .foregroundStyle(theme.accentColor)
-                            .padding(.horizontal, Spacing.xl)
-                            .padding(.vertical, Spacing.md)
-                            .background(theme.accentColor.opacity(0.12), in: Capsule())
-                            .overlay(Capsule().strokeBorder(theme.accentColor.opacity(0.35), lineWidth: 1))
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .navigationTitle("Workout")
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbarBackground(.ultraThinMaterial, for: .navigationBar)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("End") { dismiss() }
-                        .foregroundStyle(Color.heftRed)
-                }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button {
-                        isShowingExercisePicker = true
-                    } label: {
-                        Image(systemName: "plus")
-                            .fontWeight(.semibold)
-                    }
-                }
-            }
-            .sheet(isPresented: $isShowingExercisePicker) {
-                ExercisePicker { exercise in
-                    // §8 — add exercise to active session
-                    _ = exercise
-                }
-            }
-        }
-    }
-}
 
 #Preview {
     NavigationStack {
