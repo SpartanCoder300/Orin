@@ -23,21 +23,22 @@ struct ActiveWorkoutView: View {
                 ScrollView {
                     VStack(spacing: Spacing.md) {
                         if vm.draftExercises.isEmpty {
-                            EmptyWorkoutPrompt(accentColor: theme.accentColor) {
-                                vm.isShowingExercisePicker = true
-                            }
+                            EmptyWorkoutPrompt(accentColor: theme.accentColor)
                         } else {
-                            ActiveExerciseCard(vm: vm, exerciseIndex: vm.activeExerciseIndex, theme: theme)
-                                .id("active")
+                            ActiveExerciseCard(
+                                vm: vm,
+                                exerciseIndex: vm.activeExerciseIndex,
+                                theme: theme
+                            )
+                            .id("active")
 
                             if vm.draftExercises.count > 1 {
-                                OtherExercisesSection(vm: vm, theme: theme)
+                                OtherExercisesSection(vm: vm)
                             }
                         }
                     }
                     .padding(.horizontal, Spacing.md)
                     .padding(.vertical, Spacing.lg)
-                    .padding(.bottom, 88)
                 }
                 .onChange(of: vm.activeExerciseIndex) { _, _ in
                     withAnimation(Motion.standardSpring) {
@@ -60,22 +61,14 @@ struct ActiveWorkoutView: View {
                             .foregroundStyle(Color.textPrimary)
                     }
                 }
-            }
-            .safeAreaInset(edge: .bottom) {
-                Button { vm.isShowingExercisePicker = true } label: {
-                    Label("Add Exercise", systemImage: "plus")
-                        .font(Typography.body)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(theme.accentColor)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, Spacing.md)
-                        .background(theme.accentColor.opacity(0.12), in: Capsule())
-                        .overlay(Capsule().strokeBorder(theme.accentColor.opacity(0.3), lineWidth: 1))
+                ToolbarItem(placement: .topBarTrailing) {
+                    Button {
+                        vm.isShowingExercisePicker = true
+                    } label: {
+                        Image(systemName: "plus")
+                            .fontWeight(.semibold)
+                    }
                 }
-                .buttonStyle(.plain)
-                .padding(.horizontal, Spacing.md)
-                .padding(.vertical, Spacing.sm)
-                .background(.ultraThinMaterial)
             }
             .confirmationDialog(
                 "End Workout?",
@@ -104,11 +97,7 @@ struct ActiveWorkoutView: View {
                     .presentationBackground(.clear)
             }
             .onChange(of: vm.restTimer.isActive) { _, isActive in
-                if isActive {
-                    vm.isShowingRestTimer = true
-                } else {
-                    vm.isShowingRestTimer = false
-                }
+                vm.isShowingRestTimer = isActive
             }
         }
         .task { vm.setup() }
@@ -132,8 +121,7 @@ private struct ActiveExerciseCard: View {
             // ── Header ────────────────────────────────────────────────
             HStack(alignment: .center) {
                 Text(exercise.exerciseName)
-                    .font(Typography.heading)
-                    .fontWeight(.bold)
+                    .font(.title3.weight(.bold))
                     .foregroundStyle(Color.textPrimary)
                 Spacer()
                 Menu {
@@ -144,53 +132,25 @@ private struct ActiveExerciseCard: View {
                     Image(systemName: "ellipsis")
                         .font(.system(size: 16, weight: .medium))
                         .foregroundStyle(Color.textMuted)
-                        .frame(width: 44, height: 36)
+                        .frame(width: 44, height: 44)
                         .contentShape(Rectangle())
                 }
             }
+            .padding(.horizontal, Spacing.md)
+            .padding(.top, Spacing.sm)
 
-            // ── Previous performance ───────────────────────────────────
+            // ── Previous session ──────────────────────────────────────
             if !exercise.previousSets.isEmpty {
-                Text("Last: \(previousLabel)")
-                    .font(Typography.caption)
+                Text("Last  \(previousLabel)")
+                    .font(.caption)
                     .foregroundStyle(Color.textFaint)
-                    .padding(.top, 2)
+                    .padding(.horizontal, Spacing.md)
+                    .padding(.bottom, Spacing.sm)
+            } else {
+                Color.clear.frame(height: Spacing.sm)
             }
 
-            // ── Column headers ────────────────────────────────────────
-            HStack(spacing: Spacing.sm) {
-                Text("SET").frame(width: 20, alignment: .center)
-                Text("TYPE").frame(width: 30, alignment: .center)
-                Text("WEIGHT").frame(maxWidth: .infinity)
-                Text("REPS").frame(maxWidth: .infinity)
-                Text("").frame(width: 36)
-            }
-            .font(.system(size: 10, weight: .semibold))
-            .foregroundStyle(Color.textFaint)
-            .textCase(.uppercase)
-            .tracking(0.5)
-            .padding(.top, Spacing.md)
-
-            // ── Set type legend ───────────────────────────────────────
-            HStack(spacing: 0) {
-                Spacer().frame(width: 20 + Spacing.sm)
-                HStack(spacing: 5) {
-                    Text("W").foregroundStyle(Color.heftAmber)
-                    Text("warmup").foregroundStyle(Color.textFaint)
-                    Text("·").foregroundStyle(Color.textFaint.opacity(0.4))
-                    Text("N").foregroundStyle(Color.textFaint)
-                    Text("normal").foregroundStyle(Color.textFaint)
-                    Text("·").foregroundStyle(Color.textFaint.opacity(0.4))
-                    Text("D").foregroundStyle(Color.heftAccentAbyss)
-                    Text("drop").foregroundStyle(Color.textFaint)
-                }
-                .font(.system(size: 9, weight: .medium))
-                Spacer()
-            }
-            .padding(.top, 3)
-            .padding(.bottom, Spacing.xs)
-
-            Divider().overlay(Color.white.opacity(0.08))
+            Divider().overlay(Color.white.opacity(0.07))
 
             // ── Set rows ──────────────────────────────────────────────
             ForEach(exercise.sets.indices, id: \.self) { sIdx in
@@ -211,36 +171,36 @@ private struct ActiveExerciseCard: View {
                     setType: exercise.sets[sIdx].setType,
                     isDropset: isDropset,
                     isLogged: exercise.sets[sIdx].isLogged,
-                    accentColor: theme.accentColor,
                     onCycleType: { vm.cycleSetType(exerciseIndex: exerciseIndex, setIndex: sIdx) },
                     onLog: { vm.logSet(exerciseIndex: exerciseIndex, setIndex: sIdx) }
                 )
 
-                // Suppress divider between a set and its chained dropset
                 if sIdx < exercise.sets.count - 1 && !nextIsDropset {
-                    Divider().overlay(Color.white.opacity(0.05))
+                    Divider()
+                        .overlay(Color.white.opacity(0.05))
+                        .padding(.horizontal, Spacing.md)
                 }
             }
+
+            Divider().overlay(Color.white.opacity(0.07))
 
             // ── Add Set ───────────────────────────────────────────────
             Button { vm.addSet(toExerciseAt: exerciseIndex) } label: {
                 Label("Add Set", systemImage: "plus")
-                    .font(.system(size: 13, weight: .medium))
+                    .font(.subheadline.weight(.medium))
                     .foregroundStyle(theme.accentColor)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, Spacing.sm)
             }
             .buttonStyle(.plain)
-            .padding(.top, Spacing.xs)
         }
-        .padding(Spacing.md)
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
     }
 
     private var previousLabel: String {
         exercise.previousSets
-            .map { "\(vm.formatWeight($0.weight))×\($0.reps)" }
-            .joined(separator: "  ")
+            .map { "\(vm.formatWeight($0.weight)) × \($0.reps)" }
+            .joined(separator: "   ")
     }
 }
 
@@ -253,51 +213,72 @@ private struct SetRow: View {
     let setType: SetType
     let isDropset: Bool
     let isLogged: Bool
-    let accentColor: Color
     let onCycleType: () -> Void
     let onLog: () -> Void
 
     var body: some View {
-        HStack(spacing: Spacing.sm) {
-            // Set number — dropsets show a chain indicator instead
-            Text(isDropset ? "↳" : "\(setNumber)")
-                .font(.system(size: isDropset ? 14 : 13, weight: .medium, design: .rounded))
-                .foregroundStyle(isDropset ? Color.heftAccentAbyss.opacity(0.7) : Color.textFaint)
-                .frame(width: 20, alignment: .center)
+        HStack(spacing: 0) {
 
-            // Set type chip
-            SetTypeChip(setType: setType, onTap: isLogged ? nil : onCycleType)
-                .frame(width: 30)
+            // Set number + type chip
+            HStack(spacing: 5) {
+                Text(isDropset ? "↳" : "\(setNumber)")
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .foregroundStyle(isDropset ? Color.heftAccentAbyss.opacity(0.7) : Color.textFaint)
+                    .frame(width: 18, alignment: .center)
 
-            // Weight adjuster
-            FieldAdjuster(text: $weightText, step: 1, minValue: 0, maxValue: 999, isInteger: false, isLogged: isLogged)
-                .frame(maxWidth: .infinity)
+                SetTypeChip(setType: setType, onTap: isLogged ? nil : onCycleType)
+            }
+            .padding(.leading, isDropset ? Spacing.xl : Spacing.md)
+            .frame(width: 72, alignment: .leading)
 
-            // Reps adjuster
-            FieldAdjuster(text: $repsText, step: 1, minValue: 0, maxValue: 50, isInteger: true, isLogged: isLogged)
-                .frame(maxWidth: .infinity)
+            // Weight stepper
+            CompactStepper(
+                text: $weightText,
+                unit: "lbs",
+                step: 2.5,
+                minValue: 0,
+                maxValue: 999,
+                isInteger: false,
+                isLogged: isLogged
+            )
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, Spacing.xs)
 
-            // Log checkmark
+            // Reps stepper
+            CompactStepper(
+                text: $repsText,
+                unit: "reps",
+                step: 1,
+                minValue: 0,
+                maxValue: 50,
+                isInteger: true,
+                isLogged: isLogged
+            )
+            .frame(maxWidth: .infinity)
+            .padding(.horizontal, Spacing.xs)
+
+            // Log button
             Button(action: onLog) {
                 Image(systemName: isLogged ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 22))
-                    .foregroundStyle(isLogged ? Color.heftGreen : Color.textFaint)
+                    .font(.system(size: 24))
+                    .foregroundStyle(isLogged ? Color.heftGreen : Color.textFaint.opacity(0.5))
+                    .frame(width: 52, height: 52)
+                    .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-            .frame(width: 36)
             .disabled(isLogged)
         }
-        .padding(.vertical, Spacing.sm)
-        .padding(.leading, isDropset ? 10 : 0)
-        .opacity(isLogged ? 0.55 : 1.0)
+        .padding(.vertical, 4)
+        .opacity(isLogged ? 0.5 : 1.0)
         .animation(Motion.standardSpring, value: isLogged)
     }
 }
 
-// MARK: - Field Adjuster (wheel + ± tappers)
+// MARK: - Compact Stepper  [−] value [+]
 
-private struct FieldAdjuster: View {
+private struct CompactStepper: View {
     @Binding var text: String
+    let unit: String
     let step: Double
     let minValue: Double
     let maxValue: Double
@@ -309,8 +290,9 @@ private struct FieldAdjuster: View {
 
     private var current: Double { Double(text) ?? minValue }
 
+    // Wheel always uses 1-unit increments for fine control
     private var wheelValues: [Double] {
-        stride(from: minValue, through: maxValue + 0.001, by: step).map { $0 }
+        stride(from: minValue, through: maxValue, by: 1).map { $0 }
     }
 
     private func snapped(_ v: Double) -> Double {
@@ -325,50 +307,61 @@ private struct FieldAdjuster: View {
     }
 
     var body: some View {
-        VStack(spacing: 4) {
+        HStack(spacing: 0) {
+            // Minus
+            Button {
+                let next = snapped(current - step)
+                text = formatted(next)
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            } label: {
+                Image(systemName: "minus")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(Color.textMuted)
+                    .frame(width: 38, height: 52)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+            .disabled(isLogged)
+
             // Value — tap to open wheel
             Button {
-                guard !isLogged else { return }
                 wheelValue = snapped(current)
                 showingWheel = true
             } label: {
-                Text(text.isEmpty ? "—" : formatted(current))
-                    .font(.system(size: 19, weight: .semibold, design: .rounded))
-                    .monospacedDigit()
-                    .foregroundStyle(isLogged ? Color.textFaint : Color.textPrimary)
-                    .frame(minWidth: 54, minHeight: 28, alignment: .center)
+                VStack(spacing: 2) {
+                    Text(text.isEmpty ? "—" : formatted(current))
+                        .font(.system(size: 22, weight: .semibold, design: .rounded))
+                        .monospacedDigit()
+                        .contentTransition(.numericText())
+                        .animation(Motion.standardSpring, value: text)
+                    Text(unit)
+                        .font(.system(size: 9, weight: .medium))
+                        .textCase(.uppercase)
+                        .tracking(0.4)
+                        .opacity(0.5)
+                }
+                .foregroundStyle(Color.textPrimary)
+                .frame(maxWidth: .infinity, minHeight: 52)
             }
             .buttonStyle(.plain)
+            .disabled(isLogged)
 
-            // ± tappers
-            if !isLogged {
-                HStack(spacing: 0) {
-                    Button {
-                        text = formatted(snapped(current - step))
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    } label: {
-                        Image(systemName: "minus")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundStyle(Color.textMuted)
-                            .frame(width: 44, height: 44)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-
-                    Button {
-                        text = formatted(snapped(current + step))
-                        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-                    } label: {
-                        Image(systemName: "plus")
-                            .font(.system(size: 11, weight: .bold))
-                            .foregroundStyle(Color.textMuted)
-                            .frame(width: 44, height: 44)
-                            .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-                }
+            // Plus
+            Button {
+                let next = snapped(current + step)
+                text = formatted(next)
+                UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 13, weight: .bold))
+                    .foregroundStyle(Color.textMuted)
+                    .frame(width: 38, height: 52)
+                    .contentShape(Rectangle())
             }
+            .buttonStyle(.plain)
+            .disabled(isLogged)
         }
+        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         .sheet(isPresented: $showingWheel) {
             WheelPickerSheet(
                 value: $wheelValue,
@@ -459,75 +452,48 @@ private struct SetTypeChip: View {
     }
 }
 
-// MARK: - Other Exercises Section
+// MARK: - Other Exercises
 
 private struct OtherExercisesSection: View {
     let vm: ActiveWorkoutViewModel
-    let theme: AccentTheme
 
     var body: some View {
         VStack(alignment: .leading, spacing: Spacing.xs) {
-            Text("Exercises")
-                .font(Typography.caption)
-                .fontWeight(.semibold)
+            Text("Also in this workout")
+                .font(.caption.weight(.semibold))
                 .foregroundStyle(Color.textFaint)
                 .textCase(.uppercase)
                 .tracking(0.8)
+                .padding(.horizontal, 2)
 
             ForEach(vm.draftExercises.indices, id: \.self) { idx in
                 if idx != vm.activeExerciseIndex {
-                    ExerciseListRow(
-                        exercise: vm.draftExercises[idx],
-                        accentColor: theme.accentColor,
-                        onTap: { vm.activeExerciseIndex = idx }
-                    )
+                    let exercise = vm.draftExercises[idx]
+                    let logged = exercise.sets.filter { $0.isLogged }.count
+
+                    Button { vm.activeExerciseIndex = idx } label: {
+                        HStack {
+                            VStack(alignment: .leading, spacing: 3) {
+                                Text(exercise.exerciseName)
+                                    .font(.subheadline.weight(.semibold))
+                                    .foregroundStyle(Color.textPrimary)
+                                Text("\(exercise.sets.count) sets  ·  \(logged) logged")
+                                    .font(.caption)
+                                    .foregroundStyle(Color.textFaint)
+                            }
+                            Spacer()
+                            Image(systemName: "chevron.right")
+                                .font(.caption.weight(.semibold))
+                                .foregroundStyle(Color.textFaint)
+                        }
+                        .padding(.horizontal, Spacing.md)
+                        .padding(.vertical, Spacing.sm)
+                        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
+                    }
+                    .buttonStyle(.plain)
                 }
             }
         }
-    }
-}
-
-// MARK: - Exercise List Row
-
-private struct ExerciseListRow: View {
-    let exercise: ActiveWorkoutViewModel.DraftExercise
-    let accentColor: Color
-    let onTap: () -> Void
-
-    var body: some View {
-        Button(action: onTap) {
-            HStack {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(exercise.exerciseName)
-                        .font(Typography.body)
-                        .foregroundStyle(Color.textPrimary)
-                    Text(setsSummary)
-                        .font(Typography.caption)
-                        .foregroundStyle(Color.textFaint)
-                }
-                Spacer()
-                // §11 exercise context menu — placeholder
-                Menu {
-                    Text("§11 — coming next")
-                } label: {
-                    Image(systemName: "ellipsis")
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(Color.textMuted)
-                        .frame(width: 36, height: 36)
-                        .contentShape(Rectangle())
-                }
-            }
-            .padding(.horizontal, Spacing.md)
-            .padding(.vertical, Spacing.sm)
-            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
-        }
-        .buttonStyle(.plain)
-    }
-
-    private var setsSummary: String {
-        let total = exercise.sets.count
-        let logged = exercise.sets.filter { $0.isLogged }.count
-        return "\(total) sets · \(logged) logged"
     }
 }
 
@@ -535,7 +501,6 @@ private struct ExerciseListRow: View {
 
 private struct EmptyWorkoutPrompt: View {
     let accentColor: Color
-    let onAddExercise: () -> Void
 
     var body: some View {
         VStack(spacing: Spacing.lg) {
@@ -544,25 +509,13 @@ private struct EmptyWorkoutPrompt: View {
                 .foregroundStyle(accentColor)
             VStack(spacing: Spacing.xs) {
                 Text("Ready when you are")
-                    .font(Typography.title)
-                    .fontWeight(.semibold)
+                    .font(.title3.weight(.semibold))
                     .foregroundStyle(Color.textPrimary)
-                Text("Add your first exercise to start logging.")
-                    .font(Typography.caption)
+                Text("Tap + to add your first exercise.")
+                    .font(.subheadline)
                     .foregroundStyle(Color.textMuted)
                     .multilineTextAlignment(.center)
             }
-            Button(action: onAddExercise) {
-                Label("Add Exercise", systemImage: "plus")
-                    .font(Typography.body)
-                    .fontWeight(.semibold)
-                    .foregroundStyle(accentColor)
-                    .padding(.horizontal, Spacing.xl)
-                    .padding(.vertical, Spacing.md)
-                    .background(accentColor.opacity(0.12), in: Capsule())
-                    .overlay(Capsule().strokeBorder(accentColor.opacity(0.3), lineWidth: 1))
-            }
-            .buttonStyle(.plain)
         }
         .frame(maxWidth: .infinity)
         .padding(Spacing.xl)
