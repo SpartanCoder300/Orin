@@ -88,23 +88,31 @@ struct CompactStepper: View {
             .buttonStyle(.plain)
             .disabled(isLogged)
         }
-        .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
         .opacity(isLogged ? 0.4 : 1.0)
         .sheet(isPresented: $showingWheel) {
-            WheelPickerSheet(
-                value: $wheelValue,
-                values: wheelValues,
-                format: formatted,
-                onDone: {
-                    text = formatted(wheelValue)
-                    showingWheel = false
+            VStack(spacing: 0) {
+                // Drag indicator
+                Capsule()
+                    .fill(Color.primary.opacity(0.2))
+                    .frame(width: 36, height: 4)
+                    .padding(.top, 8)
+
+                Picker(unit, selection: $wheelValue) {
+                    ForEach(wheelValues, id: \.self) { v in
+                        Text(formatted(v)).tag(v)
+                    }
+                }
+                .pickerStyle(.wheel)
+                .onChange(of: wheelValue) { _, v in
+                    text = formatted(v)
                     UISelectionFeedbackGenerator().selectionChanged()
-                },
-                onCancel: { showingWheel = false }
-            )
-            .presentationDetents([.height(260)])
-            .presentationDragIndicator(.visible)
+                }
+            }
+            .presentationDetents([.height(220)])
+            .presentationDragIndicator(.hidden)
             .presentationCornerRadius(Radius.large)
+            .presentationBackground(.regularMaterial)
         }
     }
 }
@@ -115,19 +123,16 @@ struct CompactStepper: View {
     @Previewable @State var weight = "135"
     CompactStepper(text: $weight, unit: "lbs", step: 2.5, minValue: 0, maxValue: 999, isInteger: false)
         .padding()
-        .themedBackground()
 }
 
 #Preview("Reps stepper") {
     @Previewable @State var reps = "8"
     CompactStepper(text: $reps, unit: "reps", step: 1, minValue: 0, maxValue: 50, isInteger: true)
         .padding()
-        .themedBackground()
 }
 
 #Preview("Logged state") {
     @Previewable @State var weight = "135"
     CompactStepper(text: $weight, unit: "lbs", step: 2.5, minValue: 0, maxValue: 999, isInteger: false, isLogged: true)
         .padding()
-        .themedBackground()
 }

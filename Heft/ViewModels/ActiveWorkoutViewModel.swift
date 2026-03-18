@@ -31,6 +31,11 @@ final class ActiveWorkoutViewModel {
         var restSeconds: Int = 90
     }
 
+    struct SetFocus: Equatable {
+        let exerciseIndex: Int
+        let setIndex: Int
+    }
+
     // MARK: - State
 
     var draftExercises: [DraftExercise] = []
@@ -43,6 +48,38 @@ final class ActiveWorkoutViewModel {
     let restTimer = RestTimerState()
 
     var isSessionStarted: Bool { session != nil }
+
+    /// Manual focus override — set when user taps a specific set row.
+    /// Cleared automatically when that set gets logged.
+    private var manualFocus: SetFocus? = nil
+
+    // MARK: - Focus
+
+    /// The currently focused set — either manual override or first unlogged set.
+    var currentFocus: SetFocus? {
+        // If manual override is still valid (exists and not yet logged), use it
+        if let mf = manualFocus,
+           draftExercises.indices.contains(mf.exerciseIndex),
+           draftExercises[mf.exerciseIndex].sets.indices.contains(mf.setIndex),
+           !draftExercises[mf.exerciseIndex].sets[mf.setIndex].isLogged {
+            return mf
+        }
+        // Auto: first unlogged set across all exercises
+        for eIdx in draftExercises.indices {
+            if let sIdx = draftExercises[eIdx].sets.firstIndex(where: { !$0.isLogged }) {
+                return SetFocus(exerciseIndex: eIdx, setIndex: sIdx)
+            }
+        }
+        return nil
+    }
+
+    func setManualFocus(exerciseIndex: Int, setIndex: Int) {
+        guard draftExercises.indices.contains(exerciseIndex),
+              draftExercises[exerciseIndex].sets.indices.contains(setIndex),
+              !draftExercises[exerciseIndex].sets[setIndex].isLogged else { return }
+        manualFocus = SetFocus(exerciseIndex: exerciseIndex, setIndex: setIndex)
+        UISelectionFeedbackGenerator().selectionChanged()
+    }
 
     // MARK: - Private
 
@@ -130,8 +167,6 @@ final class ActiveWorkoutViewModel {
 
     func addExercise(named name: String) {
         var draft = DraftExercise(exerciseName: name, sets: [DraftSet()])
-        // applyPreviousPerformance will expand sets to match last session's count
-        // and fill all weights/reps — draft starts with 1 set as a floor only
         applyPreviousPerformance(to: &draft)
         draftExercises.append(draft)
     }
@@ -158,6 +193,15 @@ final class ActiveWorkoutViewModel {
         guard draftExercises.indices.contains(index) else { return }
         draftExercises.remove(at: index)
     }
+
+    func moveExercise(at index: Int, direction: MoveDirection) {
+        let target = direction == .up ? index - 1 : index + 1
+        guard draftExercises.indices.contains(index),
+              draftExercises.indices.contains(target) else { return }
+        draftExercises.swapAt(index, target)
+    }
+
+    enum MoveDirection { case up, down }
 
     func addDropset(toExerciseAt index: Int) {
         guard draftExercises.indices.contains(index) else { return }
@@ -197,11 +241,22 @@ final class ActiveWorkoutViewModel {
 
         draftExercises[eIdx].sets[sIdx].isLogged = true
 
+        // Clear manual focus — auto-advance takes over
+        manualFocus = nil
+
         try? modelContext.save()
 
         UIImpactFeedbackGenerator(style: .medium).impactOccurred()
 
         startRestTimer(duration: TimeInterval(draftExercises[eIdx].restSeconds))
+    }
+
+    /// Logs the currently focused set. Returns true if a set was logged.
+    @discardableResult
+    func logFocusedSet() -> Bool {
+        guard let focus = currentFocus else { return false }
+        logSet(exerciseIndex: focus.exerciseIndex, setIndex: focus.setIndex)
+        return true
     }
 
     func startRestTimer(duration: TimeInterval) {
@@ -215,7 +270,6 @@ final class ActiveWorkoutViewModel {
                 try? await Task.sleep(for: .seconds(delay))
             }
             guard !Task.isCancelled else { return }
-            // Let tick() handle the reset and pulse if the timer actually expired
             self.restTimer.tick(at: .now)
         }
     }
@@ -247,6 +301,12 @@ final class ActiveWorkoutViewModel {
 
     var loggedSetCount: Int {
         draftExercises.flatMap { $0.sets }.filter { $0.isLogged }.count
+    }
+
+    /// True when every set across all exercises is logged. Drives auto-complete.
+    var isAllSetsLogged: Bool {
+        !draftExercises.isEmpty &&
+        draftExercises.allSatisfy { $0.sets.allSatisfy { $0.isLogged } }
     }
 
     @discardableResult

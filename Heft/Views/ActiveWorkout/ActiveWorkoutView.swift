@@ -20,22 +20,37 @@ struct ActiveWorkoutView: View {
         @Bindable var vm = vm
 
         NavigationStack {
-            ScrollView {
-                VStack(spacing: Spacing.md) {
-                    if vm.draftExercises.isEmpty {
-                        EmptyWorkoutPrompt(accentColor: theme.accentColor)
-                    } else {
-                        ForEach(Array(vm.draftExercises.enumerated()), id: \.element.id) { idx, _ in
-                            ActiveExerciseCard(
-                                vm: vm,
-                                exerciseIndex: idx,
-                                theme: theme
-                            )
+            ScrollViewReader { proxy in
+                ScrollView {
+                    VStack(spacing: Spacing.md) {
+                        if vm.draftExercises.isEmpty {
+                            EmptyWorkoutPrompt(accentColor: theme.accentColor)
+                        } else {
+                            ForEach(Array(vm.draftExercises.enumerated()), id: \.element.id) { idx, exercise in
+                                ActiveExerciseCard(
+                                    vm: vm,
+                                    exerciseIndex: idx,
+                                    theme: theme
+                                )
+                                .id(exercise.id)
+                            }
                         }
                     }
+                    .padding(.horizontal, Spacing.md)
+                    .padding(.vertical, Spacing.lg)
                 }
-                .padding(.horizontal, Spacing.md)
-                .padding(.vertical, Spacing.lg)
+                .safeAreaBar(edge: .bottom) {
+                    ActiveSetCommandBar(vm: vm)
+                }
+                .onChange(of: vm.currentFocus) { _, newFocus in
+                    guard let focus = newFocus else { return }
+                    withAnimation(Motion.standardSpring) {
+                        proxy.scrollTo(
+                            vm.draftExercises[focus.exerciseIndex].id,
+                            anchor: .center
+                        )
+                    }
+                }
             }
             .themedBackground()
             .navigationBarTitleDisplayMode(.inline)
@@ -92,6 +107,16 @@ struct ActiveWorkoutView: View {
             }
             .onChange(of: vm.restTimer.isActive) { _, isActive in
                 vm.isShowingRestTimer = isActive
+            }
+            .onChange(of: vm.isAllSetsLogged) { _, allDone in
+                guard allDone else { return }
+                // Brief pause so the user sees the final set turn green
+                Task {
+                    try? await Task.sleep(for: .seconds(0.8))
+                    if let session = vm.endWorkout() {
+                        completedSession = session
+                    }
+                }
             }
         }
         .task { vm.setup() }

@@ -44,6 +44,20 @@ struct ActiveExerciseCard: View {
                         Label("Add Dropset", systemImage: "arrow.turn.down.right")
                     }
 
+                    Button {
+                        vm.moveExercise(at: exerciseIndex, direction: .up)
+                    } label: {
+                        Label("Move Up", systemImage: "arrow.up")
+                    }
+                    .disabled(exerciseIndex == 0)
+
+                    Button {
+                        vm.moveExercise(at: exerciseIndex, direction: .down)
+                    } label: {
+                        Label("Move Down", systemImage: "arrow.down")
+                    }
+                    .disabled(exerciseIndex == vm.draftExercises.count - 1)
+
                     Divider()
 
                     Button(role: .destructive) {
@@ -93,17 +107,16 @@ struct ActiveExerciseCard: View {
             ForEach(Array(exercise.sets.enumerated()), id: \.element.id) { sIdx, set in
                 SetRow(
                     setNumber: sIdx + 1,
-                    weightText: Binding(
-                        get: { vm.draftExercises[exerciseIndex].sets[sIdx].weightText },
-                        set: { vm.draftExercises[exerciseIndex].sets[sIdx].weightText = $0 }
-                    ),
-                    repsText: Binding(
-                        get: { vm.draftExercises[exerciseIndex].sets[sIdx].repsText },
-                        set: { vm.draftExercises[exerciseIndex].sets[sIdx].repsText = $0 }
-                    ),
+                    weightText: set.weightText,
+                    repsText: set.repsText,
                     setType: set.setType,
                     isLogged: set.isLogged,
+                    isFocused: vm.currentFocus == ActiveWorkoutViewModel.SetFocus(
+                        exerciseIndex: exerciseIndex, setIndex: sIdx
+                    ),
+                    accentColor: theme.accentColor,
                     onCycleType: { vm.cycleSetType(exerciseIndex: exerciseIndex, setIndex: sIdx) },
+                    onFocus: { vm.setManualFocus(exerciseIndex: exerciseIndex, setIndex: sIdx) },
                     onLog: { vm.logSet(exerciseIndex: exerciseIndex, setIndex: sIdx) },
                     onDelete: { vm.removeSet(exerciseIndex: exerciseIndex, setIndex: sIdx) }
                 )
@@ -150,71 +163,68 @@ struct ActiveExerciseCard: View {
 
 
 // MARK: - Set Row
+
+/// Compact set row — values display only, editing via bottom command bar.
+/// Tap row to focus, tap circle to log directly.
 private struct SetRow: View {
     let setNumber: Int
-    @Binding var weightText: String
-    @Binding var repsText: String
+    let weightText: String
+    let repsText: String
     let setType: SetType
     let isLogged: Bool
+    let isFocused: Bool
+    let accentColor: Color
     let onCycleType: () -> Void
+    let onFocus: () -> Void
     let onLog: () -> Void
     let onDelete: () -> Void
 
     var body: some View {
-        HStack(spacing: 0) {
+        HStack(spacing: 6) {
+            // Focused accent bar
+            RoundedRectangle(cornerRadius: 1.5)
+                .fill(isFocused ? accentColor : .clear)
+                .frame(width: 3, height: 28)
 
-            // Set number + type chip
-            HStack(spacing: 5) {
-                Text("\(setNumber)")
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
-                    .foregroundStyle(Color.textFaint)
-                    .frame(width: 18, alignment: .center)
+            Text("\(setNumber)")
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .foregroundStyle(Color.textFaint)
+                .frame(width: 20, alignment: .center)
 
-                SetTypeChip(setType: setType, onTap: isLogged ? nil : onCycleType)
-            }
-            .padding(.leading, Spacing.md)
-            .frame(width: 72, alignment: .leading)
+            SetTypeChip(setType: setType, onTap: isLogged ? nil : onCycleType)
 
-            // Weight stepper
-            CompactStepper(
-                text: $weightText,
-                unit: "lbs",
-                step: 2.5,
-                minValue: 0,
-                maxValue: 999,
-                isInteger: false,
-                isLogged: isLogged
-            )
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal, Spacing.xs)
+            Text(displayText)
+                .font(.system(size: 16, weight: .medium, design: .rounded))
+                .monospacedDigit()
+                .foregroundStyle(isLogged ? Color.heftGreen : Color.textPrimary)
+                .contentTransition(.numericText())
+                .animation(Motion.standardSpring, value: weightText)
+                .animation(Motion.standardSpring, value: repsText)
 
-            // Reps stepper
-            CompactStepper(
-                text: $repsText,
-                unit: "reps",
-                step: 1,
-                minValue: 0,
-                maxValue: 50,
-                isInteger: true,
-                isLogged: isLogged
-            )
-            .frame(maxWidth: .infinity)
-            .padding(.horizontal, Spacing.xs)
+            Spacer()
 
-            // Log button
+            // Log / status button
             Button(action: onLog) {
                 Image(systemName: isLogged ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 24))
-                    .foregroundStyle(isLogged ? Color.heftGreen : Color.textFaint.opacity(0.5))
-                    .frame(width: 52, height: 52)
+                    .font(.system(size: 20))
+                    .foregroundStyle(isLogged ? Color.heftGreen : Color.textFaint.opacity(0.4))
+                    .frame(width: 44, height: 44)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .disabled(isLogged)
         }
         .padding(.vertical, 4)
+        .padding(.leading, Spacing.xs)
+        .padding(.trailing, Spacing.sm)
+        .background(isFocused ? accentColor.opacity(0.08) : .clear)
+        .contentShape(Rectangle())
+        .onTapGesture {
+            if !isLogged { onFocus() }
+        }
         .opacity(isLogged ? 0.5 : 1.0)
         .animation(Motion.standardSpring, value: isLogged)
+        .animation(Motion.standardSpring, value: isFocused)
         .contextMenu {
             if !isLogged {
                 Button(role: .destructive, action: onDelete) {
@@ -222,6 +232,12 @@ private struct SetRow: View {
                 }
             }
         }
+    }
+
+    private var displayText: String {
+        let w = weightText.isEmpty ? "—" : weightText
+        let r = repsText.isEmpty ? "—" : repsText
+        return "\(w) × \(r)"
     }
 }
 
