@@ -87,6 +87,7 @@ struct CompactStepper: View {
             .disabled(isLogged)
         }
         .background(Color.primary.opacity(0.06), in: RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .opacity(isLogged ? 0.4 : 1.0)
         .sheet(isPresented: $showingWheel) {
             WheelPickerSheet(
                 value: $wheelValue,
@@ -104,4 +105,27 @@ struct CompactStepper: View {
             .presentationCornerRadius(Radius.large)
         }
     }
+}
+
+// MARK: - Previews
+
+#Preview("Weight stepper") {
+    @Previewable @State var weight = "135"
+    CompactStepper(text: $weight, unit: "lbs", step: 2.5, minValue: 0, maxValue: 999, isInteger: false)
+        .padding()
+        .themedBackground()
+}
+
+#Preview("Reps stepper") {
+    @Previewable @State var reps = "8"
+    CompactStepper(text: $reps, unit: "reps", step: 1, minValue: 0, maxValue: 50, isInteger: true)
+        .padding()
+        .themedBackground()
+}
+
+#Preview("Logged state") {
+    @Previewable @State var weight = "135"
+    CompactStepper(text: $weight, unit: "lbs", step: 2.5, minValue: 0, maxValue: 999, isInteger: false, isLogged: true)
+        .padding()
+        .themedBackground()
 }

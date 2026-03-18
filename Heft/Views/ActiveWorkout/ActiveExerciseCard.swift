@@ -1,6 +1,7 @@
 // iOS 26+ only. No #available guards.
 
 import SwiftUI
+import SwiftData
 
 // MARK: - Active Exercise Card
 
@@ -100,6 +101,47 @@ struct ActiveExerciseCard: View {
             .map { "\(vm.formatWeight($0.weight)) × \($0.reps)" }
             .joined(separator: "   ")
     }
+}
+
+// MARK: - Previews
+
+#Preview("With sets") {
+    let vm = ActiveWorkoutViewModel(
+        modelContext: PersistenceController.previewContainer.mainContext,
+        pendingRoutineID: nil
+    )
+    ActiveExerciseCard(vm: vm, exerciseIndex: 0, theme: AccentTheme.abyss)
+        .padding()
+        .themedBackground()
+        .onAppear {
+            vm.addExercise(named: "Bench Press")
+            vm.addSet(toExerciseAt: 0)
+            vm.addSet(toExerciseAt: 0)
+            vm.draftExercises[0].sets[0].weightText = "135"
+            vm.draftExercises[0].sets[0].repsText = "8"
+            vm.draftExercises[0].sets[1].weightText = "135"
+            vm.draftExercises[0].sets[1].repsText = "8"
+        }
+}
+
+#Preview("With previous performance") {
+    @Previewable @State var vm = ActiveWorkoutViewModel(
+        modelContext: PersistenceController.previewContainer.mainContext,
+        pendingRoutineID: nil
+    )
+    ActiveExerciseCard(vm: vm, exerciseIndex: 0, theme: AccentTheme.abyss)
+        .padding()
+        .themedBackground()
+        .onAppear {
+            vm.addExercise(named: "Squat")
+            vm.draftExercises[0].sets[0].weightText = "225"
+            vm.draftExercises[0].sets[0].repsText = "5"
+            vm.draftExercises[0].previousSets = [
+                .init(weight: 225, reps: 5),
+                .init(weight: 225, reps: 5),
+                .init(weight: 215, reps: 6),
+            ]
+        }
 }
 
 // MARK: - Set Row

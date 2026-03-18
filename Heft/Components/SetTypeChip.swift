@@ -38,3 +38,25 @@ struct SetTypeChip: View {
         }
     }
 }
+
+#Preview("All types") {
+    @Previewable @State var current: SetType = .normal
+    HStack(spacing: 12) {
+        SetTypeChip(setType: .normal,  onTap: { current = .normal })
+        SetTypeChip(setType: .warmup,  onTap: { current = .warmup })
+        SetTypeChip(setType: .dropset, onTap: { current = .dropset })
+    }
+    .padding()
+    .themedBackground()
+}
+
+#Preview("Interactive cycle") {
+    @Previewable @State var setType: SetType = .normal
+    let types = SetType.allCases
+    SetTypeChip(setType: setType) {
+        let idx = (types.firstIndex(of: setType) ?? 0 + 1) % types.count
+        setType = types[idx]
+    }
+    .padding()
+    .themedBackground()
+}

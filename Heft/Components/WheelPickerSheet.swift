@@ -33,3 +33,16 @@ struct WheelPickerSheet: View {
         }
     }
 }
+
+#Preview("Weight wheel") {
+    @Previewable @State var value = 135.0
+    let values = stride(from: 0.0, through: 999.0, by: 1.0).map { $0 }
+    WheelPickerSheet(
+        value: $value,
+        values: values,
+        format: { v in v.truncatingRemainder(dividingBy: 1) == 0 ? "\(Int(v))" : String(format: "%.1f", v) },
+        onDone: {},
+        onCancel: {}
+    )
+    .presentationDetents([.height(260)])
+}

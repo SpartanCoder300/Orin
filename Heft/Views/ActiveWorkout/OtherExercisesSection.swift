@@ -1,6 +1,7 @@
 // iOS 26+ only. No #available guards.
 
 import SwiftUI
+import SwiftData
 
 struct OtherExercisesSection: View {
     let vm: ActiveWorkoutViewModel
@@ -43,4 +44,21 @@ struct OtherExercisesSection: View {
             }
         }
     }
+}
+
+#Preview {
+    let vm = ActiveWorkoutViewModel(
+        modelContext: PersistenceController.previewContainer.mainContext,
+        pendingRoutineID: nil
+    )
+    OtherExercisesSection(vm: vm)
+        .padding()
+        .themedBackground()
+        .onAppear {
+            vm.addExercise(named: "Bench Press")
+            vm.addExercise(named: "Incline Dumbbell Press")
+            vm.addExercise(named: "Cable Fly")
+            vm.draftExercises[1].sets[0].isLogged = true
+            vm.draftExercises[1].sets[1].isLogged = true
+        }
 }
