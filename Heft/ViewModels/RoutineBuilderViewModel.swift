@@ -98,9 +98,11 @@ final class RoutineBuilderViewModel {
         entries.move(fromOffsets: source, toOffset: destination)
     }
 
-    func save(in context: ModelContext) {
+    /// Saves the routine and returns its ID when a **new** routine was created, nil when editing.
+    @discardableResult
+    func save(in context: ModelContext) -> UUID? {
         let name = routineName.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !name.isEmpty, !entries.isEmpty else { return }
+        guard !name.isEmpty, !entries.isEmpty else { return nil }
 
         if let existing = existingRoutine {
             existing.name = name
@@ -119,6 +121,8 @@ final class RoutineBuilderViewModel {
                 return e
             }
             existing.entries = fresh
+            try? context.save()
+            return nil
         } else {
             let routine = RoutineTemplate(name: name)
             context.insert(routine)
@@ -136,9 +140,9 @@ final class RoutineBuilderViewModel {
                 return e
             }
             routine.entries = fresh
+            try? context.save()
+            return routine.id
         }
-
-        try? context.save()
     }
 
     func deleteRoutine(from context: ModelContext) {

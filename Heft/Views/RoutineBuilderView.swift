@@ -10,12 +10,18 @@ struct RoutineBuilderView: View {
     @State private var configEntryID: UUID? = nil
     @State private var isShowingDeleteConfirm = false
     @State private var isShowingDiscardConfirm = false
+    @State private var isShowingStartAlert = false
+    @State private var savedNewRoutineID: UUID? = nil
+
+    /// Called only when a brand-new routine is saved. Lets the caller start a workout immediately.
+    var onStartWorkout: ((UUID) -> Void)? = nil
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
 
-    init(existingRoutine: RoutineTemplate? = nil) {
+    init(existingRoutine: RoutineTemplate? = nil, onStartWorkout: ((UUID) -> Void)? = nil) {
         _vm = State(initialValue: RoutineBuilderViewModel(existingRoutine: existingRoutine))
+        self.onStartWorkout = onStartWorkout
     }
 
     private var configSheetIsPresented: Binding<Bool> {
@@ -96,12 +102,24 @@ struct RoutineBuilderView: View {
                         }
                     }
                     Button("Save") {
-                        vm.save(in: modelContext)
+                        let newID = vm.save(in: modelContext)
                         UINotificationFeedbackGenerator().notificationOccurred(.success)
-                        dismiss()
+                        if let id = newID {
+                            savedNewRoutineID = id
+                            isShowingStartAlert = true
+                        } else {
+                            dismiss()
+                        }
                     }
                     .fontWeight(.semibold)
                     .disabled(!vm.canSave)
+                    .alert("Start \"\(vm.routineName)\"?", isPresented: $isShowingStartAlert) {
+                        Button("Start Workout") {
+                            if let id = savedNewRoutineID { onStartWorkout?(id) }
+                            dismiss()
+                        }
+                        Button("Not Now", role: .cancel) { dismiss() }
+                    }
                 }
             }
             .sheet(isPresented: $isShowingExercisePicker) {

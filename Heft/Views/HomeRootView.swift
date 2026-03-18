@@ -169,7 +169,11 @@ struct HomeRootView: View {
             )
         }
         .sheet(item: $routineBuilderRequest) { request in
-            RoutineBuilderView(existingRoutine: request.routine)
+            RoutineBuilderView(existingRoutine: request.routine) { routineID in
+                appState.pendingRoutineID = routineID
+                appState.pendingSessionID = nil
+                appState.isShowingActiveWorkout = true
+            }
         }
         .onChange(of: sessions, initial: true) {
             stats.update(container: modelContext.container)
