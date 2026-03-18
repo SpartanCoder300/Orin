@@ -8,18 +8,17 @@ struct SetTypeChip: View {
     var onTap: (() -> Void)?
 
     var body: some View {
-        Button {
-            onTap?()
-        } label: {
-            Text(label)
-                .font(.system(size: 11, weight: .bold))
-                .foregroundStyle(chipColor)
-                .frame(width: 26, height: 22)
-                .background(chipColor.opacity(0.15), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
-        }
-        .buttonStyle(.plain)
-        .disabled(onTap == nil)
-        .sensoryFeedback(.selection, trigger: setType)
+        Text(label)
+            .font(.system(size: 11, weight: .bold))
+            .foregroundStyle(chipColor)
+            .frame(width: 24, height: 22)
+            .background(chipColor.opacity(0.15), in: RoundedRectangle(cornerRadius: 5, style: .continuous))
+            .onTapGesture {
+                guard let onTap else { return }
+                onTap()
+            }
+            .allowsHitTesting(onTap != nil)
+            .sensoryFeedback(.selection, trigger: setType)
     }
 
     private var label: String {
@@ -47,16 +46,14 @@ struct SetTypeChip: View {
         SetTypeChip(setType: .dropset, onTap: { current = .dropset })
     }
     .padding()
-    .themedBackground()
 }
 
 #Preview("Interactive cycle") {
     @Previewable @State var setType: SetType = .normal
     let types = SetType.allCases
     SetTypeChip(setType: setType) {
-        let idx = (types.firstIndex(of: setType) ?? 0 + 1) % types.count
+        let idx = ((types.firstIndex(of: setType) ?? 0) + 1) % types.count
         setType = types[idx]
     }
     .padding()
-    .themedBackground()
 }

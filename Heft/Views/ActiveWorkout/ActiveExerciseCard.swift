@@ -10,6 +10,8 @@ struct ActiveExerciseCard: View {
     let exerciseIndex: Int
     let theme: AccentTheme
 
+    @State private var showingRemoveConfirm = false
+
     private var exercise: ActiveWorkoutViewModel.DraftExercise {
         vm.draftExercises[exerciseIndex]
     }
@@ -24,8 +26,36 @@ struct ActiveExerciseCard: View {
                     .foregroundStyle(Color.textPrimary)
                 Spacer()
                 Menu {
-                    Button("Remove Exercise", role: .destructive) {
-                        vm.removeExercise(at: exerciseIndex)
+                    Button {
+                        // TODO: navigate to ExerciseDetailView (§17)
+                    } label: {
+                        Label("View History", systemImage: "chart.line.uptrend.xyaxis")
+                    }
+
+                    Button {
+                        vm.isShowingExercisePicker = true
+                    } label: {
+                        Label("Add Superset", systemImage: "arrow.2.squarepath")
+                    }
+
+                    Button {
+                        vm.addDropset(toExerciseAt: exerciseIndex)
+                    } label: {
+                        Label("Add Dropset", systemImage: "arrow.turn.down.right")
+                    }
+
+                    Divider()
+
+                    Button(role: .destructive) {
+                        showingRemoveConfirm = true
+                    } label: {
+                        Label("Remove from Workout", systemImage: "trash")
+                    }
+
+                    Button(role: .destructive) {
+                        vm.isShowingEndConfirm = true
+                    } label: {
+                        Label("End Workout", systemImage: "xmark.circle")
                     }
                 } label: {
                     Image(systemName: "ellipsis")
@@ -40,7 +70,7 @@ struct ActiveExerciseCard: View {
 
             // ── Previous session ──────────────────────────────────────
             if !exercise.previousSets.isEmpty {
-                Text("Last  \(previousLabel)")
+                Text("Last \(previousLabel)")
                     .font(.caption)
                     .foregroundStyle(Color.textFaint)
                     .padding(.horizontal, Spacing.md)
@@ -52,8 +82,8 @@ struct ActiveExerciseCard: View {
             Divider().overlay(Color.white.opacity(0.07))
 
             // ── Set rows ──────────────────────────────────────────────
-            ForEach(exercise.sets.indices, id: \.self) { sIdx in
-                let isDropset = exercise.sets[sIdx].setType == .dropset
+            ForEach(Array(exercise.sets.enumerated()), id: \.element.id) { sIdx, set in
+                let isDropset = set.setType == .dropset
                 let nextIsDropset = sIdx + 1 < exercise.sets.count
                     && exercise.sets[sIdx + 1].setType == .dropset
 
@@ -67,17 +97,26 @@ struct ActiveExerciseCard: View {
                         get: { vm.draftExercises[exerciseIndex].sets[sIdx].repsText },
                         set: { vm.draftExercises[exerciseIndex].sets[sIdx].repsText = $0 }
                     ),
-                    setType: exercise.sets[sIdx].setType,
+                    setType: set.setType,
                     isDropset: isDropset,
-                    isLogged: exercise.sets[sIdx].isLogged,
+                    isLogged: set.isLogged,
                     onCycleType: { vm.cycleSetType(exerciseIndex: exerciseIndex, setIndex: sIdx) },
                     onLog: { vm.logSet(exerciseIndex: exerciseIndex, setIndex: sIdx) }
                 )
 
-                if sIdx < exercise.sets.count - 1 && !nextIsDropset {
-                    Divider()
-                        .overlay(Color.white.opacity(0.05))
-                        .padding(.horizontal, Spacing.md)
+                if sIdx < exercise.sets.count - 1 {
+                    if nextIsDropset {
+                        // Vertical connector leading into the dropset row, aligned with the ↳ column
+                        Rectangle()
+                            .fill(Color.heftAccentAbyss.opacity(0.3))
+                            .frame(width: 1.5, height: Spacing.sm)
+                            .padding(.leading, Spacing.xl + 8)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    } else {
+                        Divider()
+                            .overlay(Color.white.opacity(0.05))
+                            .padding(.horizontal, Spacing.md)
+                    }
                 }
             }
 
@@ -94,6 +133,17 @@ struct ActiveExerciseCard: View {
             .buttonStyle(.plain)
         }
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
+        .confirmationDialog(
+            "Remove \(exercise.exerciseName)?",
+            isPresented: $showingRemoveConfirm,
+            titleVisibility: .visible
+        ) {
+            Button("Remove from Workout", role: .destructive) {
+                vm.removeExercise(at: exerciseIndex)
+            }
+        } message: {
+            Text("This will remove the exercise and all its logged sets from this session.")
+        }
     }
 
     private var previousLabel: String {
@@ -103,49 +153,8 @@ struct ActiveExerciseCard: View {
     }
 }
 
-// MARK: - Previews
-
-#Preview("With sets") {
-    let vm = ActiveWorkoutViewModel(
-        modelContext: PersistenceController.previewContainer.mainContext,
-        pendingRoutineID: nil
-    )
-    ActiveExerciseCard(vm: vm, exerciseIndex: 0, theme: AccentTheme.abyss)
-        .padding()
-        .themedBackground()
-        .onAppear {
-            vm.addExercise(named: "Bench Press")
-            vm.addSet(toExerciseAt: 0)
-            vm.addSet(toExerciseAt: 0)
-            vm.draftExercises[0].sets[0].weightText = "135"
-            vm.draftExercises[0].sets[0].repsText = "8"
-            vm.draftExercises[0].sets[1].weightText = "135"
-            vm.draftExercises[0].sets[1].repsText = "8"
-        }
-}
-
-#Preview("With previous performance") {
-    @Previewable @State var vm = ActiveWorkoutViewModel(
-        modelContext: PersistenceController.previewContainer.mainContext,
-        pendingRoutineID: nil
-    )
-    ActiveExerciseCard(vm: vm, exerciseIndex: 0, theme: AccentTheme.abyss)
-        .padding()
-        .themedBackground()
-        .onAppear {
-            vm.addExercise(named: "Squat")
-            vm.draftExercises[0].sets[0].weightText = "225"
-            vm.draftExercises[0].sets[0].repsText = "5"
-            vm.draftExercises[0].previousSets = [
-                .init(weight: 225, reps: 5),
-                .init(weight: 225, reps: 5),
-                .init(weight: 215, reps: 6),
-            ]
-        }
-}
 
 // MARK: - Set Row
-
 private struct SetRow: View {
     let setNumber: Int
     @Binding var weightText: String
@@ -212,4 +221,43 @@ private struct SetRow: View {
         .opacity(isLogged ? 0.5 : 1.0)
         .animation(Motion.standardSpring, value: isLogged)
     }
+}
+
+// MARK: - Previews
+
+#Preview("With sets") {
+    {
+        let vm = ActiveWorkoutViewModel(
+            modelContext: PersistenceController.previewContainer.mainContext,
+            pendingRoutineID: nil
+        )
+        vm.addExercise(named: "Bench Press")
+        vm.addSet(toExerciseAt: 0)
+        vm.addSet(toExerciseAt: 0)
+        vm.draftExercises[0].sets[0].weightText = "135"
+        vm.draftExercises[0].sets[0].repsText = "8"
+        vm.draftExercises[0].sets[1].weightText = "135"
+        vm.draftExercises[0].sets[1].repsText = "8"
+        return ActiveExerciseCard(vm: vm, exerciseIndex: 0, theme: AccentTheme.abyss)
+            .padding()
+    }()
+}
+
+#Preview("With previous performance") {
+    {
+        let vm = ActiveWorkoutViewModel(
+            modelContext: PersistenceController.previewContainer.mainContext,
+            pendingRoutineID: nil
+        )
+        vm.addExercise(named: "Squat")
+        vm.draftExercises[0].sets[0].weightText = "225"
+        vm.draftExercises[0].sets[0].repsText = "5"
+        vm.draftExercises[0].previousSets = [
+            .init(weight: 225, reps: 5),
+            .init(weight: 225, reps: 5),
+            .init(weight: 215, reps: 6),
+        ]
+        return ActiveExerciseCard(vm: vm, exerciseIndex: 0, theme: AccentTheme.abyss)
+            .padding()
+    }()
 }

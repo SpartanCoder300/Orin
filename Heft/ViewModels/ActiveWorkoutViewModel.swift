@@ -104,6 +104,8 @@ final class ActiveWorkoutViewModel {
         guard let latest = completed.first else { return }
 
         let sortedSets = latest.sets.sorted { $0.loggedAt < $1.loggedAt }
+        guard !sortedSets.isEmpty else { return }
+
         exercise.previousSets = sortedSets.map { PreviousSet(weight: $0.weight, reps: $0.reps) }
 
         // Auto-fill: seed each draft set from the matching position, else last set
@@ -141,6 +143,17 @@ final class ActiveWorkoutViewModel {
         guard draftExercises.indices.contains(index) else { return }
         draftExercises.remove(at: index)
         activeExerciseIndex = max(0, min(activeExerciseIndex, draftExercises.count - 1))
+    }
+
+    func addDropset(toExerciseAt index: Int) {
+        guard draftExercises.indices.contains(index) else { return }
+        var dropset = DraftSet()
+        dropset.setType = .dropset
+        if let last = draftExercises[index].sets.last {
+            dropset.weightText = last.weightText
+            dropset.repsText = last.repsText
+        }
+        draftExercises[index].sets.append(dropset)
     }
 
     func logSet(exerciseIndex eIdx: Int, setIndex sIdx: Int) {
