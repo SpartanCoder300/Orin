@@ -63,7 +63,8 @@ struct ActiveSetCommandBar: View {
                         step: 1,
                         minValue: 0,
                         maxValue: 50,
-                        isInteger: true
+                        isInteger: true,
+                        firstTapDefault: 5
                     )
 
                     // LOG — primary action for the entire screen
