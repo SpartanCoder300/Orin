@@ -14,25 +14,29 @@ struct RestTimerSheet: View {
     private let ringLineWidth: CGFloat = 10
 
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 0.25)) { ctx in
-            let now = ctx.date
-            let _ = restTimer.tick(at: now)
-            let tint = restTimer.tintColor(at: now)
-            let tintColor = color(for: tint)
-            let progress = restTimer.progress(at: now) ?? 0
-            let label = restTimer.remainingLabel(at: now) ?? "0:00"
+        // nextSetInfo is evaluated outside TimelineView so @Observable tracking
+        // on vm.draftExercises fires correctly whenever propagation updates set values.
+        let info = nextSetInfo
 
-            VStack(spacing: 0) {
-                // ── Drag indicator ──────────────────────────────────
-                Capsule()
-                    .fill(Color.white.opacity(0.2))
-                    .frame(width: 36, height: 4)
-                    .padding(.top, Spacing.md)
-                    .padding(.bottom, Spacing.lg)
+        VStack(spacing: 0) {
+            // ── Drag indicator ──────────────────────────────────
+            Capsule()
+                .fill(Color.white.opacity(0.2))
+                .frame(width: 36, height: 4)
+                .padding(.top, Spacing.md)
+                .padding(.bottom, Spacing.lg)
 
-                Spacer(minLength: 0)
+            Spacer(minLength: 0)
 
-                // ── Arc ring + countdown ────────────────────────────
+            // ── Arc ring + countdown (time-dependent — kept inside TimelineView) ──
+            TimelineView(.periodic(from: .now, by: 0.25)) { ctx in
+                let now = ctx.date
+                let _ = restTimer.tick(at: now)
+                let tint = restTimer.tintColor(at: now)
+                let tintColor = color(for: tint)
+                let progress = restTimer.progress(at: now) ?? 0
+                let label = restTimer.remainingLabel(at: now) ?? "0:00"
+
                 ZStack {
                     Circle()
                         .stroke(tintColor.opacity(0.08), lineWidth: ringLineWidth)
@@ -56,7 +60,7 @@ struct RestTimerSheet: View {
                             .contentTransition(.numericText(countsDown: true))
                             .animation(Motion.standardSpring, value: label)
 
-                        if let info = nextSetInfo {
+                        if let info {
                             Text("\(info.exerciseName) · Set \(info.setNumber)")
                                 .font(.system(size: 11, weight: .medium))
                                 .foregroundStyle(Color.textFaint)
@@ -71,56 +75,52 @@ struct RestTimerSheet: View {
                 }
                 .sensoryFeedback(.impact(weight: .heavy, intensity: 1.0), trigger: restTimer.pulseCount)
 
+                // Controls inside TimelineView so tintColor is accessible
                 Spacer(minLength: Spacing.lg)
 
-                // ── Next Set card ───────────────────────────────────
-                if let info = nextSetInfo {
-                    NextSetCard(
-                        info: info,
-                        accentColor: theme.accentColor,
-                        onAdjustWeight: { vm.adjustWeight(exerciseIndex: info.exerciseIndex, setIndex: info.setIndex, increment: $0) },
-                        onAdjustReps:   { vm.adjustReps(exerciseIndex: info.exerciseIndex,   setIndex: info.setIndex, increment: $0) }
-                    )
-                    .padding(.horizontal, Spacing.lg)
-                }
-
-                Spacer(minLength: Spacing.lg)
-
-                // ── Controls ────────────────────────────────────────
                 HStack(spacing: Spacing.sm) {
                     TimerControlButton(label: "−30s") { restTimer.adjust(seconds: -30) }
                     TimerControlButton(label: "Skip Rest", isSkip: true, tintColor: tintColor) { restTimer.skip() }
                     TimerControlButton(label: "+30s") { restTimer.adjust(seconds: 30) }
                 }
                 .padding(.horizontal, Spacing.lg)
-                .padding(.bottom, Spacing.xl)
             }
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background {
-                Color.heftBackground
-                    .opacity(0.55)
-                    .background(.ultraThinMaterial)
-                    .ignoresSafeArea()
+
+            Spacer(minLength: Spacing.lg)
+
+            // ── Next Set card — outside TimelineView for correct @Observable tracking ──
+            if let info {
+                NextSetCard(
+                    info: info,
+                    accentColor: theme.accentColor,
+                    onAdjustWeight: { vm.adjustWeight(exerciseIndex: info.exerciseIndex, setIndex: info.setIndex, increment: $0) },
+                    onAdjustReps:   { vm.adjustReps(exerciseIndex: info.exerciseIndex,   setIndex: info.setIndex, increment: $0) }
+                )
+                .padding(.horizontal, Spacing.lg)
             }
+
+            Spacer(minLength: Spacing.xl)
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background {
+            Color.heftBackground
+                .opacity(0.55)
+                .background(.ultraThinMaterial)
+                .ignoresSafeArea()
         }
     }
 
     private var nextSetInfo: NextSetInfo? {
-        for eIdx in vm.draftExercises.indices {
-            let exercise = vm.draftExercises[eIdx]
-            guard let sIdx = exercise.sets.firstIndex(where: { !$0.isLogged }) else { continue }
-            let set = exercise.sets[sIdx]
-            return NextSetInfo(
-                exerciseName: exercise.exerciseName,
-                exerciseIndex: eIdx,
-                setIndex: sIdx,
-                setNumber: sIdx + 1,
-                totalSets: exercise.sets.count,
-                weight: set.weightText,
-                reps: set.repsText
-            )
-        }
-        return nil
+        guard let f = vm.nextUnloggedFocus else { return nil }
+        return NextSetInfo(
+            exerciseName: f.exerciseName,
+            exerciseIndex: f.exerciseIndex,
+            setIndex: f.setIndex,
+            setNumber: f.setIndex + 1,
+            totalSets: f.totalSets,
+            weight: f.weightText,
+            reps: f.repsText
+        )
     }
 
     private func color(for phase: TimerTintPhase) -> Color {

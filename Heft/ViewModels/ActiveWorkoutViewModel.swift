@@ -48,6 +48,7 @@ final class ActiveWorkoutViewModel {
 
     private(set) var session: WorkoutSession? = nil
     let restTimer = RestTimerState()
+    private(set) var lastLoggedFocus: SetFocus? = nil
 
     var isSessionStarted: Bool { session != nil }
 
@@ -57,16 +58,32 @@ final class ActiveWorkoutViewModel {
 
     // MARK: - Focus
 
-    /// The currently focused set — either manual override or first unlogged set.
+    /// The currently focused set — manual override if valid, otherwise auto-advanced
+    /// to the next unlogged set after the last one logged.
     var currentFocus: SetFocus? {
-        // If manual override is still valid (exists and not yet logged), use it
         if let mf = manualFocus,
            draftExercises.indices.contains(mf.exerciseIndex),
            draftExercises[mf.exerciseIndex].sets.indices.contains(mf.setIndex),
            !draftExercises[mf.exerciseIndex].sets[mf.setIndex].isLogged {
             return mf
         }
-        // Auto: first unlogged set across all exercises
+        return autoFocus
+    }
+
+    /// Next unlogged set after `lastLoggedFocus`, preserving the order the user
+    /// is working through. Falls back to the first globally unlogged set only when
+    /// no set has been logged yet.
+    private var autoFocus: SetFocus? {
+        let startEIdx = lastLoggedFocus?.exerciseIndex ?? 0
+        let startSIdx = (lastLoggedFocus?.setIndex ?? -1) + 1
+
+        for eIdx in startEIdx ..< draftExercises.count {
+            let firstS = eIdx == startEIdx ? startSIdx : 0
+            if let sIdx = draftExercises[eIdx].sets[firstS...].firstIndex(where: { !$0.isLogged }) {
+                return SetFocus(exerciseIndex: eIdx, setIndex: sIdx)
+            }
+        }
+        // Fall back: first globally unlogged set (covers initial state and wrap-around).
         for eIdx in draftExercises.indices {
             if let sIdx = draftExercises[eIdx].sets.firstIndex(where: { !$0.isLogged }) {
                 return SetFocus(exerciseIndex: eIdx, setIndex: sIdx)
@@ -282,6 +299,7 @@ final class ActiveWorkoutViewModel {
 
         draftExercises[eIdx].sets[sIdx].isLogged = true
         draftExercises[eIdx].sets[sIdx].loggedRecord = record
+        lastLoggedFocus = SetFocus(exerciseIndex: eIdx, setIndex: sIdx)
 
         // Propagate weight + reps forward to subsequent blank sets in the same exercise
         for i in draftExercises[eIdx].sets.indices where i > sIdx {
@@ -372,6 +390,21 @@ final class ActiveWorkoutViewModel {
 
     var loggedSetCount: Int {
         draftExercises.flatMap { $0.sets }.filter { $0.isLogged }.count
+    }
+
+    /// The next unlogged set for the rest timer card — same position as `autoFocus`
+    /// so the command bar and rest timer always agree on what's coming next.
+    var nextUnloggedFocus: (exerciseIndex: Int, setIndex: Int, weightText: String, repsText: String, exerciseName: String, totalSets: Int)? {
+        guard let f = autoFocus else { return nil }
+        let set = draftExercises[f.exerciseIndex].sets[f.setIndex]
+        return (
+            exerciseIndex: f.exerciseIndex,
+            setIndex: f.setIndex,
+            weightText: set.weightText,
+            repsText: set.repsText,
+            exerciseName: draftExercises[f.exerciseIndex].exerciseName,
+            totalSets: draftExercises[f.exerciseIndex].sets.count
+        )
     }
 
     /// True when every set across all exercises is logged. Drives auto-complete.
