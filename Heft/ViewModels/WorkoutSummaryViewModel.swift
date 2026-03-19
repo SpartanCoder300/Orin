@@ -16,6 +16,7 @@ final class WorkoutSummaryViewModel {
         let volume: Double
         let prWeight: Double?
         let prReps: Int?
+        let prOneRepMax: Double?
 
         var hasPR: Bool { prWeight != nil }
     }
@@ -68,6 +69,10 @@ final class WorkoutSummaryViewModel {
                 let maxW = working.map(\.weight).max() ?? 0
                 let vol = working.reduce(0.0) { $0 + $1.weight * Double($1.reps) }
                 let pr = snap.sets.first { $0.isPersonalRecord }
+                let prOneRepMax: Double? = {
+                    guard let s = pr else { return nil }
+                    return ExerciseDefinition.estimatedOneRepMax(weight: s.weight, reps: s.reps)
+                }()
                 return ExerciseRow(
                     id: snap.id,
                     name: snap.exerciseName,
@@ -75,7 +80,8 @@ final class WorkoutSummaryViewModel {
                     maxWeight: maxW,
                     volume: vol,
                     prWeight: pr?.weight,
-                    prReps: pr?.reps
+                    prReps: pr?.reps,
+                    prOneRepMax: prOneRepMax
                 )
             }
     }

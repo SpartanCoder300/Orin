@@ -201,14 +201,22 @@ private struct SetDetailRow: View {
                     .foregroundStyle(.primary)
             }
 
-            // PR badge
+            // PR badge + e1RM
             if record.isPersonalRecord {
-                Text("PR")
-                    .font(.system(size: 9, weight: .bold))
-                    .foregroundStyle(Color.heftAmber)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 3)
-                    .background(Color.heftAmber.opacity(0.15))
+                VStack(alignment: .trailing, spacing: 2) {
+                    Text("PR")
+                        .font(.system(size: 9, weight: .bold))
+                        .foregroundStyle(Color.heftAmber)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 3)
+                        .background(Color.heftAmber.opacity(0.15))
+                    let e1rm = ExerciseDefinition.estimatedOneRepMax(weight: record.weight, reps: record.reps)
+                    if e1rm > 0 {
+                        Text("~\(formattedE1RM(e1rm)) e1RM")
+                            .font(.system(size: 9))
+                            .foregroundStyle(Color.heftAmber.opacity(0.6))
+                    }
+                }
             }
         }
         .padding(.horizontal, Spacing.md)
@@ -224,6 +232,11 @@ private struct SetDetailRow: View {
         let w = record.weight
         return w.truncatingRemainder(dividingBy: 1) == 0
             ? "\(Int(w))" : String(format: "%.1f", w)
+    }
+
+    private func formattedE1RM(_ v: Double) -> String {
+        let rounded = v.rounded()
+        return "\(Int(rounded))"
     }
 }
 

@@ -306,7 +306,7 @@ final class ActiveWorkoutViewModel {
         snapshot.sets.append(record)
 
         if draft.setType != .warmup {
-            checkPR(exerciseName: draftExercises[eIdx].exerciseName, weight: weight, record: record)
+            checkPR(exerciseName: draftExercises[eIdx].exerciseName, weight: weight, reps: reps, record: record)
         }
 
         draftExercises[eIdx].sets[sIdx].isLogged = true
@@ -475,14 +475,15 @@ final class ActiveWorkoutViewModel {
         return snap
     }
 
-    private func checkPR(exerciseName: String, weight: Double, record: SetRecord) {
+    private func checkPR(exerciseName: String, weight: Double, reps: Int, record: SetRecord) {
         let d = FetchDescriptor<ExerciseDefinition>(
             predicate: #Predicate { $0.name == exerciseName }
         )
         guard let def = (try? modelContext.fetch(d))?.first else { return }
-        guard weight > def.currentPR else { return }
+        let e1rm = ExerciseDefinition.estimatedOneRepMax(weight: weight, reps: reps)
+        guard e1rm > def.currentPR else { return }
         def.previousPR = def.currentPR
-        def.currentPR = weight
+        def.currentPR = e1rm
         def.prDate = .now
         record.isPersonalRecord = true
     }

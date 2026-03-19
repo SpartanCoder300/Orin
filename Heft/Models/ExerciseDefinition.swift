@@ -48,6 +48,13 @@ final class ExerciseDefinition {
         weightIncrement ?? ExerciseDefinition.defaultIncrement(for: equipmentType)
     }
 
+    /// Epley estimated one-rep max: weight × (1 + reps / 30).
+    /// Returns weight as-is for 0–1 reps or 0 weight.
+    static func estimatedOneRepMax(weight: Double, reps: Int) -> Double {
+        guard weight > 0, reps > 1 else { return weight }
+        return weight * (1.0 + Double(reps) / 30.0)
+    }
+
     /// Standard weight increment for a given equipment type.
     static func defaultIncrement(for equipmentType: String) -> Double {
         switch equipmentType {

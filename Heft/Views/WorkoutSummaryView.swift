@@ -45,6 +45,11 @@ struct WorkoutSummaryView: View {
                                     Text("\(vm.formatWeight(prWeight)) × \(prReps)")
                                         .font(.caption2)
                                         .foregroundStyle(Color.heftAmber.opacity(0.8))
+                                    if let e1rm = row.prOneRepMax {
+                                        Text("~\(vm.formatWeight(e1rm)) e1RM")
+                                            .font(.caption2)
+                                            .foregroundStyle(Color.heftAmber.opacity(0.5))
+                                    }
                                 }
                             }
                         }
