@@ -75,11 +75,7 @@ struct ActiveWorkoutView: View {
                     }
                 }
             }
-            .confirmationDialog(
-                "End Workout?",
-                isPresented: $vm.isShowingEndConfirm,
-                titleVisibility: .visible
-            ) {
+            .alert("End Workout?", isPresented: $vm.isShowingEndConfirm) {
                 Button("Finish") {
                     if let session = vm.endWorkout() {
                         completedSession = session
@@ -91,6 +87,7 @@ struct ActiveWorkoutView: View {
                     vm.cancelWorkout()
                     dismiss()
                 }
+                Button("Back", role: .cancel) {}
             } message: {
                 Text(vm.isSessionStarted
                      ? "\(vm.elapsedLabel(at: .now)) · \(vm.loggedSetCount) sets logged"

@@ -149,14 +149,11 @@ struct ActiveExerciseCard: View {
             .buttonStyle(.plain)
         }
         .background(.regularMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
-        .confirmationDialog(
-            "Remove \(exercise.exerciseName)?",
-            isPresented: $showingRemoveConfirm,
-            titleVisibility: .visible
-        ) {
-            Button("Remove from Workout", role: .destructive) {
+        .alert("Remove \(exercise.exerciseName)?", isPresented: $showingRemoveConfirm) {
+            Button("Remove", role: .destructive) {
                 vm.removeExercise(at: exerciseIndex)
             }
+            Button("Cancel", role: .cancel) {}
         } message: {
             Text("This will remove the exercise and all its logged sets from this session.")
         }

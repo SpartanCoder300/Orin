@@ -16,6 +16,7 @@ struct HomeRootView: View {
 
     @State private var stats = HomeStatsViewModel()
     @State private var routineBuilderRequest: RoutineBuilderRequest? = nil
+    @State private var startRequest: StartRequest? = nil
 
     private var featuredRoutine: RoutineTemplate? { routines.first }
     private var remainingRoutines: [RoutineTemplate] { Array(routines.dropFirst()) }
@@ -76,9 +77,7 @@ struct HomeRootView: View {
                             routine: featured,
                             avgMinutes: routineAvgMinutes[featured.id],
                             onTap: {
-                                appState.pendingRoutineID = featured.id
-                                appState.pendingSessionID = nil
-                                appState.isShowingActiveWorkout = true
+                                startRequest = StartRequest(routineName: featured.name, routineID: featured.id, sessionID: nil)
                             },
                             onEdit: {
                                 routineBuilderRequest = RoutineBuilderRequest(routine: featured)
@@ -92,8 +91,7 @@ struct HomeRootView: View {
 
                     // Secondary option — spec requires a direct empty-start path
                     Button {
-                        appState.pendingRoutineID = nil
-                        appState.isShowingActiveWorkout = true
+                        startRequest = StartRequest(routineName: nil, routineID: nil, sessionID: nil)
                     } label: {
                         Text("or start empty workout")
                             .font(Typography.caption)
@@ -114,9 +112,7 @@ struct HomeRootView: View {
                                 routine: routine,
                                 avgMinutes: routineAvgMinutes[routine.id],
                                 onTap: {
-                                    appState.pendingRoutineID = routine.id
-                                    appState.pendingSessionID = nil
-                                    appState.isShowingActiveWorkout = true
+                                    startRequest = StartRequest(routineName: routine.name, routineID: routine.id, sessionID: nil)
                                 },
                                 onEdit: {
                                     routineBuilderRequest = RoutineBuilderRequest(routine: routine)
@@ -136,9 +132,7 @@ struct HomeRootView: View {
                         SectionHeader(title: "Recent")
                         ForEach(recentSessions) { session in
                             RecentWorkoutListRow(session: session) {
-                                appState.pendingRoutineID = nil
-                                appState.pendingSessionID = session.id
-                                appState.isShowingActiveWorkout = true
+                                startRequest = StartRequest(routineName: nil, routineID: nil, sessionID: session.id)
                             }
                         }
                     }
@@ -156,6 +150,23 @@ struct HomeRootView: View {
                     Image(systemName: "plus")
                         .fontWeight(.semibold)
                 }
+            }
+        }
+        .alert(startRequest?.title ?? "", isPresented: .init(
+            get: { startRequest != nil },
+            set: { if !$0 { startRequest = nil } }
+        )) {
+            Button(startRequest?.actionLabel ?? "Start") {
+                guard let req = startRequest else { return }
+                appState.pendingRoutineID = req.routineID
+                appState.pendingSessionID = req.sessionID
+                appState.isShowingActiveWorkout = true
+                startRequest = nil
+            }
+            Button("Cancel", role: .cancel) { startRequest = nil }
+        } message: {
+            if let req = startRequest, req.routineID == nil && req.sessionID == nil {
+                Text("No routine selected — you can add exercises as you go.")
             }
         }
         .fullScreenCover(isPresented: $appState.isShowingActiveWorkout, onDismiss: {
@@ -188,6 +199,25 @@ struct HomeRootView: View {
 private struct RoutineBuilderRequest: Identifiable {
     let id = UUID()
     let routine: RoutineTemplate?
+}
+
+// MARK: - Start Request
+
+private struct StartRequest {
+    let routineName: String?
+    let routineID: UUID?
+    let sessionID: UUID?
+
+    var title: String {
+        if let name = routineName { return "Start \"\(name)\"?" }
+        if sessionID != nil { return "Repeat Workout?" }
+        return "Start Empty Workout?"
+    }
+
+    var actionLabel: String {
+        if sessionID != nil { return "Repeat" }
+        return "Start"
+    }
 }
 
 // MARK: - Section Header
