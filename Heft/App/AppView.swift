@@ -50,7 +50,7 @@ struct AppView: View {
             }
         }
         .tint(appState.accentTheme.accentColor)
-        .background(Color.heftBackground.ignoresSafeArea())
+        .background(appState.accentTheme.backgroundColor.ignoresSafeArea())
         .preferredColorScheme(.dark)
         .environment(\.heftTheme, appState.accentTheme)
         .task {

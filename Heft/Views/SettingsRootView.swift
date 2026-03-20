@@ -47,13 +47,15 @@ private struct ThemeRow: View {
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: Spacing.md) {
-                Circle()
-                    .fill(theme.accentColor)
-                    .frame(width: 28, height: 28)
-                    .overlay(
-                        Circle()
-                            .strokeBorder(.white.opacity(0.1), lineWidth: 1)
-                    )
+                ZStack {
+                    Circle()
+                        .fill(theme.backgroundColor)
+                    Circle()
+                        .fill(theme.accentColor)
+                        .padding(7)
+                }
+                .frame(width: 32, height: 32)
+                .overlay(Circle().strokeBorder(.white.opacity(0.12), lineWidth: 1))
 
                 VStack(alignment: .leading, spacing: 2) {
                     Text(theme.displayName)

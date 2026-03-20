@@ -17,7 +17,7 @@ final class AppState {
 
     var accentTheme: AccentTheme = {
         let raw = UserDefaults.standard.string(forKey: "heft.accentTheme") ?? ""
-        return AccentTheme(rawValue: raw) ?? .midnightStrength
+        return AccentTheme(rawValue: raw) ?? .midnight
     }() {
         didSet {
             UserDefaults.standard.set(accentTheme.rawValue, forKey: "heft.accentTheme")

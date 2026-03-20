@@ -58,6 +58,8 @@ struct WorkoutSummaryView: View {
                 }
             }
         }
+        .scrollContentBackground(.hidden)
+        .themedBackground()
         .navigationTitle("Summary")
         .navigationBarTitleDisplayMode(.large)
         .navigationBarBackButtonHidden(true)

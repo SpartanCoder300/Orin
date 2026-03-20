@@ -78,6 +78,8 @@ struct RoutineBuilderView: View {
                     .tint(.accentColor)
                 }
             }
+            .scrollContentBackground(.hidden)
+            .themedBackground()
             .environment(\.editMode, .constant(vm.entries.isEmpty ? .inactive : .active))
             .navigationTitle(vm.isEditingExisting ? "Edit Routine" : "New Routine")
             .navigationBarTitleDisplayMode(.inline)

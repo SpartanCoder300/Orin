@@ -3,31 +3,37 @@
 import SwiftUI
 
 enum AccentTheme: String, CaseIterable, Identifiable {
-    case midnightStrength
-    case ember
+    case midnight
     case graphite
-    case abyss
-    case mesh           // Pro only
+    case obsidian
+    case mesh           // Pro only — placeholder
 
     var id: String { rawValue }
 
     var displayName: String {
         switch self {
-        case .midnightStrength: "Midnight Strength"
-        case .ember:            "Ember"
-        case .graphite:         "Graphite"
-        case .abyss:            "Abyss"
-        case .mesh:             "Dynamic Mesh"
+        case .midnight: "Midnight"
+        case .graphite: "Graphite"
+        case .obsidian: "Obsidian"
+        case .mesh:     "Dynamic Mesh"
         }
     }
 
     var accentColor: Color {
         switch self {
-        case .midnightStrength: Color("Accent")
-        case .ember:            Color("AccentEmber")
-        case .graphite:         Color("AccentGraphite")
-        case .abyss:            Color("AccentAbyss")
-        case .mesh:             Color("AccentMesh")
+        case .midnight: Color("Accent")
+        case .graphite: Color("AccentGraphite")
+        case .obsidian: Color("AccentObsidian")
+        case .mesh:     Color("AccentMesh")
+        }
+    }
+
+    var backgroundColor: Color {
+        switch self {
+        case .midnight: Color("BackgroundMidnight")
+        case .graphite: Color("BackgroundGraphite")
+        case .obsidian: Color("BackgroundObsidian")
+        case .mesh:     Color("BackgroundMidnight")
         }
     }
 
@@ -37,7 +43,7 @@ enum AccentTheme: String, CaseIterable, Identifiable {
 // Inject active theme into the SwiftUI environment so any view can read it
 // without going through AppState directly.
 private struct HeftThemeKey: EnvironmentKey {
-    static let defaultValue: AccentTheme = .midnightStrength
+    static let defaultValue: AccentTheme = .midnight
 }
 
 extension EnvironmentValues {

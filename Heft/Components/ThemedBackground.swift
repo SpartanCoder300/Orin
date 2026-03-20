@@ -2,7 +2,7 @@
 
 import SwiftUI
 
-/// Applies the Obsidian base + themed ambient gradient background to any root screen.
+/// Applies the per-theme background + ambient accent gradient to any root screen.
 /// Use `.themedBackground()` on every NavigationStack root view.
 struct ThemedBackgroundModifier: ViewModifier {
     @Environment(\.heftTheme) private var theme
@@ -11,11 +11,11 @@ struct ThemedBackgroundModifier: ViewModifier {
         content
             .background(
                 ZStack(alignment: .top) {
-                    Color.heftBackground
+                    theme.backgroundColor
                     LinearGradient(
-                        colors: [theme.accentColor.opacity(0.18), Color.clear],
+                        colors: [theme.accentColor.opacity(0.15), Color.clear],
                         startPoint: .top,
-                        endPoint: UnitPoint(x: 0.5, y: 0.42)
+                        endPoint: UnitPoint(x: 0.5, y: 0.4)
                     )
                 }
                 .ignoresSafeArea()

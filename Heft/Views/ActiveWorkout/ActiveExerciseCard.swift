@@ -307,7 +307,7 @@ private struct SetRow: View {
         vm.draftExercises[0].sets[0].repsText = "8"
         vm.draftExercises[0].sets[1].weightText = "135"
         vm.draftExercises[0].sets[1].repsText = "8"
-        return ActiveExerciseCard(vm: vm, exerciseIndex: 0, theme: AccentTheme.abyss)
+        return ActiveExerciseCard(vm: vm, exerciseIndex: 0, theme: AccentTheme.midnight)
             .padding()
     }()
 }
@@ -326,7 +326,7 @@ private struct SetRow: View {
             .init(weight: 225, reps: 5),
             .init(weight: 215, reps: 6),
         ]
-        return ActiveExerciseCard(vm: vm, exerciseIndex: 0, theme: AccentTheme.abyss)
+        return ActiveExerciseCard(vm: vm, exerciseIndex: 0, theme: AccentTheme.midnight)
             .padding()
     }()
 }

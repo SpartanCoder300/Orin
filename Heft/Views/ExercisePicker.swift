@@ -91,7 +91,6 @@ struct ExercisePicker: View {
                 .padding(.horizontal, Spacing.md)
                 .padding(.vertical, Spacing.lg)
             }
-            .themedBackground()
             .navigationTitle("Add Exercise")
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $vm.searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search exercises")
