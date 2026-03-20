@@ -20,8 +20,8 @@ struct HomeRootView: View {
     /// Most recently used first, falling back to creation date.
     private var sortedRoutines: [RoutineTemplate] {
         routines.sorted { a, b in
-            let aDate = a.lastUsedAt ?? a.createdAt ?? .distantPast
-            let bDate = b.lastUsedAt ?? b.createdAt ?? .distantPast
+            let aDate = a.lastUsedAt ?? a.createdAt
+            let bDate = b.lastUsedAt ?? b.createdAt
             return aDate > bDate
         }
     }

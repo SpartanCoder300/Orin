@@ -178,19 +178,19 @@ private struct SetDetailRow: View {
 
             // Weight × Reps
             HStack(spacing: 6) {
-                Group {
-                    if record.weight > 0 {
+                if record.weight > 0 {
+                    HStack(spacing: 2) {
                         Text(formattedWeight)
-                            .foregroundStyle(record.isPersonalRecord ? Color.heftAmber : .primary)
-                        + Text(" lbs")
-                            .foregroundStyle(.secondary)
-                    } else {
-                        Text("Bodyweight")
+                            .foregroundStyle(record.isPersonalRecord ? Color.heftAmber : Color.primary)
+                        Text("lbs")
                             .foregroundStyle(.secondary)
                     }
+                    .font(.body.monospacedDigit().weight(.medium))
+                } else {
+                    Text("Bodyweight")
+                        .font(.body.monospacedDigit().weight(.medium))
+                        .foregroundStyle(.secondary)
                 }
-                .font(.body.monospacedDigit())
-                .fontWeight(.medium)
 
                 Text("×")
                     .font(.body)

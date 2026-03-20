@@ -16,30 +16,36 @@ struct ActiveSetCommandBar: View {
 
             VStack(spacing: Spacing.sm) {
 
-                // ── Context row — tap to reveal set navigator ─────────
-                Button { withAnimation(Motion.standardSpring) { showingNavigator.toggle() } } label: {
-                    HStack {
+                // ── Context row ───────────────────────────────────────
+                HStack(alignment: .center) {
+                    VStack(alignment: .leading, spacing: 1) {
                         Text(exercise.exerciseName)
-                            .font(.caption.weight(.semibold))
-                            .foregroundStyle(Color.textMuted)
-                        Text("· Set \(focus.setIndex + 1) of \(exercise.sets.count)")
+                            .font(.subheadline.weight(.semibold))
+                            .foregroundStyle(Color.textPrimary)
+                            .lineLimit(1)
+                        Text("Set \(focus.setIndex + 1) of \(exercise.sets.count)")
                             .font(.caption)
                             .foregroundStyle(Color.textFaint)
-                        Spacer()
-                        Image(systemName: "chevron.up")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundStyle(Color.textFaint)
-                            .rotationEffect(showingNavigator ? .degrees(180) : .zero)
                     }
+                    Spacer()
+                    Button {
+                        withAnimation(Motion.standardSpring) { showingNavigator.toggle() }
+                    } label: {
+                        Image(systemName: showingNavigator ? "list.bullet.circle.fill" : "list.bullet.circle")
+                            .font(.system(size: 20))
+                            .foregroundStyle(showingNavigator ? theme.accentColor : Color.textFaint)
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
                 }
-                .buttonStyle(.plain)
 
                 // ── Set navigator strip ──────────────────────────────
                 if showingNavigator {
                     SetNavigatorStrip(vm: vm)
+                        .transition(.move(edge: .top).combined(with: .opacity))
                 }
 
-                // ── Controls row ─────────────────────────────────────
+                // ── Steppers row ─────────────────────────────────────
                 HStack(spacing: Spacing.sm) {
                     CompactStepper(
                         text: Binding(
@@ -66,17 +72,17 @@ struct ActiveSetCommandBar: View {
                         isInteger: true,
                         firstTapDefault: 5
                     )
-
-                    // LOG — primary action for the entire screen
-                    Button { vm.logFocusedSet() } label: {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 18, weight: .bold))
-                            .foregroundStyle(theme.accentColor)
-                            .frame(width: 56, height: 52)
-                            .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: Radius.small, style: .continuous))
-                    }
-                    .buttonStyle(.plain)
                 }
+
+                // ── LOG — primary action ──────────────────────────────
+                Button { vm.logFocusedSet() } label: {
+                    Label("Log Set", systemImage: "checkmark")
+                        .font(.body.weight(.semibold))
+                        .frame(maxWidth: .infinity)
+                }
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .tint(theme.accentColor)
             }
             .padding(.horizontal, Spacing.md)
             .padding(.top, Spacing.sm)
@@ -86,6 +92,7 @@ struct ActiveSetCommandBar: View {
             .padding(.bottom, Spacing.sm)
             .contentTransition(.numericText())
             .animation(Motion.standardSpring, value: focus)
+            .animation(Motion.standardSpring, value: showingNavigator)
         }
     }
 
@@ -125,11 +132,6 @@ private struct SetNavigatorStrip: View {
                                 Circle()
                                     .fill(dotColor(set: set, eIdx: eIdx, sIdx: sIdx))
                                     .frame(width: 8, height: 8)
-                                    .onTapGesture {
-                                        if !set.isLogged {
-                                            vm.setManualFocus(exerciseIndex: eIdx, setIndex: sIdx)
-                                        }
-                                    }
                             }
                         }
                     }
