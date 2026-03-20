@@ -6,23 +6,25 @@ import SwiftUI
 /// The system provides the Liquid Glass capsule — this view supplies only the content layout.
 struct MiniWorkoutBar: View {
     let service: ActiveWorkoutService
-    @Environment(\.tabViewBottomAccessoryPlacement) private var placement
+    @Environment(\.heftTheme) private var theme
 
     var body: some View {
         if let vm = service.viewModel {
             HStack(spacing: 0) {
-                // ── Left: tap to open full workout ───────────────────────────
+                // ── Left: exercise + set context ─────────────────────────────
                 Button {
                     service.isShowingFullWorkout = true
                 } label: {
-                    VStack(alignment: .leading, spacing: 1) {
-                        Text(service.focusedExerciseName ?? "Workout")
-                            .font(.subheadline.weight(.semibold))
-                            .foregroundStyle(.primary)
-                            .lineLimit(1)
+                    HStack(alignment: .center, spacing: 8) {
+                        LiveDot(color: theme.accentColor)
 
-                        TimelineView(.periodic(from: vm.openedAt, by: 1.0)) { ctx in
-                            Text(vm.elapsedLabel(at: ctx.date))
+                        VStack(alignment: .leading, spacing: 1) {
+                            Text(service.focusedExerciseName ?? "Workout")
+                                .font(.subheadline.weight(.semibold))
+                                .foregroundStyle(.primary)
+                                .lineLimit(1)
+
+                            Text(setLabel(vm: vm))
                                 .font(.caption.monospacedDigit())
                                 .foregroundStyle(.secondary)
                         }
@@ -38,11 +40,11 @@ struct MiniWorkoutBar: View {
                     .frame(height: 28)
                     .padding(.horizontal, 12)
 
-                // ── Right: rest timer ────────────────────────────────────────
+                // ── Right: rest timer or elapsed ─────────────────────────────
                 Button {
                     service.isShowingFullWorkout = true
                 } label: {
-                    RestTimerIndicator(timer: vm.restTimer)
+                    RestTimerIndicator(timer: vm.restTimer, openedAt: vm.openedAt)
                         .padding(.trailing, 16)
                         .padding(.vertical, 10)
                         .contentShape(Rectangle())
@@ -51,11 +53,52 @@ struct MiniWorkoutBar: View {
             }
         }
     }
+
+    private func setLabel(vm: ActiveWorkoutViewModel) -> String {
+        guard let focus = vm.currentFocus,
+              vm.draftExercises.indices.contains(focus.exerciseIndex) else {
+            return "—"
+        }
+        let exercise = vm.draftExercises[focus.exerciseIndex]
+        return "Set \(focus.setIndex + 1) of \(exercise.sets.count)"
+    }
 }
 
-/// Compact rest timer display for the mini bar.
+// MARK: - Live Dot
+
+/// Pulsing accent dot — signals an active live state, like Apple's call/recording indicator.
+private struct LiveDot: View {
+    let color: Color
+    @State private var isPulsing = false
+
+    var body: some View {
+        ZStack {
+            // Ripple ring
+            Circle()
+                .fill(color.opacity(0.25))
+                .frame(width: 7, height: 7)
+                .scaleEffect(isPulsing ? 2.6 : 1.0)
+                .opacity(isPulsing ? 0 : 1)
+                .animation(
+                    .easeOut(duration: 1.2).repeatForever(autoreverses: false),
+                    value: isPulsing
+                )
+
+            // Solid core
+            Circle()
+                .fill(color)
+                .frame(width: 7, height: 7)
+        }
+        .onAppear { isPulsing = true }
+    }
+}
+
+// MARK: - Rest Timer Indicator
+
+/// Shows rest countdown when active; falls back to elapsed workout time when idle.
 private struct RestTimerIndicator: View {
     let timer: RestTimerState
+    let openedAt: Date
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 1.0)) { ctx in
@@ -69,11 +112,20 @@ private struct RestTimerIndicator: View {
                     .monospacedDigit()
                     .contentTransition(.numericText(countsDown: true))
             } else {
-                Image(systemName: "timer")
-                    .font(.subheadline)
-                    .foregroundStyle(.tertiary)
+                // Elapsed time when no rest timer active
+                Text(elapsedLabel(at: ctx.date))
+                    .font(.system(.subheadline, design: .monospaced).weight(.regular))
+                    .foregroundStyle(.secondary)
+                    .monospacedDigit()
             }
         }
+    }
+
+    private func elapsedLabel(at now: Date) -> String {
+        let seconds = Int(now.timeIntervalSince(openedAt))
+        let m = seconds / 60
+        let s = seconds % 60
+        return String(format: "%d:%02d", m, s)
     }
 
     private func phaseColor(_ phase: TimerTintPhase) -> Color {
