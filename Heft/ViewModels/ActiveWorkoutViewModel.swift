@@ -134,6 +134,7 @@ final class ActiveWorkoutViewModel {
     private let pendingRoutineID: UUID?
     private let pendingSessionID: UUID?
     private var zeroTask: Task<Void, Never>? = nil
+    private var hasSetup = false
 
     // MARK: - Init
 
@@ -146,6 +147,8 @@ final class ActiveWorkoutViewModel {
     // MARK: - Setup
 
     func setup() {
+        guard !hasSetup else { return }
+        hasSetup = true
         if let routineID = pendingRoutineID {
             loadRoutine(id: routineID)
         } else if let sessionID = pendingSessionID {
