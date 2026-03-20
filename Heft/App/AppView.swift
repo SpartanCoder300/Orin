@@ -49,8 +49,8 @@ struct AppView: View {
                 })
             }
         }
-        .tint(appState.accentTheme.accentColor)
-        .background(appState.accentTheme.backgroundColor.ignoresSafeArea())
+        //.tint(appState.accentTheme.accentColor)
+        //.background(appState.accentTheme.backgroundColor.ignoresSafeArea())
         .preferredColorScheme(.dark)
         .environment(\.heftTheme, appState.accentTheme)
         .task {

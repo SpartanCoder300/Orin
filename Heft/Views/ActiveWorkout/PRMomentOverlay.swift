@@ -2,91 +2,61 @@
 
 import SwiftUI
 
-/// Centered Liquid Glass overlay that celebrates a new personal record.
-/// Appears immediately when a PR is logged. Dismissing it starts the rest timer.
+/// Centered overlay that celebrates a new personal record.
+/// Appears immediately when a PR is logged. Dismissing starts the rest timer.
 struct PRMomentOverlay: View {
     let moment: ActiveWorkoutViewModel.PRMoment
     let onDismiss: () -> Void
 
+    @State private var symbolAnimated = false
+
     var body: some View {
-        VStack(spacing: Spacing.lg) {
+        VStack(spacing: 20) {
 
-            // ── Trophy + label ─────────────────────────────────────────────────
-            VStack(spacing: Spacing.sm) {
-                Image(systemName: "trophy.fill")
-                    .font(.system(size: 48, weight: .medium))
-                    .foregroundStyle(
-                        LinearGradient(
-                            colors: [Color.heftGold, Color.heftAmber],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        )
-                    )
-                    .shadow(color: Color.heftGold.opacity(0.5), radius: 16)
+            // ── Trophy ──────────────────────────────────────────────────────────
+            Image(systemName: "trophy.fill")
+                .font(.system(size: 52))
+                .foregroundStyle(Color.heftGold)
+                .symbolEffect(.bounce, value: symbolAnimated)
+                .padding(.bottom, 4)
 
-                Text("NEW PR")
-                    .font(.system(size: 13, weight: .bold))
-                    .tracking(3.0)
+            // ── Labels ──────────────────────────────────────────────────────────
+            VStack(spacing: 6) {
+                Text("Personal Record")
+                    .font(.caption.weight(.semibold))
                     .foregroundStyle(Color.heftGold)
+                    .textCase(.uppercase)
+                    .tracking(1.5)
+
+                Text(moment.exerciseName)
+                    .font(.title2.weight(.bold))
+                    .foregroundStyle(.primary)
+                    .multilineTextAlignment(.center)
             }
 
-            // ── Exercise name ──────────────────────────────────────────────────
-            Text(moment.exerciseName)
-                .font(.title3.weight(.semibold))
-                .foregroundStyle(Color.textPrimary)
-                .multilineTextAlignment(.center)
-
-            // ── Set + e1RM ─────────────────────────────────────────────────────
-            VStack(spacing: Spacing.xs) {
+            // ── Numbers ─────────────────────────────────────────────────────────
+            VStack(spacing: 4) {
                 Text("\(moment.formattedWeight) lbs × \(moment.reps) reps")
-                    .font(.system(size: 22, weight: .semibold, design: .rounded))
+                    .font(.title3.weight(.semibold))
                     .monospacedDigit()
-                    .foregroundStyle(Color.textPrimary)
+                    .foregroundStyle(.primary)
 
                 Text("~\(moment.formattedE1RM) lbs estimated 1RM")
                     .font(.subheadline)
-                    .foregroundStyle(Color.heftAmber.opacity(0.8))
+                    .foregroundStyle(.secondary)
             }
 
-            // ── Dismiss ────────────────────────────────────────────────────────
-            Button(action: onDismiss) {
-                Text("Let's Go")
-                    .font(.system(size: 16, weight: .bold))
-                    .foregroundStyle(.black)
-                    .frame(maxWidth: .infinity)
-                    .frame(height: 50)
-                    .background(
-                        LinearGradient(
-                            colors: [Color.heftGold, Color.heftAmber],
-                            startPoint: .leading,
-                            endPoint: .trailing
-                        ),
-                        in: RoundedRectangle(cornerRadius: Radius.small, style: .continuous)
-                    )
-            }
-            .buttonStyle(.plain)
+            // ── Dismiss ─────────────────────────────────────────────────────────
+            Button("Continue", action: onDismiss)
+                .buttonStyle(.borderedProminent)
+                .controlSize(.large)
+                .tint(Color.heftGold)
+                .padding(.top, 4)
         }
-        .padding(Spacing.xl)
-        .frame(maxWidth: 340)
-        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: Radius.large, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: Radius.large, style: .continuous)
-                .strokeBorder(
-                    LinearGradient(
-                        colors: [
-                            Color.heftGold.opacity(0.6),
-                            Color.heftAmber.opacity(0.3),
-                            Color.heftGold.opacity(0.4),
-                        ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    ),
-                    lineWidth: 1
-                )
-        )
-        .shadow(color: Color.heftGold.opacity(0.2), radius: 48, x: 0, y: 8)
-        .shadow(color: Color.heftAmber.opacity(0.1), radius: 80, x: 0, y: 0)
-        .padding(.horizontal, Spacing.lg)
+        .padding(28)
+        .frame(maxWidth: 320)
+        .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
+        .onAppear { symbolAnimated = true }
     }
 }
 

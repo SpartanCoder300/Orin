@@ -16,18 +16,20 @@ struct HomeRootView: View {
 
     @State private var stats = HomeStatsViewModel()
     @State private var routineBuilderRequest: RoutineBuilderRequest? = nil
-    @State private var startRequest: StartRequest? = nil
 
-    private var featuredRoutine: RoutineTemplate? { routines.first }
-    private var remainingRoutines: [RoutineTemplate] { Array(routines.dropFirst()) }
+    /// Most recently used first, falling back to creation date.
+    private var sortedRoutines: [RoutineTemplate] {
+        routines.sorted { a, b in
+            let aDate = a.lastUsedAt ?? a.createdAt ?? .distantPast
+            let bDate = b.lastUsedAt ?? b.createdAt ?? .distantPast
+            return aDate > bDate
+        }
+    }
 
-    /// Computed directly from @Query so it updates the instant completedAt is saved —
-    /// no async hop, no onChange timing dependency.
     private var recentSessions: [WorkoutSession] {
         Array(sessions.filter { $0.completedAt != nil }.prefix(3))
     }
 
-    /// Average workout duration in minutes, keyed by routineTemplateId.
     private var routineAvgMinutes: [UUID: Int] {
         var byRoutine: [UUID: [TimeInterval]] = [:]
         for session in sessions {
@@ -68,51 +70,21 @@ struct HomeRootView: View {
                     StatChip(label: "PRs", value: stats.prCountLabel, valueColor: Color.heftAmber)
                 }
 
-                // ── Quick Start ────────────────────────────────────────
+                // ── Routines ───────────────────────────────────────────
                 VStack(alignment: .leading, spacing: Spacing.sm) {
-                    SectionHeader(title: "Quick Start")
+                    SectionHeader(title: "Routines")
 
-                    if let featured = featuredRoutine {
-                        FeaturedRoutineCard(
-                            routine: featured,
-                            avgMinutes: routineAvgMinutes[featured.id],
-                            onTap: {
-                                startRequest = StartRequest(routineName: featured.name, routineID: featured.id, sessionID: nil)
-                            },
-                            onEdit: {
-                                routineBuilderRequest = RoutineBuilderRequest(routine: featured)
-                            }
-                        )
-                    } else {
+                    if sortedRoutines.isEmpty {
                         EmptyRoutinesPrompt {
                             routineBuilderRequest = RoutineBuilderRequest(routine: nil)
                         }
-                    }
-
-                    // Secondary option — spec requires a direct empty-start path
-                    Button {
-                        startRequest = StartRequest(routineName: nil, routineID: nil, sessionID: nil)
-                    } label: {
-                        Text("or start empty workout")
-                            .font(Typography.caption)
-                            .foregroundStyle(Color.textFaint)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, Spacing.xs)
-                    }
-                    .buttonStyle(.plain)
-                }
-
-                // ── All Routines ───────────────────────────────────────
-                if !routines.isEmpty {
-                    VStack(alignment: .leading, spacing: Spacing.sm) {
-                        SectionHeader(title: "All Routines")
-
-                        ForEach(remainingRoutines) { routine in
+                    } else {
+                        ForEach(sortedRoutines) { routine in
                             RoutineListRow(
                                 routine: routine,
                                 avgMinutes: routineAvgMinutes[routine.id],
                                 onTap: {
-                                    startRequest = StartRequest(routineName: routine.name, routineID: routine.id, sessionID: nil)
+                                    appState.workout.startWorkout(routineID: routine.id, modelContext: modelContext)
                                 },
                                 onEdit: {
                                     routineBuilderRequest = RoutineBuilderRequest(routine: routine)
@@ -124,6 +96,17 @@ struct HomeRootView: View {
                             routineBuilderRequest = RoutineBuilderRequest(routine: nil)
                         }
                     }
+
+                    Button {
+                        appState.workout.startWorkout(routineID: nil, sessionID: nil, modelContext: modelContext)
+                    } label: {
+                        Text("or start empty workout")
+                            .font(Typography.caption)
+                            .foregroundStyle(Color.textFaint)
+                            .padding(.horizontal, Spacing.md)
+                            .padding(.vertical, Spacing.xs)
+                    }
+                    .buttonStyle(.plain)
                 }
 
                 // ── Recent Workouts ────────────────────────────────────
@@ -132,7 +115,7 @@ struct HomeRootView: View {
                         SectionHeader(title: "Recent")
                         ForEach(recentSessions) { session in
                             RecentWorkoutListRow(session: session) {
-                                startRequest = StartRequest(routineName: nil, routineID: nil, sessionID: session.id)
+                                appState.workout.startWorkout(routineID: nil, sessionID: session.id, modelContext: modelContext)
                             }
                         }
                     }
@@ -150,25 +133,6 @@ struct HomeRootView: View {
                     Image(systemName: "plus")
                         .fontWeight(.semibold)
                 }
-            }
-        }
-        .alert(startRequest?.title ?? "", isPresented: .init(
-            get: { startRequest != nil },
-            set: { if !$0 { startRequest = nil } }
-        )) {
-            Button(startRequest?.actionLabel ?? "Start") {
-                guard let req = startRequest else { return }
-                appState.workout.startWorkout(
-                    routineID: req.routineID,
-                    sessionID: req.sessionID,
-                    modelContext: modelContext
-                )
-                startRequest = nil
-            }
-            Button("Cancel", role: .cancel) { startRequest = nil }
-        } message: {
-            if let req = startRequest, req.routineID == nil && req.sessionID == nil {
-                Text("No routine selected — you can add exercises as you go.")
             }
         }
         .sheet(item: $routineBuilderRequest) { request in
@@ -189,25 +153,6 @@ struct HomeRootView: View {
 private struct RoutineBuilderRequest: Identifiable {
     let id = UUID()
     let routine: RoutineTemplate?
-}
-
-// MARK: - Start Request
-
-private struct StartRequest {
-    let routineName: String?
-    let routineID: UUID?
-    let sessionID: UUID?
-
-    var title: String {
-        if let name = routineName { return "Start \"\(name)\"?" }
-        if sessionID != nil { return "Repeat Workout?" }
-        return "Start Empty Workout?"
-    }
-
-    var actionLabel: String {
-        if sessionID != nil { return "Repeat" }
-        return "Start"
-    }
 }
 
 // MARK: - Section Header
@@ -258,79 +203,6 @@ private struct StatChip: View {
         .padding(.vertical, Spacing.sm)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
-    }
-}
-
-// MARK: - Featured Routine Card
-
-private struct FeaturedRoutineCard: View {
-    let routine: RoutineTemplate
-    let avgMinutes: Int?
-    let onTap: () -> Void
-    let onEdit: () -> Void
-    @Environment(\.heftTheme) private var theme
-
-    var body: some View {
-        Button(action: onTap) {
-            VStack(alignment: .leading, spacing: Spacing.sm) {
-                HStack(alignment: .firstTextBaseline) {
-                    Text(routine.name)
-                        .font(Typography.heading)
-                        .fontWeight(.semibold)
-                        .foregroundStyle(Color.textPrimary)
-                    Spacer()
-                    if let label = lastUsedLabel {
-                        Text(label)
-                            .font(Typography.caption)
-                            .foregroundStyle(Color.textFaint)
-                    }
-                }
-
-                HStack(spacing: Spacing.md) {
-                    MetadataPill(value: "\(routine.entries.count)", label: "exercises")
-                    MetadataPill(value: avgMinutes.map { "\($0)" } ?? "—", label: "min avg")
-                    MetadataPill(value: "\(totalSets)", label: "sets")
-                }
-            }
-            .padding(Spacing.md)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
-                    .strokeBorder(theme.accentColor.opacity(0.25), lineWidth: 1)
-            )
-        }
-        .buttonStyle(.plain)
-        .contextMenu {
-            Button { onEdit() } label: {
-                Label("Edit Routine", systemImage: "pencil")
-            }
-        }
-    }
-
-    private var lastUsedLabel: String? {
-        guard let date = routine.lastUsedAt else { return nil }
-        return date.formatted(.relative(presentation: .named, unitsStyle: .wide))
-    }
-
-    private var totalSets: Int {
-        routine.entries.reduce(0) { $0 + $1.targetSets }
-    }
-}
-
-private struct MetadataPill: View {
-    let value: String
-    let label: String
-
-    var body: some View {
-        HStack(spacing: 3) {
-            Text(value)
-                .fontWeight(.semibold)
-                .foregroundStyle(Color.textPrimary)
-            Text(label)
-                .foregroundStyle(Color.textMuted)
-        }
-        .font(Typography.caption)
     }
 }
 
@@ -399,24 +271,11 @@ private struct NewRoutineCard: View {
 
     var body: some View {
         Button(action: action) {
-            HStack(spacing: Spacing.sm) {
-                Image(systemName: "plus")
-                    .font(.system(size: 16, weight: .semibold))
-                Text("New Routine")
-                    .font(Typography.body)
-                    .fontWeight(.medium)
-            }
-            .foregroundStyle(theme.accentColor)
-            .frame(maxWidth: .infinity)
-            .padding(.vertical, Spacing.md)
-            .background(theme.accentColor.opacity(0.06), in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
-                    .strokeBorder(
-                        theme.accentColor.opacity(0.3),
-                        style: StrokeStyle(lineWidth: 1.5, dash: [6, 4])
-                    )
-            )
+            Label("New Routine", systemImage: "plus.circle.fill")
+                .font(Typography.body.weight(.medium))
+                .foregroundStyle(theme.accentColor)
+                .padding(.horizontal, Spacing.md)
+                .padding(.vertical, Spacing.sm)
         }
         .buttonStyle(.plain)
     }

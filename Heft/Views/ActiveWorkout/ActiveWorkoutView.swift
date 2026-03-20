@@ -119,12 +119,10 @@ struct ActiveWorkoutView: View {
                 }
                 .onChange(of: vm.isAllSetsLogged) { _, allDone in
                     guard allDone else { return }
-                    // Brief pause so the user sees the final set turn green
+                    // Brief pause so the user sees the final set turn green, then prompt
                     Task {
                         try? await Task.sleep(for: .seconds(0.8))
-                        if let session = vm.endWorkout() {
-                            completedSession = session
-                        }
+                        vm.isShowingEndConfirm = true
                     }
                 }
             }
