@@ -20,6 +20,12 @@ struct ActiveWorkoutView: View {
                 ScrollViewReader { proxy in
                     ScrollView {
                         VStack(spacing: Spacing.md) {
+                            // ── Inline rest timer ─────────────────────────────
+                            if vm.restTimer.isActive {
+                                RestTimerBanner(restTimer: vm.restTimer, vm: vm)
+                                    .transition(.move(edge: .top).combined(with: .opacity))
+                            }
+
                             if vm.draftExercises.isEmpty {
                                 EmptyWorkoutPrompt(accentColor: theme.accentColor)
                             } else {
@@ -35,6 +41,7 @@ struct ActiveWorkoutView: View {
                         }
                         .padding(.horizontal, Spacing.md)
                         .padding(.vertical, Spacing.lg)
+                        .animation(Motion.standardSpring, value: vm.restTimer.isActive)
                     }
                     .safeAreaBar(edge: .bottom) {
                         ActiveSetCommandBar(vm: vm)
@@ -109,16 +116,6 @@ struct ActiveWorkoutView: View {
                     ExercisePicker { exercise in
                         vm.addExercise(named: exercise.name)
                     }
-                }
-                .sheet(isPresented: $vm.isShowingRestTimer) {
-                    RestTimerSheet(restTimer: vm.restTimer, vm: vm)
-                        .presentationDetents([.fraction(0.92)])
-                        .presentationDragIndicator(.hidden)
-                        .presentationCornerRadius(Radius.large)
-                        .presentationBackground(.clear)
-                }
-                .onChange(of: vm.restTimer.isActive) { _, isActive in
-                    vm.isShowingRestTimer = isActive
                 }
                 .onChange(of: vm.isAllSetsLogged) { _, allDone in
                     guard allDone else { return }
