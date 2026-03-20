@@ -13,6 +13,7 @@ extension Color {
     static var heftRed: Color { Color("HeftRed") }
     static var heftGreen: Color { Color("HeftGreen") }
     static var heftAmber: Color { Color("HeftAmber") }
+    static var heftGold: Color { Color("HeftGold") }
 
     static var textPrimary: Color { .white.opacity(DesignTokens.Opacity.textPrimary) }
     static var textMuted: Color { .white.opacity(DesignTokens.Opacity.textMuted) }

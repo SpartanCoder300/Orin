@@ -3,6 +3,7 @@
 import Foundation
 import SwiftData
 import UIKit
+import AudioToolbox
 
 @Observable @MainActor
 final class ActiveWorkoutViewModel {
@@ -16,6 +17,7 @@ final class ActiveWorkoutViewModel {
         var setType: SetType = .normal
         var isLogged: Bool = false
         var loggedRecord: SetRecord? = nil
+        var isPR: Bool = false
     }
 
     struct PreviousSet {
@@ -39,6 +41,20 @@ final class ActiveWorkoutViewModel {
         let setIndex: Int
     }
 
+    /// Data surfaced to the PR moment overlay.
+    struct PRMoment {
+        let exerciseName: String
+        let weight: Double
+        let reps: Int
+        let estimatedOneRepMax: Double
+
+        var formattedWeight: String {
+            weight.truncatingRemainder(dividingBy: 1) == 0
+                ? "\(Int(weight))" : String(format: "%.1f", weight)
+        }
+        var formattedE1RM: String { "\(Int(estimatedOneRepMax.rounded()))" }
+    }
+
     // MARK: - State
 
     var draftExercises: [DraftExercise] = []
@@ -46,10 +62,20 @@ final class ActiveWorkoutViewModel {
     var isShowingEndConfirm: Bool = false
     var isShowingExercisePicker: Bool = false
     var isShowingRestTimer: Bool = false
+    /// Non-nil while the PR moment overlay is visible. Cleared by dismissPRMoment().
+    private(set) var showingPRMoment: PRMoment? = nil
 
     private(set) var session: WorkoutSession? = nil
     let restTimer = RestTimerState()
     private(set) var lastLoggedFocus: SetFocus? = nil
+    /// Set to the record ID of the most recently detected PR. Cleared after the celebration window.
+    private(set) var lastPRSetID: UUID? = nil
+    /// Rest duration stored when a PR is detected so it starts after the PR overlay is dismissed.
+    private var pendingRestDuration: TimeInterval? = nil
+    /// Best in-session e1RM per exercise name. Written to ExerciseDefinition only on endWorkout().
+    private var pendingPRByExercise: [String: Double] = [:]
+    /// True if at least one PR has been logged this session and would be lost on cancel.
+    var hasPendingPRs: Bool { !pendingPRByExercise.isEmpty }
 
     var isSessionStarted: Bool { session != nil }
 
@@ -305,13 +331,31 @@ final class ActiveWorkoutViewModel {
         modelContext.insert(record)
         snapshot.sets.append(record)
 
+        // PR check must run before set is marked logged (synchronous, main actor)
+        let isNewPR: Bool
         if draft.setType != .warmup {
-            checkPR(exerciseName: draftExercises[eIdx].exerciseName, weight: weight, reps: reps, record: record)
+            isNewPR = checkPR(exerciseName: draftExercises[eIdx].exerciseName, weight: weight, reps: reps, record: record)
+        } else {
+            isNewPR = false
         }
 
         draftExercises[eIdx].sets[sIdx].isLogged = true
         draftExercises[eIdx].sets[sIdx].loggedRecord = record
         lastLoggedFocus = SetFocus(exerciseIndex: eIdx, setIndex: sIdx)
+
+        // After loggedRecord is assigned, surface the PR so the view can animate
+        if isNewPR {
+            draftExercises[eIdx].sets[sIdx].isPR = true
+            lastPRSetID = record.id
+            let e1rm = ExerciseDefinition.estimatedOneRepMax(weight: weight, reps: reps)
+            showingPRMoment = PRMoment(
+                exerciseName: draftExercises[eIdx].exerciseName,
+                weight: weight,
+                reps: reps,
+                estimatedOneRepMax: e1rm
+            )
+            firePRCelebration()
+        }
 
         // Propagate weight + reps forward to subsequent blank sets in the same exercise
         for i in draftExercises[eIdx].sets.indices where i > sIdx {
@@ -328,9 +372,14 @@ final class ActiveWorkoutViewModel {
 
         try? modelContext.save()
 
-        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-
-        startRestTimer(duration: TimeInterval(draftExercises[eIdx].restSeconds))
+        if !isNewPR {
+            // PR sets fire their own distinct haptic; normal sets get medium impact
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            startRestTimer(duration: TimeInterval(draftExercises[eIdx].restSeconds))
+        } else {
+            // Rest timer deferred — starts when the PR overlay is dismissed
+            pendingRestDuration = TimeInterval(draftExercises[eIdx].restSeconds)
+        }
     }
 
     /// Logs the currently focused set. Returns true if a set was logged.
@@ -429,8 +478,22 @@ final class ActiveWorkoutViewModel {
     func endWorkout() -> WorkoutSession? {
         guard let s = session else { return nil }
         s.completedAt = .now
+        applyPendingPRs()
         try? modelContext.save()
         return s
+    }
+
+    private func applyPendingPRs() {
+        for (exerciseName, newE1RM) in pendingPRByExercise {
+            let d = FetchDescriptor<ExerciseDefinition>(
+                predicate: #Predicate { $0.name == exerciseName }
+            )
+            guard let def = (try? modelContext.fetch(d))?.first else { continue }
+            def.previousPR = def.currentPR
+            def.currentPR = newE1RM
+            def.prDate = .now
+        }
+        pendingPRByExercise.removeAll()
     }
 
     /// Discards the in-progress session and all logged sets without saving.
@@ -450,6 +513,15 @@ final class ActiveWorkoutViewModel {
 
     func formatWeight(_ v: Double) -> String {
         v.truncatingRemainder(dividingBy: 1) == 0 ? "\(Int(v))" : String(format: "%.1f", v)
+    }
+
+    /// Dismisses the PR moment overlay and starts the deferred rest timer.
+    func dismissPRMoment() {
+        showingPRMoment = nil
+        if let duration = pendingRestDuration {
+            startRestTimer(duration: duration)
+            pendingRestDuration = nil
+        }
     }
 
     // MARK: - Private helpers
@@ -475,16 +547,40 @@ final class ActiveWorkoutViewModel {
         return snap
     }
 
-    private func checkPR(exerciseName: String, weight: Double, reps: Int, record: SetRecord) {
+    @discardableResult
+    private func checkPR(exerciseName: String, weight: Double, reps: Int, record: SetRecord) -> Bool {
         let d = FetchDescriptor<ExerciseDefinition>(
             predicate: #Predicate { $0.name == exerciseName }
         )
-        guard let def = (try? modelContext.fetch(d))?.first else { return }
+        guard let def = (try? modelContext.fetch(d))?.first else { return false }
         let e1rm = ExerciseDefinition.estimatedOneRepMax(weight: weight, reps: reps)
-        guard e1rm > def.currentPR else { return }
-        def.previousPR = def.currentPR
-        def.currentPR = e1rm
-        def.prDate = .now
+        // Compare against both the persisted best and any better set already logged this session
+        let sessionBest = pendingPRByExercise[exerciseName] ?? 0
+        guard e1rm > max(def.currentPR, sessionBest) else { return false }
+        pendingPRByExercise[exerciseName] = e1rm
         record.isPersonalRecord = true
+        return true
+    }
+
+    private func firePRCelebration() {
+        // 1. Success notification haptic — the primary tactile reward
+        let notification = UINotificationFeedbackGenerator()
+        notification.prepare()
+        notification.notificationOccurred(.success)
+
+        // 2. Apple Pay–style success chime
+        AudioServicesPlaySystemSound(SystemSoundID(1322))
+
+        // 3. Secondary heavy impact 120ms later for extra punch
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(120))
+            UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+        }
+
+        // 4. Clear the PR animation trigger after the celebration window
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(3))
+            lastPRSetID = nil
+        }
     }
 }

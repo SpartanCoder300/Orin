@@ -9,6 +9,7 @@ struct AppView: View {
 
     var body: some View {
         @Bindable var appState = appState
+        @Bindable var workout = appState.workout
 
         TabView(selection: $appState.selectedTab) {
             NavigationStack {
@@ -34,6 +35,19 @@ struct AppView: View {
                 Label("Settings", systemImage: "gearshape")
             }
             .tag(AppTab.settings)
+        }
+        // ── Mini workout bar — only shown while a workout is active ──
+        // The system automatically wraps content in a Liquid Glass capsule.
+        .tabViewBottomAccessory(isEnabled: appState.workout.hasActiveWorkout) {
+            MiniWorkoutBar(service: appState.workout)
+        }
+        // ── Full workout screen ──
+        .sheet(isPresented: $workout.isShowingFullWorkout) {
+            if let vm = appState.workout.viewModel {
+                ActiveWorkoutView(vm: vm, onDismiss: {
+                    appState.workout.handleWorkoutEnded()
+                })
+            }
         }
         .tint(appState.accentTheme.accentColor)
         .background(Color.heftBackground.ignoresSafeArea())

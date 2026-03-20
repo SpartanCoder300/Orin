@@ -158,9 +158,11 @@ struct HomeRootView: View {
         )) {
             Button(startRequest?.actionLabel ?? "Start") {
                 guard let req = startRequest else { return }
-                appState.pendingRoutineID = req.routineID
-                appState.pendingSessionID = req.sessionID
-                appState.isShowingActiveWorkout = true
+                appState.workout.startWorkout(
+                    routineID: req.routineID,
+                    sessionID: req.sessionID,
+                    modelContext: modelContext
+                )
                 startRequest = nil
             }
             Button("Cancel", role: .cancel) { startRequest = nil }
@@ -169,21 +171,9 @@ struct HomeRootView: View {
                 Text("No routine selected — you can add exercises as you go.")
             }
         }
-        .fullScreenCover(isPresented: $appState.isShowingActiveWorkout, onDismiss: {
-            appState.pendingRoutineID = nil
-            appState.pendingSessionID = nil
-        }) {
-            ActiveWorkoutView(
-                modelContext: modelContext,
-                pendingRoutineID: appState.pendingRoutineID,
-                pendingSessionID: appState.pendingSessionID
-            )
-        }
         .sheet(item: $routineBuilderRequest) { request in
             RoutineBuilderView(existingRoutine: request.routine) { routineID in
-                appState.pendingRoutineID = routineID
-                appState.pendingSessionID = nil
-                appState.isShowingActiveWorkout = true
+                appState.workout.startWorkout(routineID: routineID, modelContext: modelContext)
             }
         }
         .onChange(of: sessions, initial: true) {

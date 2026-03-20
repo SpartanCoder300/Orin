@@ -10,14 +10,10 @@ enum AppTab: Hashable {
     case settings
 }
 
-@Observable
+@Observable @MainActor
 final class AppState {
     var selectedTab: AppTab = .home
-    var activeWorkoutID: UUID?
-    var isShowingActiveWorkout: Bool = false
-    var pendingRoutineID: UUID? = nil
-    /// Set when the user repeats a past session. Mutually exclusive with pendingRoutineID.
-    var pendingSessionID: UUID? = nil
+    let workout = ActiveWorkoutService()
 
     var accentTheme: AccentTheme = {
         let raw = UserDefaults.standard.string(forKey: "heft.accentTheme") ?? ""

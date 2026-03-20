@@ -121,6 +121,8 @@ struct ActiveExerciseCard: View {
                     isFocused: vm.currentFocus == ActiveWorkoutViewModel.SetFocus(
                         exerciseIndex: exerciseIndex, setIndex: sIdx
                     ),
+                    isPR: set.isPR,
+                    justGotPR: vm.lastPRSetID != nil && vm.lastPRSetID == set.loggedRecord?.id,
                     accentColor: theme.accentColor,
                     onCycleType: { vm.cycleSetType(exerciseIndex: exerciseIndex, setIndex: sIdx) },
                     onFocus: { vm.setManualFocus(exerciseIndex: exerciseIndex, setIndex: sIdx) },
@@ -178,12 +180,17 @@ private struct SetRow: View {
     let setType: SetType
     let isLogged: Bool
     let isFocused: Bool
+    let isPR: Bool
+    let justGotPR: Bool
     let accentColor: Color
     let onCycleType: () -> Void
     let onFocus: () -> Void
     let onLog: () -> Void
     let onDelete: () -> Void
     let onUndo: () -> Void
+
+    @State private var rowScale: CGFloat = 1.0
+    @State private var badgeScale: CGFloat = 0
 
     var body: some View {
         HStack(spacing: 6) {
@@ -207,6 +214,17 @@ private struct SetRow: View {
                 .animation(Motion.standardSpring, value: weightText)
                 .animation(Motion.standardSpring, value: repsText)
 
+            // PR badge — pops in with spring animation when PR is detected
+            if isPR {
+                Text("PR")
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(.black)
+                    .padding(.horizontal, 6)
+                    .padding(.vertical, 2)
+                    .background(Color.heftGold, in: Capsule())
+                    .scaleEffect(badgeScale)
+            }
+
             Spacer()
 
             // Log / status button
@@ -220,6 +238,7 @@ private struct SetRow: View {
             .buttonStyle(.plain)
             .disabled(isLogged)
         }
+        .scaleEffect(rowScale)
         .padding(.vertical, 4)
         .padding(.leading, Spacing.xs)
         .padding(.trailing, Spacing.sm)
@@ -228,7 +247,7 @@ private struct SetRow: View {
         .onTapGesture {
             if !isLogged { onFocus() }
         }
-        .opacity(isLogged ? 0.5 : 1.0)
+        .opacity(isLogged && !isPR ? 0.5 : 1.0)
         .animation(Motion.standardSpring, value: isLogged)
         .animation(Motion.standardSpring, value: isFocused)
         .contextMenu {
@@ -239,6 +258,28 @@ private struct SetRow: View {
             } else {
                 Button(role: .destructive, action: onDelete) {
                     Label("Delete Set", systemImage: "trash")
+                }
+            }
+        }
+        .onAppear {
+            // If this set was already a PR (e.g. view re-mounted), show badge immediately
+            if isPR { badgeScale = 1.0 }
+        }
+        .onChange(of: justGotPR) { _, newVal in
+            guard newVal else { return }
+            // Badge: scale from zero with bouncy spring
+            badgeScale = 0
+            withAnimation(.spring(response: 0.4, dampingFraction: 0.5)) {
+                badgeScale = 1.0
+            }
+            // Row: pulse scale 1.0 → 1.05 → 1.0
+            withAnimation(.spring(response: 0.18, dampingFraction: 0.4)) {
+                rowScale = 1.05
+            }
+            Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(180))
+                withAnimation(Motion.standardSpring) {
+                    rowScale = 1.0
                 }
             }
         }

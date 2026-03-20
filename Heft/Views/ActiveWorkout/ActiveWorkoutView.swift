@@ -4,125 +4,151 @@ import SwiftUI
 import SwiftData
 
 struct ActiveWorkoutView: View {
-    @State private var vm: ActiveWorkoutViewModel
-    @State private var completedSession: WorkoutSession?
-    @Environment(\.dismiss) private var dismiss
-    @Environment(\.heftTheme) private var theme
+    let vm: ActiveWorkoutViewModel
+    let onDismiss: () -> Void
 
-    init(modelContext: ModelContext, pendingRoutineID: UUID?, pendingSessionID: UUID? = nil) {
-        _vm = State(initialValue: ActiveWorkoutViewModel(
-            modelContext: modelContext,
-            pendingRoutineID: pendingRoutineID,
-            pendingSessionID: pendingSessionID
-        ))
-    }
+    @State private var completedSession: WorkoutSession?
+    @State private var isShowingCancelPRWarning = false
+    @Environment(\.heftTheme) private var theme
 
     var body: some View {
         @Bindable var vm = vm
 
-        NavigationStack {
-            ScrollViewReader { proxy in
-                ScrollView {
-                    VStack(spacing: Spacing.md) {
-                        if vm.draftExercises.isEmpty {
-                            EmptyWorkoutPrompt(accentColor: theme.accentColor)
-                        } else {
-                            ForEach(Array(vm.draftExercises.enumerated()), id: \.element.id) { idx, exercise in
-                                ActiveExerciseCard(
-                                    vm: vm,
-                                    exerciseIndex: idx,
-                                    theme: theme
-                                )
-                                .id(exercise.id)
+        ZStack {
+            // ── Workout content ────────────────────────────────────────────────
+            NavigationStack {
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        VStack(spacing: Spacing.md) {
+                            if vm.draftExercises.isEmpty {
+                                EmptyWorkoutPrompt(accentColor: theme.accentColor)
+                            } else {
+                                ForEach(Array(vm.draftExercises.enumerated()), id: \.element.id) { idx, exercise in
+                                    ActiveExerciseCard(
+                                        vm: vm,
+                                        exerciseIndex: idx,
+                                        theme: theme
+                                    )
+                                    .id(exercise.id)
+                                }
                             }
                         }
+                        .padding(.horizontal, Spacing.md)
+                        .padding(.vertical, Spacing.lg)
                     }
-                    .padding(.horizontal, Spacing.md)
-                    .padding(.vertical, Spacing.lg)
-                }
-                .safeAreaBar(edge: .bottom) {
-                    ActiveSetCommandBar(vm: vm)
-                }
-                .onChange(of: vm.currentFocus) { _, newFocus in
-                    guard let focus = newFocus,
-                          vm.draftExercises.indices.contains(focus.exerciseIndex) else { return }
-                    withAnimation(Motion.standardSpring) {
-                        proxy.scrollTo(
-                            vm.draftExercises[focus.exerciseIndex].id,
-                            anchor: .center
-                        )
+                    .safeAreaBar(edge: .bottom) {
+                        ActiveSetCommandBar(vm: vm)
                     }
-                }
-            }
-            .themedBackground()
-            .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("End") { vm.isShowingEndConfirm = true }
-                        .fontWeight(.semibold)
-                        .foregroundStyle(Color.heftRed)
-                }
-                ToolbarItem(placement: .principal) {
-                    TimelineView(.periodic(from: vm.openedAt, by: 1.0)) { ctx in
-                        Text(vm.elapsedLabel(at: ctx.date))
-                            .font(.system(size: 17, weight: .semibold, design: .monospaced))
-                            .foregroundStyle(Color.textPrimary)
+                    .onChange(of: vm.currentFocus) { _, newFocus in
+                        guard let focus = newFocus,
+                              vm.draftExercises.indices.contains(focus.exerciseIndex) else { return }
+                        withAnimation(Motion.standardSpring) {
+                            proxy.scrollTo(
+                                vm.draftExercises[focus.exerciseIndex].id,
+                                anchor: .center
+                            )
+                        }
                     }
                 }
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button { vm.isShowingExercisePicker = true } label: {
-                        Image(systemName: "plus").fontWeight(.semibold)
+                .themedBackground()
+                .navigationBarTitleDisplayMode(.inline)
+                .toolbar {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("End") { vm.isShowingEndConfirm = true }
+                            .fontWeight(.semibold)
+                            .foregroundStyle(Color.heftRed)
+                    }
+                    ToolbarItem(placement: .principal) {
+                        TimelineView(.periodic(from: vm.openedAt, by: 1.0)) { ctx in
+                            Text(vm.elapsedLabel(at: ctx.date))
+                                .font(.system(size: 17, weight: .semibold, design: .monospaced))
+                                .foregroundStyle(Color.textPrimary)
+                        }
+                    }
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Button { vm.isShowingExercisePicker = true } label: {
+                            Image(systemName: "plus").fontWeight(.semibold)
+                        }
+                    }
+                }
+                .alert("End Workout?", isPresented: $vm.isShowingEndConfirm) {
+                    Button("Finish") {
+                        if let session = vm.endWorkout() {
+                            completedSession = session
+                        } else {
+                            onDismiss()
+                        }
+                    }
+                    Button("Cancel Workout", role: .destructive) {
+                        if vm.hasPendingPRs {
+                            isShowingCancelPRWarning = true
+                        } else {
+                            vm.cancelWorkout()
+                            onDismiss()
+                        }
+                    }
+                    Button("Back", role: .cancel) {}
+                } message: {
+                    Text(vm.isSessionStarted
+                         ? "\(vm.elapsedLabel(at: .now)) · \(vm.loggedSetCount) sets logged"
+                         : "No sets logged — this session won't be saved.")
+                }
+                .alert("Discard Your PR?", isPresented: $isShowingCancelPRWarning) {
+                    Button("Discard & Cancel", role: .destructive) {
+                        vm.cancelWorkout()
+                        onDismiss()
+                    }
+                    Button("Keep Workout", role: .cancel) {}
+                } message: {
+                    Text("You set a new personal record this workout. Cancelling will permanently discard it.")
+                }
+                .navigationDestination(item: $completedSession) { session in
+                    WorkoutSummaryView(session: session, onDone: { onDismiss() })
+                }
+                .sheet(isPresented: $vm.isShowingExercisePicker) {
+                    ExercisePicker { exercise in
+                        vm.addExercise(named: exercise.name)
+                    }
+                }
+                .sheet(isPresented: $vm.isShowingRestTimer) {
+                    RestTimerSheet(restTimer: vm.restTimer, vm: vm)
+                        .presentationDetents([.fraction(0.92)])
+                        .presentationDragIndicator(.hidden)
+                        .presentationCornerRadius(Radius.large)
+                        .presentationBackground(.clear)
+                }
+                .onChange(of: vm.restTimer.isActive) { _, isActive in
+                    vm.isShowingRestTimer = isActive
+                }
+                .onChange(of: vm.isAllSetsLogged) { _, allDone in
+                    guard allDone else { return }
+                    // Brief pause so the user sees the final set turn green
+                    Task {
+                        try? await Task.sleep(for: .seconds(0.8))
+                        if let session = vm.endWorkout() {
+                            completedSession = session
+                        }
                     }
                 }
             }
-            .alert("End Workout?", isPresented: $vm.isShowingEndConfirm) {
-                Button("Finish") {
-                    if let session = vm.endWorkout() {
-                        completedSession = session
-                    } else {
-                        dismiss()
-                    }
+            .task { vm.setup() }
+
+            // ── PR moment overlay ──────────────────────────────────────────────
+            if let moment = vm.showingPRMoment {
+                Color.black.opacity(0.55)
+                    .ignoresSafeArea()
+                    .transition(.opacity)
+
+                PRMomentOverlay(moment: moment) {
+                    vm.dismissPRMoment()
                 }
-                Button("Cancel Workout", role: .destructive) {
-                    vm.cancelWorkout()
-                    dismiss()
-                }
-                Button("Back", role: .cancel) {}
-            } message: {
-                Text(vm.isSessionStarted
-                     ? "\(vm.elapsedLabel(at: .now)) · \(vm.loggedSetCount) sets logged"
-                     : "No sets logged — this session won't be saved.")
-            }
-            .navigationDestination(item: $completedSession) { session in
-                WorkoutSummaryView(session: session, onDone: { dismiss() })
-            }
-            .sheet(isPresented: $vm.isShowingExercisePicker) {
-                ExercisePicker { exercise in
-                    vm.addExercise(named: exercise.name)
-                }
-            }
-            .sheet(isPresented: $vm.isShowingRestTimer) {
-                RestTimerSheet(restTimer: vm.restTimer, vm: vm)
-                    .presentationDetents([.fraction(0.92)])
-                    .presentationDragIndicator(.hidden)
-                    .presentationCornerRadius(Radius.large)
-                    .presentationBackground(.clear)
-            }
-            .onChange(of: vm.restTimer.isActive) { _, isActive in
-                vm.isShowingRestTimer = isActive
-            }
-            .onChange(of: vm.isAllSetsLogged) { _, allDone in
-                guard allDone else { return }
-                // Brief pause so the user sees the final set turn green
-                Task {
-                    try? await Task.sleep(for: .seconds(0.8))
-                    if let session = vm.endWorkout() {
-                        completedSession = session
-                    }
-                }
+                .transition(
+                    .scale(scale: 0.88, anchor: .center)
+                    .combined(with: .opacity)
+                )
             }
         }
-        .task { vm.setup() }
+        .animation(Motion.standardSpring, value: vm.showingPRMoment != nil)
     }
 }
 
@@ -153,10 +179,11 @@ struct EmptyWorkoutPrompt: View {
 }
 
 #Preview("Empty workout") {
-    ActiveWorkoutView(
+    let vm = ActiveWorkoutViewModel(
         modelContext: PersistenceController.previewContainer.mainContext,
         pendingRoutineID: nil
     )
-    .environment(AppState())
-    .modelContainer(PersistenceController.previewContainer)
+    ActiveWorkoutView(vm: vm, onDismiss: {})
+        .environment(AppState())
+        .modelContainer(PersistenceController.previewContainer)
 }
