@@ -13,7 +13,7 @@ struct HomeStatChipsRow: View {
             StatChip(label: "This Week", value: stats.thisWeekLabel,
                      icon: "figure.strengthtraining.traditional", iconColor: theme.accentColor)
             StatChip(label: "PRs", value: stats.prCountLabel,
-                     icon: "trophy.fill", iconColor: Color.heftAmber, valueColor: Color.heftAmber)
+                     icon: "trophy.fill", iconColor: theme.accentColor, isAccented: true)
         }
     }
 }
@@ -26,13 +26,14 @@ struct StatChip: View {
     let icon: String
     var iconColor: Color = Color.textPrimary
     var valueColor: Color = Color.textPrimary
+    var isAccented: Bool = false
 
     var body: some View {
         ZStack(alignment: .leading) {
             // ── Watermark ────────────────────────────────────────────
             Image(systemName: icon)
                 .font(.system(size: 54, weight: .bold))
-                .foregroundStyle(iconColor.opacity(0.09))
+                .foregroundStyle(iconColor.opacity(isAccented ? 0.15 : 0.09))
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
                 .offset(x: 10, y: 10)
 
@@ -40,11 +41,11 @@ struct StatChip: View {
             VStack(alignment: .leading, spacing: 3) {
                 Text(value)
                     .font(.system(size: 26, weight: .bold, design: .rounded))
-                    .foregroundStyle(valueColor)
+                    .foregroundStyle(isAccented ? iconColor : valueColor)
                     .monospacedDigit()
                 Text(label)
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(Color.textFaint)
+                    .foregroundStyle(isAccented ? iconColor.opacity(0.7) : Color.textFaint)
                     .textCase(.uppercase)
                     .tracking(0.5)
             }
@@ -54,11 +55,17 @@ struct StatChip: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
             RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
-                .fill(.ultraThinMaterial)
+                .fill(.regularMaterial)
                 .overlay {
                     RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
-                        .fill(iconColor.opacity(0.06))
+                        .fill(iconColor.opacity(isAccented ? 0.15 : 0.06))
                 }
+        }
+        .overlay {
+            if isAccented {
+                RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
+                    .strokeBorder(iconColor.opacity(0.25), lineWidth: 1)
+            }
         }
         .clipShape(RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
     }
