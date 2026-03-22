@@ -130,7 +130,8 @@ struct ActiveExerciseCard: View {
                     onFocus: { vm.setManualFocus(exerciseIndex: exerciseIndex, setIndex: sIdx) },
                     onLog: { vm.logSet(exerciseIndex: exerciseIndex, setIndex: sIdx) },
                     onDelete: { vm.removeSet(exerciseIndex: exerciseIndex, setIndex: sIdx) },
-                    onUndo: { vm.unlogSet(exerciseIndex: exerciseIndex, setIndex: sIdx) }
+                    onUndo: { vm.unlogSet(exerciseIndex: exerciseIndex, setIndex: sIdx) },
+                    onCopyFromAbove: sIdx > 0 ? { vm.copySetFromAbove(exerciseIndex: exerciseIndex, setIndex: sIdx) } : nil
                 )
 
                 if sIdx < exercise.sets.count - 1 {
@@ -191,6 +192,7 @@ private struct SetRow: View {
     let onLog: () -> Void
     let onDelete: () -> Void
     let onUndo: () -> Void
+    let onCopyFromAbove: (() -> Void)?
 
     @State private var rowScale: CGFloat = 1.0
     @State private var badgeScale: CGFloat = 0
@@ -259,6 +261,11 @@ private struct SetRow: View {
                     Label("Undo", systemImage: "arrow.uturn.backward")
                 }
             } else {
+                if let copyFromAbove = onCopyFromAbove {
+                    Button(action: copyFromAbove) {
+                        Label("Copy from Above", systemImage: "arrow.up.doc.on.clipboard")
+                    }
+                }
                 Button(role: .destructive, action: onDelete) {
                     Label("Delete Set", systemImage: "trash")
                 }

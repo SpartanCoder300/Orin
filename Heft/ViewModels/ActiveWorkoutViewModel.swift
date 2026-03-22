@@ -245,6 +245,18 @@ final class ActiveWorkoutViewModel {
         draftExercises.append(draft)
     }
 
+    func copySetFromAbove(exerciseIndex eIdx: Int, setIndex sIdx: Int) {
+        guard draftExercises.indices.contains(eIdx),
+              sIdx > 0,
+              draftExercises[eIdx].sets.indices.contains(sIdx),
+              draftExercises[eIdx].sets.indices.contains(sIdx - 1),
+              !draftExercises[eIdx].sets[sIdx].isLogged else { return }
+        let above = draftExercises[eIdx].sets[sIdx - 1]
+        draftExercises[eIdx].sets[sIdx].weightText = above.weightText
+        draftExercises[eIdx].sets[sIdx].repsText = above.repsText
+        UISelectionFeedbackGenerator().selectionChanged()
+    }
+
     func removeSet(exerciseIndex eIdx: Int, setIndex sIdx: Int) {
         guard draftExercises.indices.contains(eIdx),
               draftExercises[eIdx].sets.indices.contains(sIdx),
