@@ -49,6 +49,8 @@ private struct RoutineListRow: View {
     let onTap: () -> Void
     let onEdit: () -> Void
 
+    @Environment(\.heftCardMaterial) private var cardMaterial
+
     var body: some View {
         Button(action: onTap) {
             HStack {
@@ -75,7 +77,8 @@ private struct RoutineListRow: View {
             }
             .padding(Spacing.md)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
+            .background(cardMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
+            .proGlass()
         }
         .buttonStyle(.plain)
         .contextMenu {

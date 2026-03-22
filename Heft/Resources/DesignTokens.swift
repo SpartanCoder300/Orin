@@ -64,4 +64,5 @@ enum Motion {
         response: DesignTokens.Duration.standard,
         dampingFraction: 0.75
     )
+    static let shimmerDuration: Double = 0.6
 }

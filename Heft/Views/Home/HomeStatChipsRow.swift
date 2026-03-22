@@ -28,6 +28,8 @@ struct StatChip: View {
     var valueColor: Color = Color.textPrimary
     var isAccented: Bool = false
 
+    @Environment(\.heftCardMaterial) private var cardMaterial
+
     var body: some View {
         ZStack(alignment: .leading) {
             // ── Watermark ────────────────────────────────────────────
@@ -55,7 +57,7 @@ struct StatChip: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .background {
             RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
-                .fill(.regularMaterial)
+                .fill(cardMaterial)
                 .overlay {
                     RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
                         .fill(iconColor.opacity(isAccented ? 0.15 : 0.06))
@@ -68,6 +70,7 @@ struct StatChip: View {
             }
         }
         .clipShape(RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
+        .proGlass()
     }
 }
 

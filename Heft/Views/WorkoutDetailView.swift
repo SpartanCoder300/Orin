@@ -77,6 +77,7 @@ struct WorkoutDetailView: View {
 private struct DetailStatChip: View {
     let label: String
     let value: String
+    @Environment(\.heftCardMaterial) private var cardMaterial
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
@@ -96,7 +97,8 @@ private struct DetailStatChip: View {
         .padding(.horizontal, Spacing.md)
         .padding(.vertical, Spacing.sm)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
+        .background(cardMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
+        .proGlass()
     }
 }
 
@@ -105,6 +107,7 @@ private struct DetailStatChip: View {
 private struct ExerciseDetailCard: View {
     let snapshot: ExerciseSnapshot
     @Environment(\.heftTheme) private var theme
+    @Environment(\.heftCardMaterial) private var cardMaterial
 
     private var sortedSets: [SetRecord] {
         snapshot.sets.sorted { $0.loggedAt < $1.loggedAt }
@@ -141,7 +144,8 @@ private struct ExerciseDetailCard: View {
                 }
             }
         }
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
+        .background(cardMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
+        .proGlass()
     }
 
     /// "185 lbs × 5" — heaviest working set, excluding warmups.

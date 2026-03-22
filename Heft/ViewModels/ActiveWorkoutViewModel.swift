@@ -68,6 +68,7 @@ final class ActiveWorkoutViewModel {
     private(set) var session: WorkoutSession? = nil
     let restTimer = RestTimerState()
     private(set) var lastLoggedFocus: SetFocus? = nil
+    private(set) var lastLoggedExerciseIndex: Int? = nil
     /// Set to the record ID of the most recently detected PR. Cleared after the celebration window.
     private(set) var lastPRSetID: UUID? = nil
     /// Rest duration stored when a PR is detected so it starts after the PR overlay is dismissed.
@@ -345,6 +346,7 @@ final class ActiveWorkoutViewModel {
         draftExercises[eIdx].sets[sIdx].isLogged = true
         draftExercises[eIdx].sets[sIdx].loggedRecord = record
         lastLoggedFocus = SetFocus(exerciseIndex: eIdx, setIndex: sIdx)
+        lastLoggedExerciseIndex = eIdx
 
         // After loggedRecord is assigned, surface the PR so the view can animate
         if isNewPR {

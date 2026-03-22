@@ -6,7 +6,7 @@ enum AccentTheme: String, CaseIterable, Identifiable {
     case midnight
     case graphite
     case ember
-    case mesh           // Pro only — placeholder
+    case mesh           // Pro only
 
     var id: String { rawValue }
 
@@ -33,7 +33,7 @@ enum AccentTheme: String, CaseIterable, Identifiable {
         case .midnight: Color("BackgroundMidnight")
         case .graphite: Color("BackgroundGraphite")
         case .ember:    Color("BackgroundEmber")
-        case .mesh:     Color("BackgroundMidnight")
+        case .mesh:     Color("BackgroundMesh")
         }
     }
 
@@ -46,9 +46,20 @@ private struct HeftThemeKey: EnvironmentKey {
     static let defaultValue: AccentTheme = .midnight
 }
 
+// Card material — ultraThinMaterial for Pro/Mesh so cards become translucent
+// windows into the mesh beneath. RegularMaterial for all other themes.
+private struct HeftCardMaterialKey: EnvironmentKey {
+    static let defaultValue: Material = .regularMaterial
+}
+
 extension EnvironmentValues {
     var heftTheme: AccentTheme {
         get { self[HeftThemeKey.self] }
         set { self[HeftThemeKey.self] = newValue }
+    }
+
+    var heftCardMaterial: Material {
+        get { self[HeftCardMaterialKey.self] }
+        set { self[HeftCardMaterialKey.self] = newValue }
     }
 }

@@ -10,6 +10,7 @@ struct ActiveExerciseCard: View {
     let exerciseIndex: Int
     let theme: AccentTheme
 
+    @Environment(\.heftCardMaterial) private var cardMaterial
     @State private var showingRemoveConfirm = false
 
     private var exercise: ActiveWorkoutViewModel.DraftExercise? {
@@ -151,7 +152,8 @@ struct ActiveExerciseCard: View {
             }
             .buttonStyle(.plain)
         }
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
+        .background(cardMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
+        .proGlass(exerciseIndex: exerciseIndex)
         .alert("Remove \(exercise.exerciseName)?", isPresented: $showingRemoveConfirm) {
             Button("Remove", role: .destructive) {
                 vm.removeExercise(at: exerciseIndex)

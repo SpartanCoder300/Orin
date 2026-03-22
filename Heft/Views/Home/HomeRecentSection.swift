@@ -27,6 +27,8 @@ private struct RecentWorkoutListRow: View {
     let session: WorkoutSession
     let onRepeat: () -> Void
 
+    @Environment(\.heftCardMaterial) private var cardMaterial
+
     var body: some View {
         Button(action: onRepeat) {
             HStack {
@@ -56,7 +58,8 @@ private struct RecentWorkoutListRow: View {
             }
             .padding(Spacing.md)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(.regularMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
+            .background(cardMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
+            .proGlass()
         }
         .buttonStyle(.plain)
     }

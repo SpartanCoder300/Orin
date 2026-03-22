@@ -109,6 +109,7 @@ private struct ExpandedSessionCard: View {
     let session: WorkoutSession
     let title: String
     let accentColor: Color
+    @Environment(\.heftCardMaterial) private var cardMaterial
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -167,7 +168,8 @@ private struct ExpandedSessionCard: View {
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(cardMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .proGlass()
     }
 
     private var statDot: some View {
@@ -220,6 +222,7 @@ private struct ExpandedSessionCard: View {
 private struct CompactSessionCard: View {
     let session: WorkoutSession
     let title: String
+    @Environment(\.heftCardMaterial) private var cardMaterial
 
     var body: some View {
         HStack(alignment: .center) {
@@ -238,7 +241,8 @@ private struct CompactSessionCard: View {
         }
         .padding(16)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(cardMaterial, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .proGlass()
     }
 
     private var subtitle: String {
