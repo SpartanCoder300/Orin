@@ -95,7 +95,19 @@ struct ActiveWorkoutView: View {
                         }
                     }
                     ToolbarItemGroup(placement: .bottomBar) {
-                        if let focus = vm.currentFocus {
+                        if vm.isAllSetsLogged {
+                            Button {
+                                if let session = vm.endWorkout() {
+                                    completedSession = session
+                                } else {
+                                    onDismiss()
+                                }
+                            } label: {
+                                Label("Complete Workout", systemImage: "checkmark.circle.fill")
+                                    .fontWeight(.semibold)
+                                    .foregroundStyle(Color.heftGreen)
+                            }
+                        } else if let focus = vm.currentFocus {
                             let exercise = vm.draftExercises[focus.exerciseIndex]
                             CompactStepper(
                                 text: Binding(
@@ -167,14 +179,6 @@ struct ActiveWorkoutView: View {
                 .sheet(isPresented: $vm.isShowingExercisePicker) {
                     ExercisePicker { exercise in
                         vm.addExercise(named: exercise.name)
-                    }
-                }
-                .onChange(of: vm.isAllSetsLogged) { _, allDone in
-                    guard allDone else { return }
-                    // Brief pause so the user sees the final set turn green, then prompt
-                    Task {
-                        try? await Task.sleep(for: .seconds(0.8))
-                        vm.isShowingEndConfirm = true
                     }
                 }
             }

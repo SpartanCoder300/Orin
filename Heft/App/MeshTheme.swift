@@ -13,25 +13,26 @@ import SwiftUI
 /// reflection), dark center and sides. Think dim gym at 5 AM, not a nightclub.
 enum MeshTheme {
 
-    // MARK: - Iron/Steel Palette
-    // Desaturated cool grays with a subtle blue undertone that gets more neutral
-    // as luminance increases — mimics how real steel reads under mixed lighting.
-    // Blue channel is ~1.5× red in darks, ~1.4× in brights.
+    // MARK: - Charcoal Palette
+    // Near-neutral dark gray — blue channel only ~1.15× red, so it reads as
+    // cool charcoal rather than blue-black. Clearly distinct from Midnight's
+    // indigo cast. Event colors (amber PR, green complete) pop harder against
+    // neutral than against a blue background.
 
-    /// Near-black — sides, corners, center shadow.
-    private static let iron0 = Color(red: 0.030, green: 0.033, blue: 0.050)
-    /// Dark steel — barely-lit surfaces.
-    private static let iron1 = Color(red: 0.050, green: 0.056, blue: 0.078)
-    /// Mid steel — secondary light spill (floor reflection).
-    private static let iron2 = Color(red: 0.078, green: 0.086, blue: 0.115)
-    /// Edge glow — primary light spill (overhead).
-    private static let iron3 = Color(red: 0.110, green: 0.120, blue: 0.158)
-    /// Pulse peak — brightest during set-logged flare.
-    private static let iron4 = Color(red: 0.155, green: 0.170, blue: 0.218)
-    /// Overhead flare — strong pulse at top-center.
-    private static let iron5 = Color(red: 0.235, green: 0.258, blue: 0.330)
-    /// Peak pulse — absolute ceiling of the flare.
-    private static let iron6 = Color(red: 0.310, green: 0.342, blue: 0.438)
+    /// Near-black charcoal — corners, sides, shadow regions.
+    private static let iron0 = Color(red: 0.038, green: 0.040, blue: 0.044)
+    /// Dark charcoal — barely-lit surfaces.
+    private static let iron1 = Color(red: 0.062, green: 0.065, blue: 0.072)
+    /// Mid charcoal — floor reflection light spill.
+    private static let iron2 = Color(red: 0.092, green: 0.097, blue: 0.108)
+    /// Light charcoal — overhead light source glow.
+    private static let iron3 = Color(red: 0.128, green: 0.135, blue: 0.150)
+    /// Bright charcoal — pulse edges and started state.
+    private static let iron4 = Color(red: 0.175, green: 0.185, blue: 0.205)
+    /// Strong flare — overhead burst during pulse.
+    private static let iron5 = Color(red: 0.248, green: 0.262, blue: 0.290)
+    /// Peak pulse — absolute ceiling of the set-logged flare.
+    private static let iron6 = Color(red: 0.325, green: 0.342, blue: 0.378)
 
     // MARK: - Amber/PR Palette
 
@@ -69,28 +70,28 @@ enum MeshTheme {
     //   Center = dark (depth/shadow between the two sources)
     //   Sides = dark (light doesn't reach)
     private static let baseRGB: [RGB] = [
-        RGB(r: 0.030, g: 0.033, b: 0.050),  // TL — dark corner
-        RGB(r: 0.110, g: 0.120, b: 0.158),  // TC — overhead light (iron3)
-        RGB(r: 0.030, g: 0.033, b: 0.050),  // TR — dark corner
-        RGB(r: 0.030, g: 0.033, b: 0.050),  // ML — dark side
-        RGB(r: 0.050, g: 0.056, b: 0.078),  // center — shadow between sources (iron1)
-        RGB(r: 0.030, g: 0.033, b: 0.050),  // MR — dark side
-        RGB(r: 0.030, g: 0.033, b: 0.050),  // BL — dark corner
-        RGB(r: 0.078, g: 0.086, b: 0.115),  // BC — floor reflection (iron2)
-        RGB(r: 0.030, g: 0.033, b: 0.050),  // BR — dark corner
+        RGB(r: 0.038, g: 0.040, b: 0.044),  // TL — dark corner
+        RGB(r: 0.128, g: 0.135, b: 0.150),  // TC — overhead light (iron3)
+        RGB(r: 0.038, g: 0.040, b: 0.044),  // TR — dark corner
+        RGB(r: 0.038, g: 0.040, b: 0.044),  // ML — dark side
+        RGB(r: 0.062, g: 0.065, b: 0.072),  // center — shadow between sources (iron1)
+        RGB(r: 0.038, g: 0.040, b: 0.044),  // MR — dark side
+        RGB(r: 0.038, g: 0.040, b: 0.044),  // BL — dark corner
+        RGB(r: 0.092, g: 0.097, b: 0.108),  // BC — floor reflection (iron2)
+        RGB(r: 0.038, g: 0.040, b: 0.044),  // BR — dark corner
     ]
 
     // At full intensity, both light sources intensify and sides wake up slightly.
     private static let intenseRGB: [RGB] = [
-        RGB(r: 0.050, g: 0.056, b: 0.078),  // TL — wakes up
-        RGB(r: 0.155, g: 0.170, b: 0.218),  // TC — overhead peaks (iron4)
-        RGB(r: 0.050, g: 0.056, b: 0.078),  // TR — wakes up
-        RGB(r: 0.050, g: 0.056, b: 0.078),  // ML — wakes up
-        RGB(r: 0.078, g: 0.086, b: 0.115),  // center — lifts slightly (iron2)
-        RGB(r: 0.050, g: 0.056, b: 0.078),  // MR — wakes up
-        RGB(r: 0.030, g: 0.033, b: 0.050),  // BL — stays dark (anchor)
-        RGB(r: 0.110, g: 0.120, b: 0.158),  // BC — reflection brightens (iron3)
-        RGB(r: 0.030, g: 0.033, b: 0.050),  // BR — stays dark (anchor)
+        RGB(r: 0.062, g: 0.065, b: 0.072),  // TL — wakes up
+        RGB(r: 0.175, g: 0.185, b: 0.205),  // TC — overhead peaks (iron4)
+        RGB(r: 0.062, g: 0.065, b: 0.072),  // TR — wakes up
+        RGB(r: 0.062, g: 0.065, b: 0.072),  // ML — wakes up
+        RGB(r: 0.092, g: 0.097, b: 0.108),  // center — lifts slightly (iron2)
+        RGB(r: 0.062, g: 0.065, b: 0.072),  // MR — wakes up
+        RGB(r: 0.038, g: 0.040, b: 0.044),  // BL — stays dark (anchor)
+        RGB(r: 0.128, g: 0.135, b: 0.150),  // BC — reflection brightens (iron3)
+        RGB(r: 0.038, g: 0.040, b: 0.044),  // BR — stays dark (anchor)
     ]
 
     /// Returns base colors blended toward the intense palette.
