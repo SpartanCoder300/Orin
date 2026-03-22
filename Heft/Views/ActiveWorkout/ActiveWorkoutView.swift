@@ -20,12 +20,6 @@ struct ActiveWorkoutView: View {
                 ScrollViewReader { proxy in
                     ScrollView {
                         VStack(spacing: Spacing.md) {
-                            // ── Inline rest timer ─────────────────────────────
-                            if vm.restTimer.isActive {
-                                RestTimerBanner(restTimer: vm.restTimer, vm: vm)
-                                    .transition(.move(edge: .top).combined(with: .opacity))
-                            }
-
                             if vm.draftExercises.isEmpty {
                                 EmptyWorkoutPrompt(accentColor: theme.accentColor)
                             } else {
@@ -41,7 +35,6 @@ struct ActiveWorkoutView: View {
                         }
                         .padding(.horizontal, Spacing.md)
                         .padding(.vertical, Spacing.lg)
-                        .animation(Motion.standardSpring, value: vm.restTimer.isActive)
                     }
                     .onChange(of: vm.currentFocus) { _, newFocus in
                         guard let focus = newFocus,
@@ -63,17 +56,43 @@ struct ActiveWorkoutView: View {
                             .foregroundStyle(Color.heftRed)
                     }
                     ToolbarItem(placement: .principal) {
-                        TimelineView(.periodic(from: vm.openedAt, by: 1.0)) { ctx in
-                            Text(vm.elapsedLabel(at: ctx.date))
-                                .font(.system(size: 17, weight: .semibold, design: .monospaced))
-                                .foregroundStyle(Color.textPrimary)
+                        TimelineView(.periodic(from: .now, by: 0.25)) { ctx in
+                            HStack(spacing: 0) {
+                                // Elapsed workout time — always visible
+                                Text(vm.elapsedLabel(at: ctx.date))
+                                    .foregroundStyle(Color.textPrimary)
+
+                                // Rest countdown — only when active
+                                if vm.restTimer.isActive {
+                                    let phase = vm.restTimer.tintColor(at: ctx.date)
+                                    let restLabel = vm.restTimer.remainingLabel(at: ctx.date) ?? "0:00"
+                                    Text("  ·  ")
+                                        .foregroundStyle(Color.textFaint)
+                                    Text(restLabel)
+                                        .foregroundStyle(restPhaseColor(phase))
+                                        .contentTransition(.numericText(countsDown: true))
+                                }
+                            }
+                            .font(.system(size: 15, weight: .semibold, design: .monospaced))
+                            .monospacedDigit()
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .glassEffect(in: Capsule())
+                            .sensoryFeedback(.impact(weight: .heavy, intensity: 1.0), trigger: vm.restTimer.pulseCount)
+                            .animation(Motion.standardSpring, value: vm.restTimer.isActive)
                         }
                     }
                     ToolbarItem(placement: .topBarTrailing) {
-                        Button { vm.isShowingExercisePicker = true } label: {
-                            Image(systemName: "plus").fontWeight(.semibold)
+                        if vm.restTimer.isActive {
+                            Button("Skip") { vm.restTimer.skip() }
+                                .fontWeight(.semibold)
+                                .foregroundStyle(Color.heftGreen)
+                        } else {
+                            Button { vm.isShowingExercisePicker = true } label: {
+                                Image(systemName: "plus").fontWeight(.semibold)
+                            }
+                            .accessibilityLabel("Add exercise")
                         }
-                        .accessibilityLabel("Add exercise")
                     }
                     ToolbarItemGroup(placement: .bottomBar) {
                         if let focus = vm.currentFocus {
@@ -181,6 +200,14 @@ struct ActiveWorkoutView: View {
 }
 
 // MARK: - Helpers
+
+private func restPhaseColor(_ phase: TimerTintPhase) -> Color {
+    switch phase {
+    case .green: Color.heftGreen
+    case .amber: Color.heftAmber
+    case .red:   Color.heftRed
+    }
+}
 
 private func weightDefault(for equipmentType: String) -> Double? {
     switch equipmentType {
