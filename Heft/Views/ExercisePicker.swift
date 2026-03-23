@@ -134,27 +134,17 @@ private struct RecentTile: View {
 
     var body: some View {
         Button(action: onTap) {
-            VStack(alignment: .leading, spacing: Spacing.xs) {
-                Image(systemName: iconName)
-                    .font(.system(size: 18, weight: .medium))
-                    .foregroundStyle(accentColor)
-                Spacer(minLength: 0)
-                Text(exercise.name)
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(Color.textPrimary)
-                    .lineLimit(2)
-                    .multilineTextAlignment(.leading)
-                    .fixedSize(horizontal: false, vertical: true)
-            }
-            .padding(Spacing.sm)
-            .frame(maxWidth: .infinity, minHeight: 80, alignment: .leading)
-            .background(.thinMaterial, in: RoundedRectangle(cornerRadius: Radius.small, style: .continuous))
+            Text(exercise.name)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(Color.textPrimary)
+                .lineLimit(2)
+                .multilineTextAlignment(.leading)
+                .fixedSize(horizontal: false, vertical: true)
+                .frame(maxWidth: .infinity, minHeight: 80, alignment: .bottomLeading)
+                .padding(Spacing.sm)
+                .background(.thinMaterial, in: RoundedRectangle(cornerRadius: Radius.small, style: .continuous))
         }
         .buttonStyle(.plain)
-    }
-
-    private var iconName: String {
-        exercise.iconName
     }
 }
 
@@ -169,11 +159,6 @@ private struct LibraryRow: View {
     var body: some View {
         Button(action: onTap) {
             HStack(spacing: Spacing.md) {
-                Image(systemName: iconName)
-                    .font(.system(size: 16, weight: .medium))
-                    .foregroundStyle(accentColor)
-                    .frame(width: 28)
-
                 VStack(alignment: .leading, spacing: 2) {
                     HighlightedText(
                         text: exercise.name,
@@ -209,9 +194,6 @@ private struct LibraryRow: View {
         .buttonStyle(.plain)
     }
 
-    private var iconName: String {
-        exercise.iconName
-    }
 }
 
 // MARK: - Highlighted Text
