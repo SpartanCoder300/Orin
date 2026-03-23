@@ -36,6 +36,16 @@ struct ActiveWorkoutView: View {
                         .padding(.horizontal, Spacing.md)
                         .padding(.vertical, Spacing.lg)
                     }
+                    .onAppear {
+                        guard let focus = vm.currentFocus,
+                              vm.draftExercises.indices.contains(focus.exerciseIndex) else { return }
+                        let id = vm.draftExercises[focus.exerciseIndex].id
+                        // Defer one runloop cycle — layout must complete before
+                        // proxy.scrollTo has a valid scroll geometry to target.
+                        Task { @MainActor in
+                            proxy.scrollTo(id, anchor: .center)
+                        }
+                    }
                     .onChange(of: vm.currentFocus) { _, newFocus in
                         guard let focus = newFocus,
                               vm.draftExercises.indices.contains(focus.exerciseIndex) else { return }
@@ -263,7 +273,7 @@ struct ActiveWorkoutView: View {
                             Text("Log Set")
                                 .font(.system(size: 16, weight: .semibold))
                         }
-                        .foregroundStyle(theme.accentColor)
+                        .foregroundStyle(Color.heftGreen)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .contentShape(Rectangle())
                     }
