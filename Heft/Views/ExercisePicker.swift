@@ -15,37 +15,55 @@ struct ExercisePicker: View {
     @Query(sort: \ExerciseDefinition.name) private var allExercises: [ExerciseDefinition]
 
     @State private var vm = ExercisePickerViewModel()
+    @State private var editorTarget: ExerciseEditorTarget? = nil
 
-    private let filterChips = ["All"] + allMuscleGroups
+    private let filterOptions: [PickerFilter] =
+        allMuscleGroups.map { .muscleGroup($0) } + [.custom, .edited]
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: Spacing.xl) {
 
-                    // ── Muscle Group Filter ────────────────────────────────
-                    let chipColumns = Array(repeating: GridItem(.flexible(), spacing: Spacing.xs), count: 4)
-                    LazyVGrid(columns: chipColumns, spacing: Spacing.xs) {
-                        ForEach(filterChips, id: \.self) { chip in
-                            let isSelected = chip == "All"
-                                ? vm.selectedMuscleGroup == nil
-                                : vm.selectedMuscleGroup == chip
-                            Button {
-                                vm.selectedMuscleGroup = chip == "All" ? nil : chip
-                            } label: {
-                                Text(chip)
-                                    .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
-                                    .foregroundStyle(isSelected ? theme.accentColor : Color.textMuted)
-                                    .frame(maxWidth: .infinity)
+                    // ── Filter chips (horizontal scroll, multi-select) ─────
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: Spacing.xs) {
+                            // "All" clears all active filters
+                            let isAll = vm.selectedFilters.isEmpty
+                            Button { vm.selectedFilters.removeAll() } label: {
+                                Text("All")
+                                    .font(.system(size: 12, weight: isAll ? .semibold : .regular))
+                                    .foregroundStyle(isAll ? theme.accentColor : Color.textMuted)
+                                    .padding(.horizontal, Spacing.sm)
                                     .padding(.vertical, 6)
                             }
                             .buttonStyle(.plain)
                             .glassEffect(.regular.interactive(), in: Capsule())
+
+                            ForEach(filterOptions, id: \.self) { option in
+                                let isSelected = vm.selectedFilters.contains(option)
+                                Button {
+                                    if isSelected {
+                                        vm.selectedFilters.remove(option)
+                                    } else {
+                                        vm.selectedFilters.insert(option)
+                                    }
+                                } label: {
+                                    Text(option.label)
+                                        .font(.system(size: 12, weight: isSelected ? .semibold : .regular))
+                                        .foregroundStyle(isSelected ? theme.accentColor : Color.textMuted)
+                                        .padding(.horizontal, Spacing.sm)
+                                        .padding(.vertical, 6)
+                                }
+                                .buttonStyle(.plain)
+                                .glassEffect(.regular.interactive(), in: Capsule())
+                            }
                         }
+                        .padding(.horizontal, 1)
                     }
 
                     // ── Recents (hidden during search) ──────────────────────────────────────
-                    let recents = vm.recentExercises(from: allExercises, muscleGroup: vm.selectedMuscleGroup)
+                    let recents = vm.recentExercises(from: allExercises, filters: vm.selectedFilters)
                     if vm.searchText.isEmpty && !recents.isEmpty {
                         VStack(alignment: .leading, spacing: Spacing.sm) {
                             pickerSectionLabel("Recent")
@@ -65,7 +83,7 @@ struct ExercisePicker: View {
                     // ── Full Library ────────────────────────────────────────
                     let library = vm.libraryExercises(from: allExercises)
                     VStack(alignment: .leading, spacing: Spacing.sm) {
-                        pickerSectionLabel(vm.searchText.isEmpty && vm.selectedMuscleGroup == nil
+                        pickerSectionLabel(vm.searchText.isEmpty && vm.selectedFilters.isEmpty
                                            ? "All Exercises"
                                            : "Results (\(library.count))")
 
@@ -81,10 +99,10 @@ struct ExercisePicker: View {
                                     LibraryRow(
                                         exercise: exercise,
                                         matchRanges: vm.matchRanges(query: vm.searchText, in: exercise.name),
-                                        accentColor: theme.accentColor
-                                    ) {
-                                        select(exercise)
-                                    }
+                                        accentColor: theme.accentColor,
+                                        onTap: { select(exercise) },
+                                        onEdit: { editorTarget = .edit(exercise) }
+                                    )
                                 }
                             }
                         }
@@ -97,9 +115,17 @@ struct ExercisePicker: View {
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $vm.searchText, placement: .navigationBarDrawer(displayMode: .always), prompt: "Search exercises")
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button { editorTarget = .new } label: {
+                        Label("New Exercise", systemImage: "plus")
+                    }
+                }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Cancel") { dismiss() }
                 }
+            }
+            .sheet(item: $editorTarget) { target in
+                ExerciseEditorView(exercise: target.exercise)
             }
         }
         .onAppear {
@@ -154,6 +180,7 @@ private struct LibraryRow: View {
     let matchRanges: [Range<String.Index>]
     let accentColor: Color
     let onTap: () -> Void
+    let onEdit: () -> Void
 
     var body: some View {
         Button(action: onTap) {
@@ -175,6 +202,23 @@ private struct LibraryRow: View {
 
                 Spacer()
 
+                if exercise.isTimed {
+                    Image(systemName: "timer")
+                        .font(.system(size: 11, weight: .medium))
+                        .foregroundStyle(Color.textFaint)
+                }
+
+                if exercise.isEdited && !exercise.isCustom {
+                    Text("Edited")
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(Color.textFaint)
+                        .textCase(.uppercase)
+                        .tracking(0.4)
+                        .padding(.horizontal, 6)
+                        .padding(.vertical, 2)
+                        .background(Color.white.opacity(0.08), in: Capsule())
+                }
+
                 if exercise.isCustom {
                     Text("Custom")
                         .font(.system(size: 10, weight: .medium))
@@ -191,8 +235,12 @@ private struct LibraryRow: View {
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .contextMenu {
+            Button(action: onEdit) {
+                Label("Edit Exercise", systemImage: "pencil")
+            }
+        }
     }
-
 }
 
 // MARK: - Highlighted Text
@@ -220,6 +268,28 @@ private struct HighlightedText: View {
             }
         }
         return Text(result)
+    }
+}
+
+// MARK: - Editor Target
+
+/// Drives the sheet presented from the picker — new exercise or edit existing.
+private enum ExerciseEditorTarget: Identifiable {
+    case new
+    case edit(ExerciseDefinition)
+
+    var id: String {
+        switch self {
+        case .new:          return "new"
+        case .edit(let ex): return ex.id.uuidString
+        }
+    }
+
+    var exercise: ExerciseDefinition? {
+        switch self {
+        case .new:          return nil
+        case .edit(let ex): return ex
+        }
     }
 }
 

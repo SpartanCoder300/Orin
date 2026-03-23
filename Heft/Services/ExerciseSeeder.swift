@@ -38,6 +38,11 @@ enum ExerciseSeeder {
         }
     }
 
+    /// Returns a fresh copy of the seeded defaults for the given exercise name, or nil if not seeded.
+    static func defaultDefinition(named name: String) -> ExerciseDefinition? {
+        commonExercises.first { $0.name == name }
+    }
+
     // swiftlint:disable function_body_length
     private static let commonExercises: [ExerciseDefinition] = [
 

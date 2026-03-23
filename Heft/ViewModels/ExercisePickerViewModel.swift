@@ -3,6 +3,20 @@
 import Foundation
 import SwiftData
 
+enum PickerFilter: Hashable {
+    case muscleGroup(String)
+    case custom
+    case edited
+
+    var label: String {
+        switch self {
+        case .muscleGroup(let g): return g
+        case .custom:             return "Custom"
+        case .edited:             return "Edited"
+        }
+    }
+}
+
 @Observable
 @MainActor
 final class ExercisePickerViewModel {
@@ -10,7 +24,8 @@ final class ExercisePickerViewModel {
     // MARK: - Input state (driven by the view)
 
     var searchText: String = ""
-    var selectedMuscleGroup: String? = nil
+    /// Active filters. Empty = show all (equivalent to "All" chip selected).
+    var selectedFilters: Set<PickerFilter> = []
 
     // MARK: - Loaded data
 
@@ -19,12 +34,10 @@ final class ExercisePickerViewModel {
     // MARK: - Filtering / search
 
     /// Top-8 exercises by frecency score the user has actually used (score > 0).
-    /// Pass a muscleGroup to scope recents to that filter chip.
-    func recentExercises(from all: [ExerciseDefinition], muscleGroup: String? = nil) -> [ExerciseDefinition] {
+    /// Scoped to the active filter set.
+    func recentExercises(from all: [ExerciseDefinition], filters: Set<PickerFilter> = []) -> [ExerciseDefinition] {
         var candidates = all.filter { scoreFor($0) > 0 }
-        if let group = muscleGroup {
-            candidates = candidates.filter { $0.muscleGroups.contains(group) }
-        }
+        candidates = applyFilters(filters, to: candidates)
         return candidates
             .sorted { scoreFor($0) > scoreFor($1) }
             .prefix(8)
@@ -32,23 +45,32 @@ final class ExercisePickerViewModel {
     }
 
     /// Exercises to show in the full library section.
-    /// Filtered by muscle group chip and/or fuzzy search query.
+    /// Multiple active filters are joined as a union.
     /// Custom exercises float to the top within their group.
     func libraryExercises(from all: [ExerciseDefinition]) -> [ExerciseDefinition] {
-        var filtered = all
-
-        if let group = selectedMuscleGroup {
-            filtered = filtered.filter { $0.muscleGroups.contains(group) }
-        }
+        var filtered = applyFilters(selectedFilters, to: all)
 
         if searchText.count >= 2 {
             filtered = filtered.filter { fuzzyMatches(query: searchText, in: $0.name) }
         }
 
-        // Custom exercises first, then sort remaining by frecency
         return filtered.sorted {
             if $0.isCustom != $1.isCustom { return $0.isCustom }
             return scoreFor($0) > scoreFor($1)
+        }
+    }
+
+    /// Returns exercises matching any of the active filters (union). Empty set = no filtering.
+    private func applyFilters(_ filters: Set<PickerFilter>, to exercises: [ExerciseDefinition]) -> [ExerciseDefinition] {
+        guard !filters.isEmpty else { return exercises }
+        return exercises.filter { exercise in
+            filters.contains { filter in
+                switch filter {
+                case .muscleGroup(let g): return exercise.muscleGroups.contains(g)
+                case .custom:             return exercise.isCustom
+                case .edited:             return exercise.isEdited && !exercise.isCustom
+                }
+            }
         }
     }
 

@@ -21,6 +21,9 @@ final class ExerciseDefinition {
     /// True for exercises measured by duration (planks, holds) rather than reps.
     /// Defaults to false — safe lightweight migration for existing records.
     var isTimed: Bool = false
+    /// True when a seeded exercise has been manually modified by the user.
+    /// Always false for custom exercises (user owns them entirely).
+    var isEdited: Bool = false
 
     init(
         id: UUID = UUID(),
