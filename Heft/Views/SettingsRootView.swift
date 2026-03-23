@@ -18,6 +18,7 @@ struct SettingsRootView: View {
                     ) {
                         appState.accentTheme = t
                     }
+                    .listRowBackground(theme == .mesh ? Color.clear : nil as Color?)
                 }
             } header: {
                 Text("Theme")
@@ -26,6 +27,7 @@ struct SettingsRootView: View {
             // ── About ──────────────────────────────────────────────────
             Section {
                 LabeledContent("Version", value: "1.0")
+                    .listRowBackground(theme == .mesh ? Color.clear : nil as Color?)
             } header: {
                 Text("About")
             }

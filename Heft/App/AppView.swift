@@ -11,6 +11,7 @@ struct AppView: View {
     @State private var meshEngine = MeshEngine()
     @State private var setLoggedTask: Task<Void, Never>?
     @State private var workoutStartTask: Task<Void, Never>?
+    @State private var meshIntroTask: Task<Void, Never>?
 
     var body: some View {
         @Bindable var appState = appState
@@ -110,10 +111,27 @@ struct AppView: View {
                 meshEngine.updateIntensity(0, pulse: false)
             }
         }
+        // ── Mesh theme intro ──────────────────────────────────────────────────
+        .onChange(of: appState.accentTheme) { _, newTheme in
+            guard newTheme == .mesh else { return }
+            // All-lights-on flash — makes the mesh announce itself.
+            // Breathes down to dark base after 1.2s.
+            playWorkoutStartHaptic()
+            meshIntroTask?.cancel()
+            meshEngine.state = .workoutStarted
+            meshIntroTask = Task {
+                try? await Task.sleep(for: .milliseconds(1200))
+                guard !Task.isCancelled else { return }
+                meshEngine.state = derivedMeshState
+            }
+        }
         // ── PR & complete haptics ─────────────────────────────────────────────
         .onChange(of: meshEngine.state) { _, newState in
             switch newState {
             case .prBloom:
+                // Ascending flourish is mesh-only — firePRCelebration() in the VM
+                // already handles the primary haptic for all themes.
+                guard appState.accentTheme == .mesh else { break }
                 playPRHaptics()
             case .workoutComplete:
                 UINotificationFeedbackGenerator().notificationOccurred(.success)

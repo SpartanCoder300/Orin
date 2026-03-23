@@ -198,13 +198,24 @@ private struct SetRow: View {
 
             SetTypeChip(setType: setType, onTap: isLogged ? nil : onCycleType)
 
-            Text(displayText)
-                .font(.system(size: 16, weight: .medium, design: .rounded))
-                .monospacedDigit()
-                .foregroundStyle(isLogged ? (isPR ? Color.heftAmber : Color.heftGreen) : Color.textPrimary)
-                .contentTransition(.numericText())
-                .animation(Motion.standardSpring, value: weightText)
-                .animation(Motion.standardSpring, value: repsText)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(displayText)
+                    .font(.system(size: 16, weight: .medium, design: .rounded))
+                    .monospacedDigit()
+                    .foregroundStyle(isLogged ? (isPR ? Color.heftAmber : Color.heftGreen) : Color.textPrimary)
+                    .contentTransition(.numericText())
+                    .animation(Motion.standardSpring, value: weightText)
+                    .animation(Motion.standardSpring, value: repsText)
+
+                // e1RM subtitle — only on logged PR sets
+                if isPR, let e1rmLabel {
+                    Text(e1rmLabel)
+                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .foregroundStyle(Color.heftGold.opacity(0.7))
+                        .transition(.opacity.combined(with: .move(edge: .top)))
+                }
+            }
+            .animation(Motion.standardSpring, value: isPR)
 
             // PR badge — pops in with spring animation when PR is detected
             if isPR {
@@ -287,6 +298,15 @@ private struct SetRow: View {
         let w = weightText.isEmpty ? "—" : weightText
         let r = repsText.isEmpty ? "—" : repsText
         return "\(w) × \(r)"
+    }
+
+    /// Estimated 1RM label for PR rows. Nil if values can't be parsed or reps is 0.
+    private var e1rmLabel: String? {
+        guard isPR,
+              let w = Double(weightText), w > 0,
+              let r = Int(repsText), r > 0 else { return nil }
+        let e1rm = ExerciseDefinition.estimatedOneRepMax(weight: w, reps: r)
+        return "~\(Int(e1rm.rounded())) lbs e1RM"
     }
 }
 

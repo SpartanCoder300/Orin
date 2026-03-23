@@ -45,7 +45,8 @@ struct CompactStepper: View {
                 Image(systemName: "minus")
                     .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(Color.textMuted)
-                    .frame(width: 44, height: 52)
+                    .frame(width: 44)
+                    .frame(minHeight: 44, maxHeight: .infinity)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
@@ -71,7 +72,8 @@ struct CompactStepper: View {
                         .opacity(0.5)
                 }
                 .foregroundStyle(Color.textPrimary)
-                .frame(maxWidth: .infinity, minHeight: 52)
+                .frame(maxWidth: .infinity, minHeight: 52, maxHeight: .infinity)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .disabled(isLogged)
@@ -88,7 +90,8 @@ struct CompactStepper: View {
                 Image(systemName: "plus")
                     .font(.system(size: 13, weight: .bold))
                     .foregroundStyle(Color.textMuted)
-                    .frame(width: 44, height: 52)
+                    .frame(width: 44)
+                    .frame(minHeight: 44, maxHeight: .infinity)
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)

@@ -51,7 +51,7 @@ struct ActiveWorkoutView: View {
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
-                        Button("End") { vm.isShowingEndConfirm = true }
+                        Button("Finish") { vm.isShowingEndConfirm = true }
                             .fontWeight(.semibold)
                             .foregroundStyle(Color.heftRed)
                     }
@@ -97,6 +97,8 @@ struct ActiveWorkoutView: View {
                 }
                 .safeAreaInset(edge: .bottom, spacing: 0) {
                     commandPanel(vm: vm)
+                        .frame(maxWidth: .infinity)
+                        .contentShape(Rectangle())
                 }
                 .alert("End Workout?", isPresented: $vm.isShowingEndConfirm) {
                     Button("Finish") {
