@@ -395,8 +395,8 @@ final class ActiveWorkoutViewModel {
         try? modelContext.save()
 
         if !isNewPR {
-            // PR sets fire their own distinct haptic; normal sets get medium impact
-            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            // Haptic is handled in AppView (onChange loggedSetCount) so it can
+            // distinguish exercise-complete from single-set. Don't fire here.
             startRestTimer(duration: TimeInterval(draftExercises[eIdx].restSeconds))
         } else {
             // Rest timer deferred — starts when the PR overlay is dismissed

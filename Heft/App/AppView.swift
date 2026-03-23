@@ -57,15 +57,32 @@ struct AppView: View {
         // ── Set logged: pulse + haptic + intensity ────────────────────────────
         .onChange(of: appState.workout.viewModel?.loggedSetCount) { oldCount, newCount in
             guard let oldCount, let newCount, newCount > oldCount else { return }
-            guard appState.workout.viewModel?.showingPRMoment == nil else { return }
+            let vm = appState.workout.viewModel
+            guard vm?.showingPRMoment == nil else { return }
 
-            // Haptic — always, every theme
-            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            // Haptic — always, every theme.
+            // Exercise complete → success notification (distinctive double-pulse).
+            // Last set of the whole workout → skip; workoutComplete haptic takes over.
+            // Everything else → medium impact (single thud).
+            let isWorkoutComplete = vm?.isAllSetsLogged == true
+            let isExerciseComplete: Bool = {
+                guard !isWorkoutComplete,
+                      let vm,
+                      let idx = vm.lastLoggedExerciseIndex,
+                      vm.draftExercises.indices.contains(idx) else { return false }
+                return vm.draftExercises[idx].sets.allSatisfy { $0.isLogged }
+            }()
+
+            if isExerciseComplete {
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
+            } else if !isWorkoutComplete {
+                UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            }
 
             // Mesh: intensity + pulse — Pro only
             if appState.accentTheme == .mesh {
                 meshEngine.updateIntensity(min(Double(newCount) / 20.0, 1.0), pulse: true)
-                meshEngine.lastLoggedExerciseIndex = appState.workout.viewModel?.lastLoggedExerciseIndex
+                meshEngine.lastLoggedExerciseIndex = vm?.lastLoggedExerciseIndex
                 setLoggedTask?.cancel()
                 meshEngine.state = .setLogged
                 setLoggedTask = Task {
