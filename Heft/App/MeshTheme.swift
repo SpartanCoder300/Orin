@@ -142,6 +142,14 @@ enum MeshTheme {
         amberDeep, amberMid,  amberDeep,
     ]
 
+    /// Exercise complete — brief green flash at both light sources only.
+    /// Dimmer than workoutComplete; reads as "milestone" not "finished".
+    static let exercisePulse: [Color] = [
+        iron1,     greenMid,  iron1,
+        iron1,     greenGlow, iron1,
+        iron0,     greenMid,  iron0,
+    ]
+
     /// Workout complete — green wash. Light sources go green, center fills.
     static let complete: [Color] = [
         greenDeep, greenHot,  greenDeep,
@@ -154,11 +162,12 @@ enum MeshTheme {
     /// Duration for each state transition. Animation is applied at the view layer.
     static func transitionDuration(for state: MeshState) -> TimeInterval {
         switch state {
-        case .base:            return 1.5
-        case .workoutStarted:  return 0.5   // deliberate build, not a snap
-        case .setLogged:       return 0.15
-        case .prBloom:         return 0.20   // stage 1 — prSettle handled separately
-        case .workoutComplete: return 0.8
+        case .base:             return 1.5
+        case .workoutStarted:   return 0.5   // deliberate build, not a snap
+        case .setLogged:        return 0.15
+        case .exerciseComplete: return 0.15  // same snap-in, different color
+        case .prBloom:          return 0.20  // stage 1 — prSettle handled separately
+        case .workoutComplete:  return 0.8
         }
     }
 
@@ -166,11 +175,12 @@ enum MeshTheme {
     static let prSettle: TimeInterval = 1.20
 }
 
-/// Four workout events + base. Nothing else.
+/// Workout events + base.
 enum MeshState: Hashable {
     case base
     case workoutStarted
     case setLogged
+    case exerciseComplete
     case prBloom
     case workoutComplete
 }

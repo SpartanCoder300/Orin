@@ -84,9 +84,10 @@ struct AppView: View {
                 meshEngine.updateIntensity(min(Double(newCount) / 20.0, 1.0), pulse: true)
                 meshEngine.lastLoggedExerciseIndex = vm?.lastLoggedExerciseIndex
                 setLoggedTask?.cancel()
-                meshEngine.state = .setLogged
+                meshEngine.state = isExerciseComplete ? .exerciseComplete : .setLogged
                 setLoggedTask = Task {
-                    try? await Task.sleep(for: .milliseconds(500))
+                    // Hold exercise-complete green slightly longer so it reads clearly
+                    try? await Task.sleep(for: .milliseconds(isExerciseComplete ? 700 : 500))
                     guard !Task.isCancelled else { return }
                     meshEngine.state = derivedMeshState
                 }

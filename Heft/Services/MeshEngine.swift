@@ -63,6 +63,10 @@ final class MeshEngine {
             transitionDuration = MeshTheme.transitionDuration(for: .setLogged)
             colors = MeshTheme.pulse
 
+        case .exerciseComplete:
+            transitionDuration = MeshTheme.transitionDuration(for: .exerciseComplete)
+            colors = MeshTheme.exercisePulse
+
         case .prBloom:
             // Stage 1: hot flash
             transitionDuration = MeshTheme.transitionDuration(for: .prBloom)

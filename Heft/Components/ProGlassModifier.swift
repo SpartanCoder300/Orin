@@ -23,6 +23,8 @@ struct ProGlassModifier: ViewModifier {
     /// Shimmer band position. -1 = off-screen left, 2 = off-screen right.
     @State private var shimmerPhase: CGFloat = -1.0
     @State private var isShimmering = false
+    /// Peak opacity of the shimmer band. Higher for exercise-complete sweeps.
+    @State private var shimmerPeak: CGFloat = 0.12
 
     func body(content: Content) -> some View {
         if theme == .mesh {
@@ -50,12 +52,14 @@ struct ProGlassModifier: ViewModifier {
                     }
                 }
                 .onChange(of: engine.state) { _, newState in
-                    guard newState == .setLogged,
+                    guard (newState == .setLogged || newState == .exerciseComplete),
                           let myIndex = exerciseIndex,
                           myIndex == engine.lastLoggedExerciseIndex,
                           !reduceMotion
                     else { return }
 
+                    // Exercise complete gets a brighter, wider band.
+                    shimmerPeak = newState == .exerciseComplete ? 0.20 : 0.12
                     shimmerPhase = -1.0
                     isShimmering = true
                     withAnimation(.easeInOut(duration: Motion.shimmerDuration)) {
@@ -72,13 +76,17 @@ struct ProGlassModifier: ViewModifier {
     }
 
     private var shimmerOverlay: some View {
-        GeometryReader { geo in
+        // Band width scales with peak: normal (peak 0.12) → tight 10% band,
+        // exercise-complete (peak 0.20) → wider 24% band for more presence.
+        let edge = shimmerPeak * 0.67
+        let spread: CGFloat = shimmerPeak > 0.15 ? 0.12 : 0.05
+        return GeometryReader { geo in
             LinearGradient(
                 stops: [
                     .init(color: .clear, location: 0),
-                    .init(color: Color.white.opacity(0.08), location: 0.45),
-                    .init(color: Color.white.opacity(0.12), location: 0.5),
-                    .init(color: Color.white.opacity(0.08), location: 0.55),
+                    .init(color: Color.white.opacity(edge), location: 0.5 - spread),
+                    .init(color: Color.white.opacity(shimmerPeak), location: 0.5),
+                    .init(color: Color.white.opacity(edge), location: 0.5 + spread),
                     .init(color: .clear, location: 1.0),
                 ],
                 startPoint: .leading,
