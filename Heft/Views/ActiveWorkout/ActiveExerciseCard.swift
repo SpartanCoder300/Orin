@@ -52,6 +52,12 @@ struct ActiveExerciseCard: View {
                     }
 
                     Button {
+                        vm.beginSwap(exerciseIndex: exerciseIndex)
+                    } label: {
+                        Label("Swap Exercise", systemImage: "arrow.left.arrow.right")
+                    }
+
+                    Button {
                         vm.isShowingExercisePicker = true
                     } label: {
                         Label("Add Superset", systemImage: "arrow.2.squarepath")

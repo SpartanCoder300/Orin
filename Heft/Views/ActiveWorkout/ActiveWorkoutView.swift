@@ -144,9 +144,15 @@ struct ActiveWorkoutView: View {
                 .navigationDestination(item: $completedSession) { session in
                     WorkoutSummaryView(session: session, onDone: { onDismiss() })
                 }
-                .sheet(isPresented: $vm.isShowingExercisePicker) {
+                .sheet(isPresented: $vm.isShowingExercisePicker, onDismiss: {
+                    vm.cancelSwap()
+                }) {
                     ExercisePicker { exercise in
-                        vm.addExercise(named: exercise.name)
+                        if let idx = vm.swappingExerciseIndex {
+                            vm.swapExercise(at: idx, named: exercise.name)
+                        } else {
+                            vm.addExercise(named: exercise.name)
+                        }
                     }
                 }
             }

@@ -71,6 +71,8 @@ final class ActiveWorkoutViewModel {
     private(set) var showingPRMoment: PRMoment? = nil
 
     private(set) var session: WorkoutSession? = nil
+    /// Non-nil while the exercise picker is open in swap mode. Cleared on dismiss.
+    private(set) var swappingExerciseIndex: Int? = nil
     let restTimer = RestTimerState()
     private(set) var lastLoggedFocus: SetFocus? = nil
     private(set) var lastLoggedExerciseIndex: Int? = nil
@@ -255,6 +257,39 @@ final class ActiveWorkoutViewModel {
     }
 
     // MARK: - Mutations
+
+    /// Clears swap mode without performing a swap (e.g. user cancelled the picker).
+    func cancelSwap() {
+        swappingExerciseIndex = nil
+    }
+
+    func beginSwap(exerciseIndex: Int) {
+        guard draftExercises.indices.contains(exerciseIndex) else { return }
+        swappingExerciseIndex = exerciseIndex
+        isShowingExercisePicker = true
+    }
+
+    func swapExercise(at index: Int, named name: String) {
+        swappingExerciseIndex = nil
+        guard draftExercises.indices.contains(index) else { return }
+        let descriptor = FetchDescriptor<ExerciseDefinition>(predicate: #Predicate { $0.name == name })
+        let def = (try? modelContext.fetch(descriptor))?.first
+        let equipmentType = def?.equipmentType ?? ""
+        let weightIncrement = def?.weightIncrement ?? ExerciseDefinition.defaultIncrement(for: equipmentType)
+        let isTimed = def?.isTimed ?? false
+        // Preserve set count; clear logged state — new exercise starts fresh
+        let setCount = max(1, draftExercises[index].sets.count)
+        let sets = (0..<setCount).map { _ in DraftSet() }
+        var replacement = DraftExercise(
+            exerciseName: name,
+            equipmentType: equipmentType,
+            weightIncrement: weightIncrement,
+            isTimed: isTimed,
+            sets: sets
+        )
+        applyPreviousPerformance(to: &replacement)
+        draftExercises[index] = replacement
+    }
 
     func addExercise(named name: String) {
         let descriptor = FetchDescriptor<ExerciseDefinition>(predicate: #Predicate { $0.name == name })
