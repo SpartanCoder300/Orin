@@ -33,21 +33,35 @@ enum MeshTheme {
     private static let stonePeak = Color(red: 0.285, green: 0.260, blue: 0.222)
 
     // MARK: - Steel-Blue Event Palette (iron)
-    // Only used for the set-logged pulse and workout-started flash.
-    // Blue channel ≈ 2× red — reads as cool steel, not colorless.
-    // Transitioning from warm stone → blue iron is what makes each set feel physical.
+    // Two sub-groups:
+    //
+    // "steel" — gym-light color-temperature shift. Same luminance as the stone
+    //   sources but warm tungsten → cool steel. TC and BC shift color; corners
+    //   barely move. Used for set-logged and exercise-complete.
+    //
+    // "iron" — high-intensity burst. Much brighter. Reserved for workout-started
+    //   and any future peak-intensity moments.
 
-    /// Near-black steel — event corner anchor.
+    // Steel tints: ≈ stone luma, just blue-cast.
+    // steelCorner   ≈ stone0 (2%)  — barely blue, corners stay dark
+    // steelCenter   ≈ stone1 (3%)  — slight blue lift, center shadow
+    // steelFloor    ≈ stone2 (7%)  — floor reflection shifts cool
+    // steelOverhead ≈ stone3 (11%) — overhead shifts from tungsten to steel
+    private static let steelCorner   = Color(red: 0.038, green: 0.042, blue: 0.080)
+    private static let steelCenter   = Color(red: 0.050, green: 0.058, blue: 0.092)
+    private static let steelFloor    = Color(red: 0.058, green: 0.072, blue: 0.122)
+    private static let steelOverhead = Color(red: 0.088, green: 0.108, blue: 0.188)
+
+    // One tier brighter — exercise-complete. Clearly visible step up from set-logged.
+    private static let steelFloorBright    = Color(red: 0.078, green: 0.098, blue: 0.165)
+    private static let steelOverheadBright = Color(red: 0.125, green: 0.155, blue: 0.265)
+
+    // Iron — high-output burst for workout-started / peak moments.
     private static let iron0 = Color(red: 0.035, green: 0.040, blue: 0.075)
-    /// Edge mids — barely-lit steel.
     private static let iron1 = Color(red: 0.065, green: 0.080, blue: 0.145)
-    /// Pulse edges / floor surge.
     private static let iron2 = Color(red: 0.110, green: 0.135, blue: 0.230)
-    /// Center glow — overhead source during pulse.
     private static let iron3 = Color(red: 0.175, green: 0.210, blue: 0.355)
-    /// Pulse center burst.
     private static let iron4 = Color(red: 0.260, green: 0.305, blue: 0.490)
-    /// Peak flare — absolute ceiling, workout-start fill.
     private static let iron5 = Color(red: 0.360, green: 0.415, blue: 0.600)
 
     // MARK: - Amber/PR Palette
@@ -124,18 +138,19 @@ enum MeshTheme {
         stone0, stone2,      stone0,
     ]
 
-    /// Set logged — overhead brightens, same warmth. The room responding to effort.
+    /// Set logged — overhead and floor shift from warm tungsten to cool steel.
+    /// Same brightness as base; only the color temperature changes. Subtle but physical.
     static let pulse: [Color] = [
-        stone0, stoneBright, stone0,
-        stone0, stone1,      stone0,
-        stone0, stone2,      stone0,
+        steelCorner,  steelOverhead,       steelCorner,
+        steelCorner,  steelCenter,         steelCorner,
+        steelCorner,  steelFloor,          steelCorner,
     ]
 
-    /// Exercise complete — overhead + floor both lift. One tier above set-logged.
+    /// Exercise complete — same color shift, one clear tier brighter.
     static let exercisePulse: [Color] = [
-        stone0, stoneBright, stone0,
-        stone0, stone2,      stone0,
-        stone0, stone2,      stone0,
+        steelCorner,  steelOverheadBright, steelCorner,
+        steelCorner,  steelCenter,         steelCorner,
+        steelCorner,  steelFloorBright,    steelCorner,
     ]
 
     /// PR — initial hot amber flash. Top brighter, bottom cooler.
@@ -164,6 +179,7 @@ enum MeshTheme {
     static func transitionDuration(for state: MeshState) -> TimeInterval {
         switch state {
         case .base:             return 1.5
+        case .themeIntro:       return 1.5   // slow, deliberate bloom
         case .workoutStarted:   return 0.5
         case .setLogged:        return 0.15
         case .exerciseComplete: return 0.15
@@ -179,6 +195,7 @@ enum MeshTheme {
 /// Workout events + base.
 enum MeshState: Hashable {
     case base
+    case themeIntro
     case workoutStarted
     case setLogged
     case exerciseComplete

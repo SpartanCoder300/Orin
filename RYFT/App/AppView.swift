@@ -114,13 +114,13 @@ struct AppView: View {
         // ── Mesh theme intro ──────────────────────────────────────────────────
         .onChange(of: appState.accentTheme) { _, newTheme in
             guard newTheme == .mesh else { return }
-            // All-lights-on flash — makes the mesh announce itself.
-            // Breathes down to dark base after 1.2s.
+            // Slow warm white bloom — welcome to Lux. Deliberate, not reactive.
+            // Holds for 2.5s so the 1.5s fade-in has room to breathe, then returns to base.
             playWorkoutStartHaptic()
             meshIntroTask?.cancel()
-            meshEngine.state = .workoutStarted
+            meshEngine.state = .themeIntro
             meshIntroTask = Task {
-                try? await Task.sleep(for: .milliseconds(1200))
+                try? await Task.sleep(for: .milliseconds(2500))
                 guard !Task.isCancelled else { return }
                 meshEngine.state = derivedMeshState
             }

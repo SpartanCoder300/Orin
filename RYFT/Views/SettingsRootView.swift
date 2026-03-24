@@ -5,6 +5,7 @@ import SwiftUI
 struct SettingsRootView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.ryftTheme) private var theme
+    @Environment(\.ryftCardMaterial) private var cardMaterial
 
     var body: some View {
         List {
@@ -18,7 +19,7 @@ struct SettingsRootView: View {
                     ) {
                         appState.accentTheme = t
                     }
-                    .listRowBackground(theme == .mesh ? Color.clear : nil as Color?)
+                    .listRowBackground(Rectangle().fill(cardMaterial))
                 }
             } header: {
                 Text("Theme")
@@ -27,7 +28,7 @@ struct SettingsRootView: View {
             // ── About ──────────────────────────────────────────────────
             Section {
                 LabeledContent("Version", value: "1.0")
-                    .listRowBackground(theme == .mesh ? Color.clear : nil as Color?)
+                    .listRowBackground(Rectangle().fill(cardMaterial))
             } header: {
                 Text("About")
             }

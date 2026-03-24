@@ -55,6 +55,12 @@ final class MeshEngine {
             transitionDuration = MeshTheme.transitionDuration(for: .base)
             colors = MeshTheme.base(intensity: sessionIntensity)
 
+        case .themeIntro:
+            // Slow warm white bloom — "welcome to Lux". Same palette as workout
+            // complete but 1.5s fade-in so it feels deliberate, not reactive.
+            transitionDuration = MeshTheme.transitionDuration(for: .themeIntro)
+            colors = MeshTheme.complete
+
         case .workoutStarted:
             transitionDuration = MeshTheme.transitionDuration(for: .workoutStarted)
             colors = MeshTheme.started

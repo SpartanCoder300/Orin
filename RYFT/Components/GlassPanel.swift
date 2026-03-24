@@ -18,5 +18,6 @@ struct GlassPanel<Content: View>: View {
             .frame(maxWidth: .infinity)
             .frame(minHeight: DesignTokens.Layout.placeholderPanelHeight)
             .background(cardMaterial, in: RoundedRectangle(cornerRadius: Radius.sheet, style: .continuous))
+            .proGlass(cornerRadius: Radius.sheet)
     }
 }

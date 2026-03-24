@@ -18,6 +18,8 @@ struct RoutineBuilderView: View {
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
+    @Environment(\.ryftTheme) private var theme
+    @Environment(\.ryftCardMaterial) private var cardMaterial
 
     init(existingRoutine: RoutineTemplate? = nil, onStartWorkout: ((UUID) -> Void)? = nil) {
         _vm = State(initialValue: RoutineBuilderViewModel(existingRoutine: existingRoutine))
@@ -41,6 +43,7 @@ struct RoutineBuilderView: View {
                     TextField("Routine Name", text: $vm.routineName)
                         .font(.title3.weight(.semibold))
                         .autocorrectionDisabled()
+                        .listRowBackground(Rectangle().fill(cardMaterial))
                 }
 
                 // ── Exercises ─────────────────────────────────────────
@@ -58,6 +61,7 @@ struct RoutineBuilderView: View {
                                 ExerciseEntryRow(entry: entry)
                             }
                             .tint(.primary)
+                            .listRowBackground(Rectangle().fill(cardMaterial))
                         }
                         .onMove { vm.move(from: $0, to: $1) }
                         .onDelete { vm.removeEntries(at: $0) }
@@ -76,6 +80,7 @@ struct RoutineBuilderView: View {
                         Label("Add Exercise", systemImage: "plus.circle.fill")
                     }
                     .tint(.accentColor)
+                    .listRowBackground(Rectangle().fill(cardMaterial))
                 }
             }
             .scrollContentBackground(.hidden)
