@@ -1,0 +1,26 @@
+// iOS 26+ only. No #available guards.
+
+import Observation
+import SwiftData
+import Foundation
+
+enum AppTab: Hashable {
+    case home
+    case history
+    case settings
+}
+
+@Observable @MainActor
+final class AppState {
+    var selectedTab: AppTab = .home
+    let workout = ActiveWorkoutService()
+
+    var accentTheme: AccentTheme = {
+        let raw = UserDefaults.standard.string(forKey: "RYFT.accentTheme") ?? ""
+        return AccentTheme(rawValue: raw) ?? .midnight
+    }() {
+        didSet {
+            UserDefaults.standard.set(accentTheme.rawValue, forKey: "RYFT.accentTheme")
+        }
+    }
+}
