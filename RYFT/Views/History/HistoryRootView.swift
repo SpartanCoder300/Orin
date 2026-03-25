@@ -4,6 +4,8 @@ import SwiftUI
 import SwiftData
 
 struct HistoryRootView: View {
+    @Environment(\.ryftCardMaterial) private var cardMaterial
+
     @Query(sort: \WorkoutSession.completedAt, order: .reverse)
     private var allSessions: [WorkoutSession]
 
@@ -48,6 +50,7 @@ struct HistoryRootView: View {
                                     }
                                     .padding(.vertical, 6)
                                 }
+                                .listRowBackground(Rectangle().fill(cardMaterial))
                             }
                         }
                     }
