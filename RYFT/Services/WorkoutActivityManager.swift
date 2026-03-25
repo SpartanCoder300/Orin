@@ -77,9 +77,13 @@ final class WorkoutActivityManager {
         updateTask?.cancel()
         updateTask = Task {
             guard !Task.isCancelled else { return }
+            // During rest, stale date is just after the timer ends so the system
+            // knows the data expires imminently. Otherwise cap at max workout duration.
+            let staleDate = state.restEndsAt.map { $0.addingTimeInterval(5) }
+                         ?? (.now + maxWorkoutDuration)
             let content = ActivityContent(
                 state: state,
-                staleDate: .now + maxWorkoutDuration,
+                staleDate: staleDate,
                 relevanceScore: state.isResting ? 100 : 50
             )
             await activity.update(content)

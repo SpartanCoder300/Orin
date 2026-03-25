@@ -21,6 +21,15 @@ private func restPhaseColor(endsAt: Date, totalDuration: TimeInterval) -> Color 
     return .ryftRed
 }
 
+/// Returns the Dynamic Island keyline tint — tracks rest phase during rest,
+/// brand green during active work.
+private func keylineTint(for state: WorkoutActivityAttributes.ContentState) -> Color {
+    guard state.isResting,
+          let endsAt = state.restEndsAt,
+          let total  = state.totalRestDuration else { return .ryftGreen }
+    return restPhaseColor(endsAt: endsAt, totalDuration: total)
+}
+
 // MARK: - Widget
 
 struct RYFTWidgetsLiveActivity: Widget {
@@ -47,7 +56,8 @@ struct RYFTWidgetsLiveActivity: Widget {
             } minimal: {
                 MinimalView(context: context)
             }
-            .keylineTint(.ryftGreen)
+            // Keyline tracks rest phase — pill border goes green → amber → red
+            .keylineTint(keylineTint(for: context.state))
             .widgetURL(URL(string: "ryft://workout"))
         }
     }
@@ -88,6 +98,7 @@ private struct WorkingBanner: View {
                 Text("\(state.setsLogged) sets logged")
                     .font(.system(size: 13))
                     .foregroundStyle(.white.opacity(0.6))
+                    .contentTransition(.numericText(countsDown: false))
             }
 
             Spacer()
@@ -119,7 +130,7 @@ private struct RestingBanner: View {
                     .textCase(.uppercase)
                     .tracking(0.5)
                 Spacer()
-                Text(timerInterval: Date.now...endsAt, countsDown: true)
+                Text(timerInterval: Date.now...endsAt, countsDown: true, showsHours: false)
                     .font(.system(size: 22, weight: .semibold, design: .monospaced))
                     .monospacedDigit()
                     .foregroundStyle(phaseColor)
@@ -150,7 +161,7 @@ private struct ExpandedLeading: View {
         if context.state.isResting, let endsAt = context.state.restEndsAt,
            let total = context.state.totalRestDuration {
             VStack(alignment: .leading, spacing: 4) {
-                Text(timerInterval: Date.now...endsAt, countsDown: true)
+                Text(timerInterval: Date.now...endsAt, countsDown: true, showsHours: false)
                     .font(.system(size: 26, weight: .bold, design: .monospaced))
                     .monospacedDigit()
                     .foregroundStyle(restPhaseColor(endsAt: endsAt, totalDuration: total))
@@ -169,9 +180,11 @@ private struct ExpandedLeading: View {
                     .foregroundStyle(.white)
                     .lineLimit(2)
                     .minimumScaleFactor(0.8)
+                    .dynamicIsland(verticalPlacement: .belowIfTooWide)
                 Text("\(context.state.setsLogged) sets")
-                    .font(.system(size: 12))
+                    .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(Color.ryftGreen)
+                    .contentTransition(.numericText(countsDown: false))
             }
             .padding(.leading, 4)
         }
@@ -219,6 +232,7 @@ private struct ExpandedBottom: View {
     var body: some View {
         if context.state.isResting, let endsAt = context.state.restEndsAt,
            let total = context.state.totalRestDuration {
+            // Rest: progress bar depleting as rest ends, tinted by phase
             ProgressView(
                 timerInterval: endsAt.addingTimeInterval(-total)...endsAt,
                 countsDown: true,
@@ -229,7 +243,23 @@ private struct ExpandedBottom: View {
             .tint(restPhaseColor(endsAt: endsAt, totalDuration: total))
             .padding(.horizontal, 4)
         } else {
-            EmptyView()
+            // Working: routine name + running set tally
+            HStack(spacing: 0) {
+                Text(context.attributes.routineName)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.4))
+                    .lineLimit(1)
+                Spacer()
+                Text("\(context.state.setsLogged)")
+                    .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(Color.ryftGreen)
+                    .contentTransition(.numericText(countsDown: false))
+                Text(" sets")
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(.white.opacity(0.4))
+            }
+            .padding(.horizontal, 4)
+            .padding(.top, 2)
         }
     }
 }
@@ -242,17 +272,17 @@ private struct CompactLeading: View {
     var body: some View {
         if context.state.isResting, let endsAt = context.state.restEndsAt,
            let total = context.state.totalRestDuration {
-            Text(timerInterval: Date.now...endsAt, countsDown: true)
+            // Rest: countdown is the dominant, urgent signal
+            Text(timerInterval: Date.now...endsAt, countsDown: true, showsHours: false)
                 .font(.system(size: 14, weight: .semibold, design: .monospaced))
                 .monospacedDigit()
                 .foregroundStyle(restPhaseColor(endsAt: endsAt, totalDuration: total))
-                .padding(.leading, 4)
+                .frame(width: 40, alignment: .leading)
         } else {
-            Text(context.state.startedAt, style: .timer)
-                .font(.system(size: 14, weight: .semibold, design: .monospaced))
-                .monospacedDigit()
-                .foregroundStyle(.white.opacity(0.8))
-                .padding(.leading, 4)
+            // Working: icon signals activity type instantly
+            Image(systemName: "dumbbell.fill")
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(Color.ryftGreen)
         }
     }
 }
@@ -261,11 +291,28 @@ private struct CompactTrailing: View {
     let context: ActivityViewContext<WorkoutActivityAttributes>
 
     var body: some View {
-        // Leading already shows the countdown during rest — show set count here for context.
-        Text("\(context.state.setsLogged)")
-            .font(.system(size: 14, weight: .semibold, design: .monospaced))
-            .foregroundStyle(context.state.isResting ? Color.ryftAmber : Color.ryftGreen)
-            .padding(.trailing, 4)
+        if context.state.isResting {
+            // Rest trailing: set count shows what was just completed, in phase color
+            Text("\(context.state.setsLogged)")
+                .font(.system(size: 14, weight: .semibold, design: .monospaced))
+                .foregroundStyle(
+                    context.state.restEndsAt.flatMap { endsAt in
+                        context.state.totalRestDuration.map { total in
+                            restPhaseColor(endsAt: endsAt, totalDuration: total)
+                        }
+                    } ?? Color.ryftAmber
+                )
+                .contentTransition(.numericText(countsDown: false))
+        } else {
+            // Working trailing: elapsed timer with showsHours: false so it stays M:SS
+            // even past 60 min, preventing layout blowout in the compact pill.
+            Text(timerInterval: context.state.startedAt...Date.distantFuture,
+                 countsDown: false, showsHours: false)
+                .font(.system(size: 13, weight: .semibold, design: .monospaced))
+                .monospacedDigit()
+                .foregroundStyle(.white.opacity(0.8))
+                .frame(width: 40, alignment: .trailing)
+        }
     }
 }
 
@@ -277,12 +324,14 @@ private struct MinimalView: View {
     var body: some View {
         if context.state.isResting, let endsAt = context.state.restEndsAt,
            let total = context.state.totalRestDuration {
-            Text(timerInterval: Date.now...endsAt, countsDown: true)
+            // Minimal rest: countdown in 4 chars max (e.g. "1:30") — phase colored
+            Text(timerInterval: Date.now...endsAt, countsDown: true, showsHours: false)
                 .font(.system(size: 12, weight: .semibold, design: .monospaced))
                 .monospacedDigit()
                 .foregroundStyle(restPhaseColor(endsAt: endsAt, totalDuration: total))
                 .minimumScaleFactor(0.7)
         } else {
+            // Minimal working: icon only — unambiguous identity in ~36×36 pt
             Image(systemName: "dumbbell.fill")
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(Color.ryftGreen)
