@@ -84,13 +84,26 @@ private struct RecentWorkoutListRow: View {
     }
 }
 
-#Preview {
+#Preview("Empty") {
     NavigationStack {
         ScrollView {
             HomeRecentSection(sessions: [], onRepeat: { _ in })
                 .padding()
         }
     }
-    .modelContainer(PersistenceController.previewContainer)
+    .environment(MeshEngine())
+    .modelContainer(HomePreviewData.container)
+    .preferredColorScheme(.dark)
+}
+
+#Preview("With recent") {
+    NavigationStack {
+        ScrollView {
+            HomeRecentSection(sessions: HomePreviewData.recentSessions, onRepeat: { _ in })
+                .padding()
+        }
+    }
+    .environment(MeshEngine())
+    .modelContainer(HomePreviewData.container)
     .preferredColorScheme(.dark)
 }

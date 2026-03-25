@@ -23,6 +23,7 @@ struct HomeRoutinesSection: View {
                 if let featured,
                    let featuredRoutine = routines.first(where: { $0.id == featured.routineID }) {
                     FeaturedRoutineCard(
+                        routine: featuredRoutine,
                         suggestion: featured,
                         avgMinutes: avgMinutes[featured.routineID],
                         onTap: { onStart(featured.routineID) },
@@ -56,70 +57,55 @@ struct HomeRoutinesSection: View {
 // MARK: - Featured Routine Card
 
 private struct FeaturedRoutineCard: View {
+    let routine: RoutineTemplate
     let suggestion: FeaturedRoutineSuggestion
     let avgMinutes: Int?
     let onTap: () -> Void
     let onEdit: () -> Void
 
-    @Environment(\.ryftTheme) private var theme
     @Environment(\.ryftCardMaterial) private var cardMaterial
 
     var body: some View {
         Button(action: onTap) {
-            VStack(alignment: .leading, spacing: Spacing.sm) {
-
-                // Header row: "UP NEXT" label + optional "Due" badge
-                HStack(spacing: Spacing.xs) {
+            HStack(alignment: .center, spacing: Spacing.md) {
+                VStack(alignment: .leading, spacing: Spacing.xs) {
                     Text("Up Next")
-                        .font(.system(size: 10, weight: .bold))
-                        .foregroundStyle(theme.accentColor)
-                        .textCase(.uppercase)
-                        .tracking(1.0)
-
-                    Spacer()
-
-                    if suggestion.daysSinceLast >= suggestion.avgIntervalDays {
-                        Text("Due")
-                            .font(.system(size: 10, weight: .bold))
-                            .foregroundStyle(Color.ryftGreen)
-                            .textCase(.uppercase)
-                            .tracking(0.8)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 3)
-                            .background(Color.ryftGreen.opacity(0.15), in: Capsule())
-                    }
-                }
-
-                // Routine name
-                Text(suggestion.routineName)
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(Color.textPrimary)
-
-                // Detail row
-                HStack(spacing: 0) {
-                    Label("\(suggestion.exerciseCount) exercises", systemImage: "list.bullet")
-                        .foregroundStyle(Color.textMuted)
-                    if let avg = avgMinutes {
-                        Text("  ·  \(avg) min avg")
-                            .foregroundStyle(Color.textMuted)
-                    }
-                    Spacer()
-                    Text(recencyLabel)
+                        .font(Typography.caption.weight(.medium))
                         .foregroundStyle(Color.textFaint)
+                        .textCase(.uppercase)
+
+                    Text(suggestion.routineName)
+                        .font(.title3)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(Color.textPrimary)
+                        .lineLimit(2)
+
+                    if !muscleGroupSummary.isEmpty {
+                        Text(muscleGroupSummary)
+                            .font(Typography.caption)
+                            .foregroundStyle(Color.textMuted)
+                            .lineLimit(1)
+                    }
+
+                    Text(summaryLine)
+                        .font(Typography.caption)
+                        .foregroundStyle(Color.textMuted)
+                        .lineLimit(1)
                 }
-                .font(.system(size: 12))
+
+                Spacer(minLength: Spacing.sm)
+
+                Image(systemName: "chevron.right")
+                    .font(.footnote.weight(.semibold))
+                    .foregroundStyle(.tertiary)
             }
-            .padding(Spacing.md)
+            .padding(.horizontal, Spacing.lg)
+            .padding(.vertical, Spacing.md)
             .frame(maxWidth: .infinity, alignment: .leading)
             .background(cardMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
-            .background(
-                // Accent color wash layered on top of the card material
-                theme.accentColor.opacity(0.10),
-                in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
-            )
             .overlay(
                 RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
-                    .strokeBorder(theme.accentColor.opacity(0.35), lineWidth: 1)
+                    .strokeBorder(.white.opacity(0.08), lineWidth: 1)
             )
             .proGlass()
         }
@@ -131,12 +117,18 @@ private struct FeaturedRoutineCard: View {
         }
     }
 
-    private var recencyLabel: String {
-        switch suggestion.daysSinceLast {
-        case 0:  return "Done today"
-        case 1:  return "Yesterday · every ~\(suggestion.avgIntervalDays)d"
-        default: return "\(suggestion.daysSinceLast)d ago · every ~\(suggestion.avgIntervalDays)d"
+    private var summaryLine: String {
+        var parts = ["\(suggestion.exerciseCount) exercises"]
+
+        if let avgMinutes {
+            parts.append("\(avgMinutes) min avg")
         }
+
+        return parts.joined(separator: " • ")
+    }
+
+    private var muscleGroupSummary: String {
+        routine.muscleGroupSummary
     }
 }
 
@@ -169,7 +161,7 @@ private struct RoutineListRow: View {
                     Text("\(routine.entries.count) exercises")
                         .font(Typography.caption)
                         .foregroundStyle(Color.textMuted)
-                    Text(avgMinutes.map { "\($0) min avg" } ?? "— min avg")
+                    Text(avgMinutes.map { "\($0) min avg" } ?? "No history yet")
                         .font(Typography.caption)
                         .foregroundStyle(Color.textFaint)
                 }
@@ -188,9 +180,15 @@ private struct RoutineListRow: View {
     }
 
     private var muscleGroupSummary: String {
+        routine.muscleGroupSummary
+    }
+}
+
+private extension RoutineTemplate {
+    var muscleGroupSummary: String {
         var seen = Set<String>()
         var ordered: [String] = []
-        for entry in routine.entries {
+        for entry in entries {
             for group in (entry.exerciseDefinition?.muscleGroups ?? []) {
                 if seen.insert(group).inserted { ordered.append(group) }
             }
@@ -272,15 +270,18 @@ private struct EmptyRoutinesPrompt: View {
         onStartEmpty: {}
     )
     .padding()
+    .environment(MeshEngine())
     .preferredColorScheme(.dark)
 }
 
 #Preview("With routines") {
+    let scenario = HomePreviewData.featured
+
     NavigationStack {
         HomeRoutinesSection(
-            routines: [],
-            avgMinutes: [:],
-            featured: nil,
+            routines: scenario.routines,
+            avgMinutes: scenario.avgMinutes,
+            featured: scenario.featuredSuggestion,
             onStart: { _ in },
             onEdit: { _ in },
             onNew: {},
@@ -288,6 +289,7 @@ private struct EmptyRoutinesPrompt: View {
         )
         .padding()
     }
-    .modelContainer(PersistenceController.previewContainer)
+    .environment(MeshEngine())
+    .modelContainer(scenario.container)
     .preferredColorScheme(.dark)
 }

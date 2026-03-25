@@ -68,6 +68,7 @@
 		20C237262F746D2300D5763E /* WorkoutSummaryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236E92F746D2300D5763E /* WorkoutSummaryView.swift */; };
 		20C237272F746D2300D5763E /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 20C236EB2F746D2300D5763E /* Assets.xcassets */; };
 		20C237292F746D2300D5763E /* WorkoutActivityAttributes.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236BF2F746D2300D5763E /* WorkoutActivityAttributes.swift */; };
+		20C2372B2F7479AC00D5763E /* HomePreviewData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C2372A2F7479AC00D5763E /* HomePreviewData.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -174,6 +175,7 @@
 		20C236EB2F746D2300D5763E /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		20C236EC2F746D2300D5763E /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		20C236ED2F746D2300D5763E /* RYFT.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = RYFT.entitlements; sourceTree = "<group>"; };
+		20C2372A2F7479AC00D5763E /* HomePreviewData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomePreviewData.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -320,6 +322,7 @@
 		20C236C32F746D2300D5763E /* Preview */ = {
 			isa = PBXGroup;
 			children = (
+				20C2372A2F7479AC00D5763E /* HomePreviewData.swift */,
 				20C236C22F746D2300D5763E /* HistoryRootPreviewData.swift */,
 			);
 			path = Preview;
@@ -608,6 +611,7 @@
 				20C236F02F746D2300D5763E /* AppState.swift in Sources */,
 				20C236F12F746D2300D5763E /* AppView.swift in Sources */,
 				20C236F22F746D2300D5763E /* HeftApp.swift in Sources */,
+				20C2372B2F7479AC00D5763E /* HomePreviewData.swift in Sources */,
 				20C236F32F746D2300D5763E /* MeshTheme.swift in Sources */,
 				20C236F42F746D2300D5763E /* Color+Tokens.swift in Sources */,
 				20C236F52F746D2300D5763E /* CompactStepper.swift in Sources */,

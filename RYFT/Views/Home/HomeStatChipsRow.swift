@@ -74,9 +74,20 @@ struct StatChip: View {
     }
 }
 
+private struct HomeStatChipsRowPreview: View {
+    @State private var stats = HomeStatsViewModel()
+
+    var body: some View {
+        HomeStatChipsRow(stats: stats)
+            .task {
+                stats.update(container: HomePreviewData.container)
+            }
+    }
+}
+
 #Preview {
-    @Previewable @State var stats = HomeStatsViewModel()
-    HomeStatChipsRow(stats: stats)
+    HomeStatChipsRowPreview()
         .padding()
+        .environment(MeshEngine())
         .preferredColorScheme(.dark)
 }

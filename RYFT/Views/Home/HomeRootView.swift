@@ -103,10 +103,32 @@ private struct RoutineBuilderRequest: Identifiable {
     let routine: RoutineTemplate?
 }
 
-#Preview {
+#Preview("Featured") {
     NavigationStack {
         HomeRootView()
     }
     .environment(AppState())
-    .modelContainer(PersistenceController.previewContainer)
+    .environment(MeshEngine())
+    .modelContainer(HomePreviewData.featuredRootContainer)
+    .preferredColorScheme(.dark)
+}
+
+#Preview("No Featured") {
+    NavigationStack {
+        HomeRootView()
+    }
+    .environment(AppState())
+    .environment(MeshEngine())
+    .modelContainer(HomePreviewData.routinesOnlyRootContainer)
+    .preferredColorScheme(.dark)
+}
+
+#Preview("No Routines") {
+    NavigationStack {
+        HomeRootView()
+    }
+    .environment(AppState())
+    .environment(MeshEngine())
+    .modelContainer(HomePreviewData.emptyRootContainer)
+    .preferredColorScheme(.dark)
 }
