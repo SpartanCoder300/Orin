@@ -40,7 +40,8 @@ final class WorkoutActivityManager {
         }
 
         let attributes = WorkoutActivityAttributes(routineName: routineName)
-        let content = ActivityContent(state: state, staleDate: .now + maxWorkoutDuration)
+        let content = ActivityContent(state: state, staleDate: .now + maxWorkoutDuration,
+                                      relevanceScore: 100)
         do {
             let requested = try Activity.request(attributes: attributes,
                                                  content: content,
@@ -84,7 +85,7 @@ final class WorkoutActivityManager {
             let content = ActivityContent(
                 state: state,
                 staleDate: staleDate,
-                relevanceScore: state.isResting ? 100 : 50
+                relevanceScore: 100
             )
             await activity.update(content)
         }
