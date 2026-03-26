@@ -48,6 +48,7 @@ struct AppView: View {
                 })
             }
         }
+        .sensoryFeedback(.selection, trigger: appState.selectedTab)
         .tint(appState.accentTheme.accentColor)
         .preferredColorScheme(.dark)
         .environment(\.ryftTheme, appState.accentTheme)

@@ -10,9 +10,13 @@ struct RoutineListRow: View {
     let onEdit: () -> Void
 
     @Environment(\.ryftCardMaterial) private var cardMaterial
+    @State private var hapticTrigger = false
 
     var body: some View {
-        Button(action: onTap) {
+        Button {
+            hapticTrigger.toggle()
+            onTap()
+        } label: {
             HStack {
                 VStack(alignment: .leading, spacing: Spacing.xs) {
                     Text(routine.name)
@@ -41,6 +45,7 @@ struct RoutineListRow: View {
             .proGlass()
         }
         .buttonStyle(.plain)
+        .sensoryFeedback(.impact(weight: .light), trigger: hapticTrigger)
         .contextMenu {
             Button { onEdit() } label: {
                 Label("Edit Routine", systemImage: "pencil")

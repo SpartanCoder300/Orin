@@ -28,9 +28,13 @@ private struct RecentWorkoutListRow: View {
     let onRepeat: () -> Void
 
     @Environment(\.ryftCardMaterial) private var cardMaterial
+    @State private var hapticTrigger = false
 
     var body: some View {
-        Button(action: onRepeat) {
+        Button {
+            hapticTrigger.toggle()
+            onRepeat()
+        } label: {
             HStack {
                 VStack(alignment: .leading, spacing: Spacing.xs) {
                     Text(dateLabel)
@@ -62,6 +66,7 @@ private struct RecentWorkoutListRow: View {
             .proGlass()
         }
         .buttonStyle(.plain)
+        .sensoryFeedback(.impact(weight: .light), trigger: hapticTrigger)
     }
 
     private var dateLabel: String {

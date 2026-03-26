@@ -120,6 +120,7 @@ struct ActiveWorkoutView: View {
                         }
                     }
                     Button("Cancel Workout", role: .destructive) {
+                        UINotificationFeedbackGenerator().notificationOccurred(.warning)
                         if vm.hasPendingPRs {
                             isShowingCancelPRWarning = true
                         } else {
@@ -135,6 +136,7 @@ struct ActiveWorkoutView: View {
                 }
                 .alert("Discard Your PR?", isPresented: $isShowingCancelPRWarning) {
                     Button("Discard & Cancel", role: .destructive) {
+                        UINotificationFeedbackGenerator().notificationOccurred(.warning)
                         vm.cancelWorkout()
                         onDismiss()
                     }

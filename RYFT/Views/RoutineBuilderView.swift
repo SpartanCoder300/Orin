@@ -163,6 +163,7 @@ struct RoutineBuilderView: View {
                 titleVisibility: .visible
             ) {
                 Button("Delete Routine", role: .destructive) {
+                    UINotificationFeedbackGenerator().notificationOccurred(.warning)
                     vm.deleteRoutine(from: modelContext)
                     dismiss()
                 }

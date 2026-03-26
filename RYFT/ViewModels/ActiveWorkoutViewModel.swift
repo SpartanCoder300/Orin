@@ -497,6 +497,7 @@ final class ActiveWorkoutViewModel {
         var draft = DraftExercise(exerciseName: name, equipmentType: equipmentType, weightIncrement: weightIncrement, isTimed: isTimed, sets: [DraftSet(), DraftSet(), DraftSet()])
         applyPreviousPerformance(to: &draft)
         draftExercises.append(draft)
+        UISelectionFeedbackGenerator().selectionChanged()
     }
 
     func copySetFromAbove(exerciseIndex eIdx: Int, setIndex sIdx: Int) {
@@ -517,6 +518,7 @@ final class ActiveWorkoutViewModel {
               draftExercises[eIdx].sets.indices.contains(sIdx),
               !draftExercises[eIdx].sets[sIdx].isLogged else { return }
         draftExercises[eIdx].sets.remove(at: sIdx)
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
         // If that was the last set, remove the exercise entirely to avoid a
         // zombie card with zero rows that isAllSetsLogged treats as complete.
         if draftExercises[eIdx].sets.isEmpty {
@@ -551,6 +553,7 @@ final class ActiveWorkoutViewModel {
             new.setType = last.setType
         }
         draftExercises[index].sets.append(new)
+        UISelectionFeedbackGenerator().selectionChanged()
     }
 
     func removeExercise(at index: Int) {
@@ -564,6 +567,7 @@ final class ActiveWorkoutViewModel {
         }
 
         draftExercises.remove(at: index)
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
         // Invalidate focus state that pointed into the removed (or now-shifted) exercise.
         if let lf = lastLoggedFocus {
             if lf.exerciseIndex == index { lastLoggedFocus = nil }
