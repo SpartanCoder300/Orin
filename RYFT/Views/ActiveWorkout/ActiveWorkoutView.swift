@@ -98,9 +98,17 @@ struct ActiveWorkoutView: View {
                 }
                 .animation(.spring(response: 0.4, dampingFraction: 0.8), value: vm.restTimer.isActive)
                 .safeAreaInset(edge: .bottom, spacing: 0) {
-                    commandPanel(vm: vm)
-                        .frame(maxWidth: .infinity)
-                        .contentShape(Rectangle())
+                    ActiveWorkoutCommandPanel(
+                        vm: vm,
+                        theme: theme,
+                        onComplete: { session in
+                            playWorkoutCompleteHaptic()
+                            completedSession = session
+                        },
+                        onDismiss: onDismiss
+                    )
+                    .frame(maxWidth: .infinity)
+                    .contentShape(Rectangle())
                 }
                 .alert("End Workout?", isPresented: $vm.isShowingEndConfirm) {
                     Button("Finish") {
@@ -180,164 +188,6 @@ struct ActiveWorkoutView: View {
         }
     }
 
-    // MARK: - Command Panel
-
-    @ViewBuilder
-    private func commandPanel(vm: ActiveWorkoutViewModel) -> some View {
-        if vm.isAllSetsLogged {
-            // ── Complete Workout ───────────────────────────────────────────────
-            Button {
-                if let session = vm.endWorkout() {
-                    playWorkoutCompleteHaptic()
-                    completedSession = session
-                } else {
-                    onDismiss()
-                }
-            } label: {
-                Label("Complete Workout", systemImage: "checkmark.circle.fill")
-                    .font(.body.weight(.semibold))
-                    .foregroundStyle(Color.ryftGreen)
-                    .padding(.vertical, Spacing.md)
-                    .padding(.horizontal, Spacing.xl)
-            }
-            .buttonStyle(.plain)
-            .glassEffect(in: RoundedRectangle(cornerRadius: Radius.sheet, style: .continuous))
-            .padding(.bottom, Spacing.md)
-
-        } else if let focus = vm.currentFocus,
-                  vm.draftExercises.indices.contains(focus.exerciseIndex),
-                  vm.draftExercises[focus.exerciseIndex].sets.indices.contains(focus.setIndex) {
-            // ── Set editing card ───────────────────────────────────────────────
-            let exercise = vm.draftExercises[focus.exerciseIndex]
-
-            VStack(spacing: 0) {
-                // Row 1: Weight | Reps (or Duration for timed exercises)
-                HStack(spacing: 0) {
-                    if !exercise.isTimed {
-                        CompactStepper(
-                            text: Binding(
-                                get: {
-                                    guard vm.draftExercises.indices.contains(focus.exerciseIndex),
-                                          vm.draftExercises[focus.exerciseIndex].sets.indices.contains(focus.setIndex)
-                                    else { return "" }
-                                    return vm.draftExercises[focus.exerciseIndex].sets[focus.setIndex].weightText
-                                },
-                                set: {
-                                    guard vm.draftExercises.indices.contains(focus.exerciseIndex),
-                                          vm.draftExercises[focus.exerciseIndex].sets.indices.contains(focus.setIndex)
-                                    else { return }
-                                    vm.draftExercises[focus.exerciseIndex].sets[focus.setIndex].weightText = $0
-                                }
-                            ),
-                            unit: "lbs",
-                            step: exercise.weightIncrement,
-                            minValue: 0,
-                            maxValue: 999,
-                            isInteger: false,
-                            firstTapDefault: weightDefault(for: exercise.equipmentType)
-                        )
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-
-                        Divider()
-                    }
-
-                    if exercise.isTimed {
-                        // Duration stepper — full width for timed exercises
-                        CompactStepper(
-                            text: Binding(
-                                get: {
-                                    guard vm.draftExercises.indices.contains(focus.exerciseIndex),
-                                          vm.draftExercises[focus.exerciseIndex].sets.indices.contains(focus.setIndex)
-                                    else { return "" }
-                                    return vm.draftExercises[focus.exerciseIndex].sets[focus.setIndex].durationText
-                                },
-                                set: {
-                                    guard vm.draftExercises.indices.contains(focus.exerciseIndex),
-                                          vm.draftExercises[focus.exerciseIndex].sets.indices.contains(focus.setIndex)
-                                    else { return }
-                                    vm.draftExercises[focus.exerciseIndex].sets[focus.setIndex].durationText = $0
-                                }
-                            ),
-                            unit: "sec",
-                            step: 5,
-                            minValue: 5,
-                            maxValue: 600,
-                            isInteger: true,
-                            firstTapDefault: 30
-                        )
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    } else {
-                        CompactStepper(
-                            text: Binding(
-                                get: {
-                                    guard vm.draftExercises.indices.contains(focus.exerciseIndex),
-                                          vm.draftExercises[focus.exerciseIndex].sets.indices.contains(focus.setIndex)
-                                    else { return "" }
-                                    return vm.draftExercises[focus.exerciseIndex].sets[focus.setIndex].repsText
-                                },
-                                set: {
-                                    guard vm.draftExercises.indices.contains(focus.exerciseIndex),
-                                          vm.draftExercises[focus.exerciseIndex].sets.indices.contains(focus.setIndex)
-                                    else { return }
-                                    vm.draftExercises[focus.exerciseIndex].sets[focus.setIndex].repsText = $0
-                                }
-                            ),
-                            unit: "reps",
-                            step: 1,
-                            minValue: 0,
-                            maxValue: 50,
-                            isInteger: true,
-                            firstTapDefault: 5
-                        )
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    }
-                }
-                .frame(height: 72)
-
-                Divider()
-
-                // Row 2: Set type (left) | Log Set (centered) | mirror spacer (right)
-                HStack(spacing: 0) {
-                    // Left: set type chip — 44pt to match the mirror spacer
-                    SetTypeChip(
-                        setType: vm.draftExercises[focus.exerciseIndex].sets[focus.setIndex].setType,
-                        onTap: { vm.cycleSetType(exerciseIndex: focus.exerciseIndex, setIndex: focus.setIndex) }
-                    )
-                    .frame(width: 44)
-
-                    // Centre: Log Set fills remaining space, text naturally centred
-                    Button { vm.logFocusedSet() } label: {
-                        HStack(spacing: Spacing.xs) {
-                            Image(systemName: "checkmark")
-                                .font(.system(size: 15, weight: .bold))
-                            Text("Log Set")
-                                .font(.system(size: 16, weight: .semibold))
-                        }
-                        .foregroundStyle(theme.accentColor)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .contentShape(Rectangle())
-                    }
-                    .buttonStyle(.plain)
-
-                    // Right mirror: same width as chip so the label stays centred
-                    Color.clear.frame(width: 44)
-                }
-                .frame(height: 52)
-            }
-            .glassEffect(in: RoundedRectangle(cornerRadius: Radius.large, style: .continuous))
-            .padding(.horizontal, Spacing.md)
-            .padding(.bottom, Spacing.md)
-
-        } else if !vm.draftExercises.isEmpty {
-            // ── No focus — prompt user ─────────────────────────────────────────
-            Text("Tap a set to edit")
-                .font(.subheadline)
-                .foregroundStyle(Color.textFaint)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, Spacing.sm)
-                .padding(.bottom, Spacing.md)
-        }
-    }
 }
 
 // MARK: - Rest Timer Bar
@@ -457,18 +307,6 @@ private func restPhaseColor(_ phase: TimerTintPhase) -> Color {
     case .green: Color.ryftGreen
     case .amber: Color.ryftAmber
     case .red:   Color.ryftRed
-    }
-}
-
-private func weightDefault(for equipmentType: String) -> Double? {
-    switch equipmentType {
-    case "Barbell":    return 45
-    case "Dumbbell":   return 10
-    case "Cable":      return 20
-    case "Machine":    return 45
-    case "Kettlebell": return 35
-    case "Bodyweight": return nil
-    default:           return 45
     }
 }
 

@@ -1,0 +1,76 @@
+// iOS 26+ only. No #available guards.
+
+import SwiftUI
+
+struct SummaryExerciseCard: View {
+    let row: WorkoutSummaryViewModel.ExerciseRow
+    let formatWeight: (Double) -> String
+    @Environment(\.ryftCardMaterial) private var cardMaterial
+
+    var body: some View {
+        HStack(alignment: .center, spacing: Spacing.sm) {
+            VStack(alignment: .leading, spacing: 3) {
+                Text(row.name)
+                    .font(.body.weight(.medium))
+                    .foregroundStyle(.primary)
+                Text(subtitle)
+                    .font(.subheadline)
+                    .foregroundStyle(.secondary)
+            }
+            Spacer(minLength: Spacing.sm)
+            if row.hasPR {
+                SummaryPRBadge(weight: row.prWeight!, reps: row.prReps!, formatWeight: formatWeight)
+            }
+        }
+        .padding(.horizontal, Spacing.md)
+        .padding(.vertical, 14)
+        .background(cardMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
+        .proGlass()
+    }
+
+    private var subtitle: String {
+        let sets = "\(row.setCount) \(row.setCount == 1 ? "set" : "sets")"
+        guard row.maxWeight > 0 else { return sets }
+        return "\(sets) · \(formatWeight(row.maxWeight)) lbs max"
+    }
+}
+
+// MARK: - Previews
+
+private let _formatWeight: (Double) -> String = { w in
+    w.truncatingRemainder(dividingBy: 1) == 0 ? "\(Int(w))" : String(format: "%.1f", w)
+}
+
+#Preview("No PR") {
+    let row = WorkoutSummaryViewModel.ExerciseRow(
+        id: UUID(),
+        name: "Squat",
+        setCount: 3,
+        maxWeight: 225,
+        volume: 4050,
+        prWeight: nil,
+        prReps: nil,
+        prOneRepMax: nil
+    )
+    SummaryExerciseCard(row: row, formatWeight: _formatWeight)
+        .padding()
+        .environment(\.ryftCardMaterial, .regularMaterial)
+        .preferredColorScheme(.dark)
+}
+
+#Preview("With PR") {
+    let row = WorkoutSummaryViewModel.ExerciseRow(
+        id: UUID(),
+        name: "Bench Press",
+        setCount: 4,
+        maxWeight: 185,
+        volume: 2960,
+        prWeight: 185,
+        prReps: 5,
+        prOneRepMax: nil
+    )
+    SummaryExerciseCard(row: row, formatWeight: _formatWeight)
+        .padding()
+        .environment(\.ryftCardMaterial, .regularMaterial)
+        .preferredColorScheme(.dark)
+}

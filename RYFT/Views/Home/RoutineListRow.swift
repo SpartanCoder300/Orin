@@ -1,0 +1,77 @@
+// iOS 26+ only. No #available guards.
+
+import SwiftUI
+import SwiftData
+
+struct RoutineListRow: View {
+    let routine: RoutineTemplate
+    let avgMinutes: Int?
+    let onTap: () -> Void
+    let onEdit: () -> Void
+
+    @Environment(\.ryftCardMaterial) private var cardMaterial
+
+    var body: some View {
+        Button(action: onTap) {
+            HStack {
+                VStack(alignment: .leading, spacing: Spacing.xs) {
+                    Text(routine.name)
+                        .font(Typography.body)
+                        .fontWeight(.semibold)
+                        .foregroundStyle(Color.textPrimary)
+                    if !routine.muscleGroupSummary.isEmpty {
+                        Text(routine.muscleGroupSummary)
+                            .font(Typography.caption)
+                            .foregroundStyle(Color.textMuted)
+                    }
+                }
+                Spacer()
+                VStack(alignment: .trailing, spacing: Spacing.xs) {
+                    Text("\(routine.entries.count) exercises")
+                        .font(Typography.caption)
+                        .foregroundStyle(Color.textMuted)
+                    Text(avgMinutes.map { "\($0) min avg" } ?? "No history yet")
+                        .font(Typography.caption)
+                        .foregroundStyle(Color.textFaint)
+                }
+            }
+            .padding(Spacing.md)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(cardMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
+            .proGlass()
+        }
+        .buttonStyle(.plain)
+        .contextMenu {
+            Button { onEdit() } label: {
+                Label("Edit Routine", systemImage: "pencil")
+            }
+        }
+    }
+}
+
+// MARK: - Previews
+
+#Preview("With history") {
+    let scenario = HomePreviewData.featured
+    let routine = scenario.routines[1]
+    return RoutineListRow(
+        routine: routine,
+        avgMinutes: scenario.avgMinutes[routine.id],
+        onTap: {},
+        onEdit: {}
+    )
+    .padding()
+    .environment(\.ryftCardMaterial, .regularMaterial)
+    .modelContainer(scenario.container)
+    .preferredColorScheme(.dark)
+}
+
+#Preview("No history") {
+    let scenario = HomePreviewData.routinesOnly
+    let routine = scenario.routines[0]
+    return RoutineListRow(routine: routine, avgMinutes: nil, onTap: {}, onEdit: {})
+        .padding()
+        .environment(\.ryftCardMaterial, .regularMaterial)
+        .modelContainer(scenario.container)
+        .preferredColorScheme(.dark)
+}
