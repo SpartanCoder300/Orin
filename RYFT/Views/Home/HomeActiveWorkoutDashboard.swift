@@ -1,6 +1,7 @@
 // iOS 26+ only. No #available guards.
 
 import SwiftUI
+import SwiftData
 
 struct HomeActiveWorkoutDashboard: View {
     let vm: ActiveWorkoutViewModel
