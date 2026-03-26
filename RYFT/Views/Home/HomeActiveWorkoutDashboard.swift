@@ -126,8 +126,6 @@ struct HomeActiveWorkoutDashboard: View {
         let isCurrent = vm.currentFocus?.exerciseIndex == index
         let loggedCount = exercise.sets.filter { $0.isLogged }.count
         let isDone = loggedCount == exercise.sets.count && !exercise.sets.isEmpty
-        let bestPrev = exercise.previousSets.filter { $0.weight > 0 }.max(by: { $0.weight < $1.weight })
-
         HStack(spacing: Spacing.sm) {
             // Current-exercise indicator
             Circle()
@@ -141,12 +139,6 @@ struct HomeActiveWorkoutDashboard: View {
 
             Spacer()
 
-            if let best = bestPrev {
-                Text(prevWeightLabel(best))
-                    .font(.caption2)
-                    .foregroundStyle(.quaternary)
-            }
-
             // Set dots
             HStack(spacing: 4) {
                 ForEach(Array(exercise.sets.enumerated()), id: \.offset) { _, set in
@@ -158,12 +150,6 @@ struct HomeActiveWorkoutDashboard: View {
         }
         .padding(.horizontal, Spacing.md)
         .padding(.vertical, 10)
-    }
-
-    private func prevWeightLabel(_ set: ActiveWorkoutViewModel.PreviousSet) -> String {
-        set.weight.truncatingRemainder(dividingBy: 1) == 0
-            ? "\(Int(set.weight)) lbs"
-            : String(format: "%.1f lbs", set.weight)
     }
 
     // MARK: - Footer
