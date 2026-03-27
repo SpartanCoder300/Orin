@@ -32,7 +32,8 @@ final class WorkoutActivityManager {
 
         // Adopt any activity left over from a previous app session (e.g. after a crash/relaunch).
         // Syncs state immediately so the Live Activity reflects current reality.
-        if let existing = Activity<WorkoutActivityAttributes>.activities.first {
+        if let existing = Activity<WorkoutActivityAttributes>.activities.first,
+           existing.activityState == .active {
             activity = existing
             observeActivityState(existing)
             update(state)
