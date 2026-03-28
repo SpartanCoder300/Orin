@@ -20,6 +20,7 @@ struct ProGlassModifier: ViewModifier {
     /// Corner radius of the card — used to clip overlays so they respect rounded corners.
     var cornerRadius: CGFloat = Radius.medium
 
+
     /// Shimmer band position. -1 = off-screen left, 2 = off-screen right.
     @State private var shimmerPhase: CGFloat = -1.0
     @State private var isShimmering = false

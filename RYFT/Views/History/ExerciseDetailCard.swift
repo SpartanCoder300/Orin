@@ -12,6 +12,15 @@ struct ExerciseDetailCard: View {
         snapshot.sets.sorted { $0.loggedAt < $1.loggedAt }
     }
 
+    /// "185 lbs × 5" — heaviest working set, excluding warmups.
+    private var bestSetLabel: String? {
+        let working = sortedSets.filter { $0.setType != .warmup && $0.weight > 0 }
+        guard let top = working.max(by: { $0.weight < $1.weight }) else { return nil }
+        let w = top.weight.truncatingRemainder(dividingBy: 1) == 0
+            ? "\(Int(top.weight))" : String(format: "%.1f", top.weight)
+        return "\(w) lbs × \(top.reps)"
+    }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
 
@@ -35,8 +44,8 @@ struct ExerciseDetailCard: View {
                         .foregroundStyle(.primary)
                 }
                 Spacer(minLength: Spacing.sm)
-                if let best = bestSetLabel {
-                    Text(best)
+                if let label = bestSetLabel {
+                    Text(label)
                         .font(.subheadline)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -59,15 +68,6 @@ struct ExerciseDetailCard: View {
         }
         .background(cardMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
         .proGlass()
-    }
-
-    /// "185 lbs × 5" — heaviest working set, excluding warmups.
-    private var bestSetLabel: String? {
-        let working = sortedSets.filter { $0.setType != .warmup && $0.weight > 0 }
-        guard let top = working.max(by: { $0.weight < $1.weight }) else { return nil }
-        let w = top.weight.truncatingRemainder(dividingBy: 1) == 0
-            ? "\(Int(top.weight))" : String(format: "%.1f", top.weight)
-        return "\(w) lbs × \(top.reps)"
     }
 }
 

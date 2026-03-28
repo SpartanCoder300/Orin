@@ -5,11 +5,16 @@ import SwiftData
 
 struct WorkoutDetailView: View {
     let session: WorkoutSession
+    var routineName: String? = nil
     @Environment(\.ryftTheme) private var theme
     @State private var historyExerciseName: String? = nil
 
     private var sortedExercises: [ExerciseSnapshot] {
         session.exercises.sorted { $0.order < $1.order }
+    }
+
+    private var prCount: Int {
+        session.exercises.flatMap { $0.sets }.filter { $0.isPersonalRecord }.count
     }
 
     var body: some View {
@@ -21,6 +26,21 @@ struct WorkoutDetailView: View {
                     DetailStatChip(label: "Duration", value: durationLabel ?? "—")
                     DetailStatChip(label: "Volume",   value: volumeLabel)
                     DetailStatChip(label: "Sets",     value: "\(totalSets)")
+                }
+
+                // ── PR banner ──────────────────────────────────────────
+                if prCount > 0 {
+                    HStack(spacing: Spacing.xs) {
+                        Image(systemName: "trophy.fill")
+                            .font(.caption.weight(.semibold))
+                        Text(prCount == 1 ? "1 Personal Record" : "\(prCount) Personal Records")
+                            .font(.subheadline.weight(.semibold))
+                    }
+                    .foregroundStyle(Color.ryftAmber)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, Spacing.sm + 2)
+                    .background(Color.ryftAmber.opacity(0.12),
+                                in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
                 }
 
                 // ── Exercises ──────────────────────────────────────────
@@ -52,6 +72,7 @@ struct WorkoutDetailView: View {
     // MARK: - Computed
 
     private var navTitle: String {
+        if let name = routineName { return name }
         guard let date = session.completedAt else { return "Workout" }
         let cal = Calendar.current
         if cal.isDateInToday(date) { return "Today" }
@@ -65,6 +86,7 @@ struct WorkoutDetailView: View {
     private var durationLabel: String? {
         guard let start = session.startedAt, let end = session.completedAt else { return nil }
         let total = Int(end.timeIntervalSince(start) / 60)
+        if total < 1 { return "< 1 min" }
         if total < 60 { return "\(total) min" }
         return "\(total / 60)h \(total % 60)m"
     }

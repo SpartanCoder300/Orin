@@ -36,6 +36,21 @@ struct ExerciseHistoryChart: View {
             }
     }
 
+    @State private var selectedDate: Date?
+
+    private var yDomain: ClosedRange<Double> {
+        let values = points.map(\.maxWeight)
+        guard let lo = values.min(), let hi = values.max(), lo < hi else { return 0...100 }
+        return (lo * 0.92)...(hi * 1.08)
+    }
+
+    private var selectedPoint: DataPoint? {
+        guard let date = selectedDate else { return nil }
+        return points.min(by: {
+            abs($0.date.timeIntervalSince(date)) < abs($1.date.timeIntervalSince(date))
+        })
+    }
+
     var body: some View {
         if points.count >= 2 {
             Chart(points) { point in
@@ -52,7 +67,29 @@ struct ExerciseHistoryChart: View {
                 )
                 .foregroundStyle(point.hasPR ? Color.accentColor : .secondary)
                 .symbolSize(point.hasPR ? 72 : 36)
+                .annotation(position: .top, spacing: 4) {
+                    if point.hasPR || point.id == points.last?.id {
+                        Text(formatWeight(point.maxWeight))
+                            .font(.caption2.weight(.semibold))
+                            .foregroundStyle(point.hasPR ? Color.accentColor : .secondary)
+                    }
+                }
+
+                if let sel = selectedPoint, sel.id == point.id {
+                    RuleMark(x: .value("Selected", sel.date, unit: .day))
+                        .foregroundStyle(.secondary.opacity(0.25))
+                        .lineStyle(StrokeStyle(lineWidth: 1, dash: [4, 3]))
+                        .annotation(
+                            position: .top,
+                            spacing: 6,
+                            overflowResolution: .init(x: .fit(to: .chart), y: .disabled)
+                        ) {
+                            selectionTooltip(sel)
+                        }
+                }
             }
+            .chartXSelection(value: $selectedDate)
+            .chartYScale(domain: yDomain)
             .chartXAxis {
                 AxisMarks(values: .automatic(desiredCount: 4)) { _ in
                     AxisValueLabel(format: .dateTime.month(.abbreviated).day())
@@ -74,8 +111,34 @@ struct ExerciseHistoryChart: View {
                     }
                 }
             }
-            .frame(height: 120)
+            .frame(height: 150)
         }
+    }
+
+    @ViewBuilder
+    private func selectionTooltip(_ point: DataPoint) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(point.date.formatted(.dateTime.month(.abbreviated).day()))
+                .font(.caption2)
+                .foregroundStyle(.secondary)
+            Text(formatWeight(point.maxWeight))
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(.primary)
+            if point.hasPR {
+                Text("PR")
+                    .font(.caption2.weight(.bold))
+                    .foregroundStyle(Color.accentColor)
+            }
+        }
+        .padding(.horizontal, 8)
+        .padding(.vertical, 5)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 6, style: .continuous))
+    }
+
+    private func formatWeight(_ value: Double) -> String {
+        let v = value.truncatingRemainder(dividingBy: 1) == 0
+            ? "\(Int(value))" : String(format: "%.1f", value)
+        return "\(v) lbs"
     }
 }
 

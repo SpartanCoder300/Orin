@@ -25,7 +25,6 @@ struct StatChip: View {
     let value: String
     let icon: String
     var iconColor: Color = Color.textPrimary
-    var valueColor: Color = Color.textPrimary
     var isAccented: Bool = false
     var isHighlighted: Bool = false
 
@@ -64,15 +63,17 @@ struct StatChip: View {
                         .fill(iconColor.opacity(isAccented ? 0.15 : isHighlighted ? 0.12 : 0.10))
                 }
         }
-        .overlay {
-            RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
-                .strokeBorder(
-                    isAccented ? iconColor.opacity(0.25) : isHighlighted ? iconColor.opacity(0.18) : .white.opacity(0.07),
-                    lineWidth: isAccented || isHighlighted ? 1 : 0.5
-                )
-        }
         .clipShape(RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
         .proGlass()
+        .overlay {
+            if isAccented || isHighlighted {
+                RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
+                    .strokeBorder(
+                        isAccented ? iconColor.opacity(0.25) : iconColor.opacity(0.18),
+                        lineWidth: 1
+                    )
+            }
+        }
     }
 }
 

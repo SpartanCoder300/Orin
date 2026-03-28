@@ -81,7 +81,7 @@ private struct RecentWorkoutListRow: View {
     private var durationLabel: String? {
         guard let start = session.startedAt, let end = session.completedAt else { return nil }
         let minutes = Int(end.timeIntervalSince(start) / 60)
-        return "\(minutes) min"
+        return minutes < 1 ? "< 1 min" : "\(minutes) min"
     }
 
     private var exerciseSummary: String? {

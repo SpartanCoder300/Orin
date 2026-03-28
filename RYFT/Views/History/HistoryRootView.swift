@@ -40,13 +40,29 @@ struct HistoryRootView: View {
                         Section(group.section) {
                             ForEach(group.sessions) { session in
                                 NavigationLink(value: session) {
-                                    VStack(alignment: .leading, spacing: 4) {
-                                        Text(sessionTitle(session))
-                                            .font(.headline)
-                                            .foregroundStyle(.primary)
+                                    VStack(alignment: .leading, spacing: 3) {
+                                        HStack(spacing: Spacing.xs) {
+                                            Text(sessionTitle(session))
+                                                .font(.headline)
+                                                .foregroundStyle(.primary)
+                                            if sessionHasPR(session) {
+                                                Text("PR")
+                                                    .font(.caption2.weight(.bold))
+                                                    .foregroundStyle(Color.ryftAmber)
+                                                    .padding(.horizontal, 5)
+                                                    .padding(.vertical, 2)
+                                                    .background(Color.ryftAmber.opacity(0.15), in: Capsule())
+                                            }
+                                        }
                                         Text(sessionSubtitle(session))
                                             .font(.subheadline)
                                             .foregroundStyle(.secondary)
+                                        if let exercises = exerciseSummary(session) {
+                                            Text(exercises)
+                                                .font(.caption)
+                                                .foregroundStyle(.tertiary)
+                                                .lineLimit(1)
+                                        }
                                     }
                                     .padding(.vertical, 6)
                                 }
@@ -58,7 +74,10 @@ struct HistoryRootView: View {
                 .listStyle(.insetGrouped)
                 .scrollContentBackground(.hidden)
                 .navigationDestination(for: WorkoutSession.self) { session in
-                    WorkoutDetailView(session: session)
+                    WorkoutDetailView(
+                        session: session,
+                        routineName: session.routineTemplateId.flatMap { routineNameMap[$0] }
+                    )
                 }
             }
         }
@@ -67,6 +86,18 @@ struct HistoryRootView: View {
     }
 
     // MARK: - Helpers
+
+    private func sessionHasPR(_ session: WorkoutSession) -> Bool {
+        session.exercises.flatMap { $0.sets }.contains { $0.isPersonalRecord }
+    }
+
+    private func exerciseSummary(_ session: WorkoutSession) -> String? {
+        let names = session.exercises
+            .sorted { $0.order < $1.order }
+            .prefix(3)
+            .map { $0.exerciseName }
+        return names.isEmpty ? nil : names.joined(separator: " · ")
+    }
 
     private func sectionKey(for date: Date) -> String {
         let cal = Calendar.current
@@ -95,7 +126,8 @@ struct HistoryRootView: View {
             parts.append(date.formatted(.dateTime.weekday(.abbreviated)))
         }
         if let s = session.startedAt, let e = session.completedAt {
-            parts.append("\(Int(e.timeIntervalSince(s) / 60)) min")
+            let minutes = Int(e.timeIntervalSince(s) / 60)
+            parts.append(minutes < 1 ? "< 1 min" : "\(minutes) min")
         }
         let sets = session.exercises.reduce(0) { $0 + $1.sets.count }
         parts.append("\(sets) sets")

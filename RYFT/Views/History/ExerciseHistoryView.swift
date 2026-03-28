@@ -41,6 +41,16 @@ struct ExerciseHistoryView: View {
         allTimeBest?.exerciseSnapshot?.workoutSession?.completedAt
     }
 
+    private func e1rmForSnapshot(_ snapshot: ExerciseSnapshot) -> Double? {
+        let working = snapshot.sets.filter { $0.setType != .warmup && $0.weight > 0 && $0.reps > 0 }
+        guard let top = working.max(by: {
+            ExerciseDefinition.estimatedOneRepMax(weight: $0.weight, reps: $0.reps) <
+            ExerciseDefinition.estimatedOneRepMax(weight: $1.weight, reps: $1.reps)
+        }) else { return nil }
+        let e1rm = ExerciseDefinition.estimatedOneRepMax(weight: top.weight, reps: top.reps)
+        return e1rm > 0 ? e1rm : nil
+    }
+
     // MARK: - Body
 
     var body: some View {
@@ -52,8 +62,8 @@ struct ExerciseHistoryView: View {
                     } else {
                         // ── Stats + chart ───────────────────────────────
                         VStack(alignment: .leading, spacing: Spacing.md) {
-                            if let best = allTimeBest {
-                                bestBanner(best)
+                            if allTimeBest != nil {
+                                bestBanner()
                             }
                             if sessions.count >= 2 {
                                 ExerciseHistoryChart(snapshots: sessions)
@@ -62,9 +72,13 @@ struct ExerciseHistoryView: View {
                         .padding(.horizontal, Spacing.md)
 
                         // ── Session cards ───────────────────────────────
-                        VStack(spacing: Spacing.sm) {
-                            ForEach(sessions) { snapshot in
-                                ExerciseHistorySessionCard(snapshot: snapshot)
+                        LazyVStack(spacing: Spacing.sm) {
+                            ForEach(Array(sessions.enumerated()), id: \.element.id) { index, snapshot in
+                                ExerciseHistorySessionCard(
+                                    snapshot: snapshot,
+                                    previousE1RM: index + 1 < sessions.count
+                                        ? e1rmForSnapshot(sessions[index + 1]) : nil
+                                )
                             }
                         }
                         .padding(.horizontal, Spacing.md)
@@ -87,7 +101,7 @@ struct ExerciseHistoryView: View {
     // MARK: - Subviews
 
     @ViewBuilder
-    private func bestBanner(_ record: SetRecord) -> some View {
+    private func bestBanner() -> some View {
         HStack(alignment: .center) {
             VStack(alignment: .leading, spacing: 2) {
                 Text("All-Time Best")

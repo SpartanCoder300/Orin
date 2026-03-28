@@ -5,14 +5,11 @@ import SwiftData
 
 struct ExerciseHistorySessionCard: View {
     let snapshot: ExerciseSnapshot
+    var previousE1RM: Double? = nil
     @Environment(\.ryftCardMaterial) private var cardMaterial
 
     private var sortedSets: [SetRecord] {
         snapshot.sets.sorted { $0.loggedAt < $1.loggedAt }
-    }
-
-    private var hasPR: Bool {
-        sortedSets.contains { $0.isPersonalRecord }
     }
 
     private var dateLabel: String {
@@ -26,12 +23,27 @@ struct ExerciseHistorySessionCard: View {
             : date.formatted(.dateTime.weekday(.abbreviated).month(.abbreviated).day().year())
     }
 
-    private var bestSetLabel: String? {
-        let working = sortedSets.filter { $0.setType != .warmup && $0.weight > 0 }
-        guard let top = working.max(by: { $0.weight < $1.weight }) else { return nil }
-        let w = top.weight.truncatingRemainder(dividingBy: 1) == 0
-            ? "\(Int(top.weight))" : String(format: "%.1f", top.weight)
-        return "\(w) lbs × \(top.reps)"
+    private var bestE1RM: Double? {
+        let working = sortedSets.filter { $0.setType != .warmup && $0.weight > 0 && $0.reps > 0 }
+        guard let top = working.max(by: {
+            ExerciseDefinition.estimatedOneRepMax(weight: $0.weight, reps: $0.reps) <
+            ExerciseDefinition.estimatedOneRepMax(weight: $1.weight, reps: $1.reps)
+        }) else { return nil }
+        let e1rm = ExerciseDefinition.estimatedOneRepMax(weight: top.weight, reps: top.reps)
+        return e1rm > 0 ? e1rm : nil
+    }
+
+    private var bestE1RMLabel: String? {
+        guard let e1rm = bestE1RM else { return nil }
+        let v = e1rm.truncatingRemainder(dividingBy: 1) == 0
+            ? "\(Int(e1rm))" : String(format: "%.1f", e1rm)
+        return "\(v) lbs e1RM"
+    }
+
+    private var e1rmDelta: Double? {
+        guard let current = bestE1RM, let prev = previousE1RM, prev > 0 else { return nil }
+        let delta = current - prev
+        return delta == 0 ? nil : delta
     }
 
     var body: some View {
@@ -39,25 +51,27 @@ struct ExerciseHistorySessionCard: View {
 
             // ── Header ─────────────────────────────────────────────────
             HStack(alignment: .firstTextBaseline) {
-                HStack(spacing: Spacing.xs) {
-                    Text(dateLabel)
-                        .font(.headline)
-                        .foregroundStyle(.primary)
-                    if hasPR {
-                        Text("PR")
-                            .font(.caption2.weight(.bold))
-                            .foregroundStyle(Color.ryftAmber)
-                            .padding(.horizontal, 5)
-                            .padding(.vertical, 2)
-                            .background(Color.ryftAmber.opacity(0.15), in: Capsule())
-                    }
-                }
+                Text(dateLabel)
+                    .font(.headline)
+                    .foregroundStyle(.primary)
                 Spacer(minLength: Spacing.sm)
-                if let best = bestSetLabel {
-                    Text(best)
-                        .font(.subheadline)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
+                HStack(spacing: Spacing.xs) {
+                    if let delta = e1rmDelta {
+                        Label(
+                            delta > 0
+                                ? "+\(formatDelta(delta))" : "-\(formatDelta(abs(delta)))",
+                            systemImage: delta > 0 ? "arrow.up" : "arrow.down"
+                        )
+                        .font(.caption2.weight(.semibold))
+                        .foregroundStyle(delta > 0 ? Color.green : Color.red)
+                        .labelStyle(.titleAndIcon)
+                    }
+                    if let best = bestE1RMLabel {
+                        Text(best)
+                            .font(.subheadline)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                    }
                 }
             }
             .padding(.horizontal, Spacing.md)
@@ -77,6 +91,12 @@ struct ExerciseHistorySessionCard: View {
         }
         .background(cardMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
         .proGlass()
+    }
+
+    private func formatDelta(_ value: Double) -> String {
+        let v = value.truncatingRemainder(dividingBy: 1) == 0
+            ? "\(Int(value))" : String(format: "%.1f", value)
+        return "\(v) lbs"
     }
 }
 
