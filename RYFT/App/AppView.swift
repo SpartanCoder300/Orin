@@ -27,10 +27,16 @@ struct AppView: View {
             .tag(AppTab.home)
 
             NavigationStack {
-                HistoryRootView()
+                ProgressRootView()
             }
-            .tabItem { Label("History", systemImage: "chart.bar") }
-            .tag(AppTab.history)
+            .tabItem { Label("Progress", systemImage: "chart.line.uptrend.xyaxis") }
+            .tag(AppTab.progress)
+
+            NavigationStack {
+                LibraryRootView()
+            }
+            .tabItem { Label("Library", systemImage: "books.vertical") }
+            .tag(AppTab.library)
 
             NavigationStack {
                 SettingsRootView()

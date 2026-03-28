@@ -68,7 +68,7 @@ struct HistoryRootView: View {
                 }
             }
         }
-        .navigationTitle("History")
+        .navigationTitle("Progress")
         .themedBackground()
     }
 

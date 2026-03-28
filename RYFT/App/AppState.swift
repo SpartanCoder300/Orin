@@ -6,7 +6,8 @@ import Foundation
 
 enum AppTab: Hashable {
     case home
-    case history
+    case progress
+    case library
     case settings
 }
 

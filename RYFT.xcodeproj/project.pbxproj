@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		20A10DC82F7814980053B465 /* ProgressRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20A10DC72F7814980053B465 /* ProgressRootView.swift */; };
+		20A10DD12F78158F0053B465 /* LibraryRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20A10DD02F78158F0053B465 /* LibraryRootView.swift */; };
 		20C236842F732C8A00D5763E /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 20C236832F732C8A00D5763E /* WidgetKit.framework */; };
 		20C236862F732C8A00D5763E /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 20C236852F732C8A00D5763E /* SwiftUI.framework */; };
 		20C236952F732C8C00D5763E /* RYFTWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 20C236812F732C8A00D5763E /* RYFTWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -133,6 +135,8 @@
 		205CFF5F2F69D7E200FFF88C /* RYFT.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = RYFT.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		205CFF702F69D7E400FFF88C /* RYFTTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RYFTTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		205CFF7A2F69D7E400FFF88C /* RYFTUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = RYFTUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		20A10DC72F7814980053B465 /* ProgressRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressRootView.swift; sourceTree = "<group>"; };
+		20A10DD02F78158F0053B465 /* LibraryRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryRootView.swift; sourceTree = "<group>"; };
 		20C236812F732C8A00D5763E /* RYFTWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = RYFTWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		20C236832F732C8A00D5763E /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		20C236852F732C8A00D5763E /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
@@ -314,6 +318,22 @@
 			path = Modifiers;
 			sourceTree = "<group>";
 		};
+		20A10DCF2F78151E0053B465 /* Progress */ = {
+			isa = PBXGroup;
+			children = (
+				20A10DC72F7814980053B465 /* ProgressRootView.swift */,
+			);
+			path = Progress;
+			sourceTree = "<group>";
+		};
+		20A10DD42F7815A50053B465 /* Library */ = {
+			isa = PBXGroup;
+			children = (
+				20A10DD02F78158F0053B465 /* LibraryRootView.swift */,
+			);
+			path = Library;
+			sourceTree = "<group>";
+		};
 		20C236822F732C8A00D5763E /* Frameworks */ = {
 			isa = PBXGroup;
 			children = (
@@ -461,6 +481,8 @@
 		20C236EA2F746D2300D5763E /* Views */ = {
 			isa = PBXGroup;
 			children = (
+				20A10DD42F7815A50053B465 /* Library */,
+				20A10DCF2F78151E0053B465 /* Progress */,
 				20C236DA2F746D2300D5763E /* ActiveWorkout */,
 				20C236DD2F746D2300D5763E /* History */,
 				20C236E42F746D2300D5763E /* Home */,
@@ -686,6 +708,7 @@
 				20C236F62F746D2300D5763E /* GlassPanel.swift in Sources */,
 				20C236F72F746D2300D5763E /* MeshBackgroundView.swift in Sources */,
 				20C236F82F746D2300D5763E /* PlaceholderScreen.swift in Sources */,
+				20A10DC82F7814980053B465 /* ProgressRootView.swift in Sources */,
 				20C236F92F746D2300D5763E /* ProGlassModifier.swift in Sources */,
 				20C236FA2F746D2300D5763E /* SetTypeChip.swift in Sources */,
 				20C236FB2F746D2300D5763E /* ThemedBackground.swift in Sources */,
@@ -701,6 +724,7 @@
 				20C237052F746D2300D5763E /* WorkoutSession.swift in Sources */,
 				20C237062F746D2300D5763E /* HistoryRootPreviewData.swift in Sources */,
 				20C237072F746D2300D5763E /* DesignTokens.swift in Sources */,
+				20A10DD12F78158F0053B465 /* LibraryRootView.swift in Sources */,
 				20C237082F746D2300D5763E /* ActiveWorkoutService.swift in Sources */,
 				20C237092F746D2300D5763E /* ExerciseFrecencyActor.swift in Sources */,
 				20C2370A2F746D2300D5763E /* ExerciseSeeder.swift in Sources */,
