@@ -77,7 +77,8 @@ struct ExerciseHistoryView: View {
                                 ExerciseHistorySessionCard(
                                     snapshot: snapshot,
                                     previousE1RM: index + 1 < sessions.count
-                                        ? e1rmForSnapshot(sessions[index + 1]) : nil
+                                        ? e1rmForSnapshot(sessions[index + 1]) : nil,
+                                    cardIndex: index
                                 )
                             }
                         }

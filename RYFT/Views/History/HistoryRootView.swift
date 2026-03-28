@@ -41,14 +41,15 @@ struct HistoryRootView: View {
                             VStack(alignment: .leading, spacing: Spacing.sm) {
                                 SectionHeader(title: group.section)
                                     .padding(.horizontal, Spacing.md)
-                                ForEach(group.sessions) { session in
+                                ForEach(Array(group.sessions.enumerated()), id: \.element.id) { index, session in
                                     NavigationLink(value: session) {
                                         HistorySessionRow(
                                             session: session,
                                             title: sessionTitle(session),
                                             subtitle: sessionSubtitle(session),
                                             exerciseSummary: exerciseSummary(session),
-                                            hasPR: sessionHasPR(session)
+                                            hasPR: sessionHasPR(session),
+                                            cardIndex: index
                                         )
                                     }
                                     .buttonStyle(.plain)
@@ -128,6 +129,7 @@ private struct HistorySessionRow: View {
     let subtitle: String
     let exerciseSummary: String?
     let hasPR: Bool
+    var cardIndex: Int = 0
 
     @Environment(\.ryftCardMaterial) private var cardMaterial
 
@@ -166,7 +168,7 @@ private struct HistorySessionRow: View {
         .padding(.vertical, Spacing.md)
         .frame(maxWidth: .infinity, alignment: .leading)
         .background(cardMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
-        .proGlass()
+        .proGlass(cardIndex: cardIndex)
     }
 }
 

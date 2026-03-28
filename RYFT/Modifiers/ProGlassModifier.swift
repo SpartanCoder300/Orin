@@ -17,9 +17,28 @@ struct ProGlassModifier: ViewModifier {
     /// lastLoggedExerciseIndex matches — i.e. this exercise's set was just logged.
     var exerciseIndex: Int?
 
+    /// When non-nil, shifts the specular gradient angle slightly so stacked cards
+    /// don't all reflect from the exact same angle. Uses modulo-5 cycling.
+    var cardIndex: Int?
+
     /// Corner radius of the card — used to clip overlays so they respect rounded corners.
     var cornerRadius: CGFloat = Radius.medium
 
+
+    // Golden ratio distribution — each card gets a non-sequential angle so no
+    // visible stepping pattern emerges when cards are stacked.
+    // φ ≈ 0.618 guarantees adjacent indices are maximally far apart in the range.
+    private var specularT: CGFloat {
+        (CGFloat(cardIndex ?? 0) * 0.618).truncatingRemainder(dividingBy: 1.0)
+    }
+
+    private var specularStart: UnitPoint {
+        UnitPoint(x: specularT * 0.28, y: specularT * 0.14)
+    }
+
+    private var specularEnd: UnitPoint {
+        UnitPoint(x: 1.0 - specularT * 0.10, y: 1.0 - specularT * 0.22)
+    }
 
     /// Shimmer band position. -1 = off-screen left, 2 = off-screen right.
     @State private var shimmerPhase: CGFloat = -1.0
@@ -37,7 +56,8 @@ struct ProGlassModifier: ViewModifier {
         if theme == .mesh {
             withBorder
                 .overlay {
-                    // Static diagonal specular highlight — applies to all cards
+                    // Static diagonal specular — angle shifts slightly per cardIndex
+                    // so stacked cards each catch light from a subtly different angle.
                     LinearGradient(
                         colors: [
                             Color.white.opacity(0.09),
@@ -45,8 +65,8 @@ struct ProGlassModifier: ViewModifier {
                             Color.white.opacity(0.04),
                             Color.clear,
                         ],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
+                        startPoint: specularStart,
+                        endPoint: specularEnd
                     )
                     .clipShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
                     .allowsHitTesting(false)
@@ -109,7 +129,7 @@ extension View {
     /// Applies the Pro mesh glass treatment. Pass `exerciseIndex` on active workout cards
     /// so only the card whose set was logged receives the shimmer sweep.
     /// `cornerRadius` must match the card's background shape to avoid hard overlay corners.
-    func proGlass(exerciseIndex: Int? = nil, cornerRadius: CGFloat = Radius.medium) -> some View {
-        modifier(ProGlassModifier(exerciseIndex: exerciseIndex, cornerRadius: cornerRadius))
+    func proGlass(exerciseIndex: Int? = nil, cardIndex: Int? = nil, cornerRadius: CGFloat = Radius.medium) -> some View {
+        modifier(ProGlassModifier(exerciseIndex: exerciseIndex, cardIndex: cardIndex, cornerRadius: cornerRadius))
     }
 }
