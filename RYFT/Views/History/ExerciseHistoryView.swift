@@ -9,36 +9,43 @@ struct ExerciseHistoryView: View {
     @Query private var snapshots: [ExerciseSnapshot]
     @Environment(\.dismiss) private var dismiss
 
+    /// Cached all-time best set — computed once on appear and when session count changes,
+    /// not on every render. Prevents faulting all SetRecord objects each frame.
+    @State private var cachedBest: SetRecord? = nil
+    /// How many session cards to show. Expanded by the "Show more" button.
+    @State private var displayLimit: Int = 50
+
     init(exerciseName: String) {
         self.exerciseName = exerciseName
         let name = exerciseName
         _snapshots = Query(filter: #Predicate<ExerciseSnapshot> { $0.exerciseName == name })
     }
 
-    // Sorted newest-first; only sessions that are completed
+    // Sorted newest-first; only completed sessions.
+    // Sort runs in-memory — SwiftData can't sort by relationship keypath in @Query.
     private var sessions: [ExerciseSnapshot] {
         snapshots
             .filter { $0.workoutSession?.completedAt != nil }
             .sorted { $0.workoutSession!.completedAt! > $1.workoutSession!.completedAt! }
     }
 
-    private var allTimeBest: SetRecord? {
-        sessions
+    private var allTimeBestE1RM: Double {
+        guard let best = cachedBest else { return 0 }
+        return ExerciseDefinition.estimatedOneRepMax(weight: best.weight, reps: best.reps)
+    }
+
+    private var bestDate: Date? {
+        cachedBest?.exerciseSnapshot?.workoutSession?.completedAt
+    }
+
+    private func recomputeBest() {
+        cachedBest = sessions
             .flatMap { $0.sets }
             .filter { $0.setType != .warmup && $0.weight > 0 && $0.reps > 0 }
             .max(by: {
                 ExerciseDefinition.estimatedOneRepMax(weight: $0.weight, reps: $0.reps) <
                 ExerciseDefinition.estimatedOneRepMax(weight: $1.weight, reps: $1.reps)
             })
-    }
-
-    private var allTimeBestE1RM: Double {
-        guard let best = allTimeBest else { return 0 }
-        return ExerciseDefinition.estimatedOneRepMax(weight: best.weight, reps: best.reps)
-    }
-
-    private var bestDate: Date? {
-        allTimeBest?.exerciseSnapshot?.workoutSession?.completedAt
     }
 
     private func e1rmForSnapshot(_ snapshot: ExerciseSnapshot) -> Double? {
@@ -62,7 +69,7 @@ struct ExerciseHistoryView: View {
                     } else {
                         // ── Stats + chart ───────────────────────────────
                         VStack(alignment: .leading, spacing: Spacing.md) {
-                            if allTimeBest != nil {
+                            if cachedBest != nil {
                                 bestBanner()
                             }
                             if sessions.count >= 2 {
@@ -71,14 +78,27 @@ struct ExerciseHistoryView: View {
                         }
                         .padding(.horizontal, Spacing.md)
 
-                        // ── Session cards ───────────────────────────────
+                        // ── Session cards (capped for performance) ──────
+                        let displayed = Array(sessions.prefix(displayLimit))
                         LazyVStack(spacing: Spacing.sm) {
-                            ForEach(Array(sessions.enumerated()), id: \.element.id) { index, snapshot in
+                            ForEach(Array(displayed.enumerated()), id: \.element.id) { index, snapshot in
                                 ExerciseHistorySessionCard(
                                     snapshot: snapshot,
-                                    previousE1RM: index + 1 < sessions.count
-                                        ? e1rmForSnapshot(sessions[index + 1]) : nil
+                                    previousE1RM: index + 1 < displayed.count
+                                        ? e1rmForSnapshot(displayed[index + 1]) : nil
                                 )
+                            }
+                            if sessions.count > displayLimit {
+                                Button {
+                                    displayLimit += 50
+                                } label: {
+                                    Text("Show \(min(50, sessions.count - displayLimit)) more")
+                                        .font(.subheadline.weight(.medium))
+                                        .foregroundStyle(.secondary)
+                                        .frame(maxWidth: .infinity)
+                                        .padding(.vertical, Spacing.sm)
+                                }
+                                .buttonStyle(.plain)
                             }
                         }
                         .padding(.horizontal, Spacing.md)
@@ -89,6 +109,8 @@ struct ExerciseHistoryView: View {
             .themedBackground()
             .navigationTitle(exerciseName)
             .navigationBarTitleDisplayMode(.large)
+            .task { recomputeBest() }
+            .onChange(of: snapshots.count) { recomputeBest() }
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Done") { dismiss() }
