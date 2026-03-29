@@ -10,13 +10,12 @@ struct ActiveWorkoutView: View {
 
     @State private var completedSession: WorkoutSession?
     @State private var isShowingCancelPRWarning = false
-@Environment(\.ryftTheme) private var theme
+    @Environment(\.ryftTheme) private var theme
 
     var body: some View {
         @Bindable var vm = vm
 
-        ZStack(alignment: .bottomTrailing) {
-            // ── Workout content ────────────────────────────────────────────────
+        ZStack {
             NavigationStack {
                 ScrollViewReader { proxy in
                     ScrollView {
@@ -35,7 +34,7 @@ struct ActiveWorkoutView: View {
                             }
                         }
                         .padding(.horizontal, Spacing.md)
-                        .padding(.vertical, Spacing.lg)
+                        .padding(.top, Spacing.lg)
                     }
                     .scrollDismissesKeyboard(.interactively)
                     .onAppear {
@@ -60,12 +59,16 @@ struct ActiveWorkoutView: View {
                     }
                 }
                 .themedBackground()
+                .overlay(alignment: .bottom) {
+                    BottomCommandBackdrop(theme: theme)
+                        .allowsHitTesting(false)
+                }
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .topBarLeading) {
                         Button("Finish") { vm.isShowingEndConfirm = true }
                             .fontWeight(.semibold)
-                            .foregroundStyle(Color.ryftRed)
+                            .foregroundStyle(.secondary)
                     }
                     ToolbarItem(placement: .principal) {
                         TimelineView(.periodic(from: .now, by: 1.0)) { ctx in
@@ -97,7 +100,6 @@ struct ActiveWorkoutView: View {
                         .transition(.move(edge: .top).combined(with: .opacity))
                     }
                 }
-                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: vm.restTimer.isActive)
                 .safeAreaInset(edge: .bottom, spacing: 0) {
                     ActiveWorkoutCommandPanel(
                         vm: vm,
@@ -109,8 +111,8 @@ struct ActiveWorkoutView: View {
                         onDismiss: onDismiss
                     )
                     .frame(maxWidth: .infinity)
-                    .contentShape(Rectangle())
                 }
+                .animation(.spring(response: 0.4, dampingFraction: 0.8), value: vm.restTimer.isActive)
                 .alert("End Workout?", isPresented: $vm.isShowingEndConfirm) {
                     Button("Finish") {
                         if let session = vm.endWorkout() {
@@ -171,12 +173,16 @@ struct ActiveWorkoutView: View {
                 PRMomentOverlay(moment: moment) {
                     vm.dismissPRMoment()
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .transition(
                     .scale(scale: 0.88, anchor: .center)
                     .combined(with: .opacity)
                 )
             }
         }
+        // Fill the bottom safe area with the theme background so the command
+        // panel shadow blends seamlessly into the screen bottom — no hard edge.
+        .background(theme.backgroundColor, ignoresSafeAreaEdges: .bottom)
         .animation(Motion.standardSpring, value: vm.showingPRMoment != nil)
     }
 
@@ -194,6 +200,36 @@ struct ActiveWorkoutView: View {
 }
 
 // MARK: - Rest Timer Bar
+
+private struct BottomCommandBackdrop: View {
+    let theme: AccentTheme
+
+    private let fadeHeight: CGFloat = 140
+
+    var body: some View {
+        GeometryReader { proxy in
+            VStack(spacing: 0) {
+                Spacer(minLength: 0)
+
+                LinearGradient(
+                    stops: [
+                        .init(color: .clear, location: 0),
+                        .init(color: Color.black.opacity(0.32), location: 0.45),
+                        .init(color: Color.black.opacity(0.58), location: 1)
+                    ],
+                    startPoint: .top,
+                    endPoint: .bottom
+                )
+                .frame(height: fadeHeight)
+
+                theme.backgroundColor
+                    .frame(height: proxy.safeAreaInsets.bottom)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+        }
+        .ignoresSafeArea(edges: .bottom)
+    }
+}
 
 private struct RestTimerBar: View {
     let timer: RestTimerState
@@ -308,7 +344,7 @@ private func playRestCompleteSound() {
 private func restPhaseColor(_ phase: TimerTintPhase) -> Color {
     switch phase {
     case .green: .secondary
-    case .amber: .secondary
+    case .amber: Color.ryftAmber
     case .red:   .primary
     }
 }
@@ -356,6 +392,18 @@ private func previewVM(allLogged: Bool = false) -> ActiveWorkoutViewModel {
         }
     }
     vm.draftExercises = [
+        ActiveWorkoutViewModel.DraftExercise(
+            exerciseName: "Bench Press",
+            equipmentType: "Barbell",
+            weightIncrement: 5,
+            sets: sets("135", "8")
+        ),
+        ActiveWorkoutViewModel.DraftExercise(
+            exerciseName: "Squat",
+            equipmentType: "Barbell",
+            weightIncrement: 5,
+            sets: sets("225", "5")
+        ),
         ActiveWorkoutViewModel.DraftExercise(
             exerciseName: "Bench Press",
             equipmentType: "Barbell",

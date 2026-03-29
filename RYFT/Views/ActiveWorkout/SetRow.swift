@@ -57,7 +57,7 @@ struct SetRow: View {
                 Text(displayText)
                     .font(.system(size: 16, weight: .medium, design: .rounded))
                     .monospacedDigit()
-                    .foregroundStyle(isLogged ? Color.ryftGreen : Color.textPrimary)
+                    .foregroundStyle(isLogged ? Color.textMuted : Color.textPrimary)
                     .contentTransition(.numericText())
                     .animation(Motion.standardSpring, value: weightText)
                     .animation(Motion.standardSpring, value: repsText)
@@ -84,7 +84,7 @@ struct SetRow: View {
             Button(action: isLogged ? onUndo : onLog) {
                 Image(systemName: isLogged ? "checkmark.circle.fill" : "circle")
                     .font(.system(size: 20))
-                    .foregroundStyle(isLogged ? Color.ryftGreen : Color.textFaint.opacity(0.4))
+                    .foregroundStyle(isLogged ? Color.ryftGreen : Color.textMuted)
                     .frame(width: 44, height: 44)
                     .contentShape(Rectangle())
             }
@@ -94,12 +94,12 @@ struct SetRow: View {
         .padding(.vertical, 4)
         .padding(.leading, Spacing.xs)
         .padding(.trailing, Spacing.sm)
-        .background(isFocused ? accentColor.opacity(0.08) : .clear)
+        .background(isFocused ? accentColor.opacity(0.13) : .clear)
         .contentShape(Rectangle())
         .onTapGesture {
             if !isLogged { onFocus() }
         }
-        .opacity(isLogged ? 0.5 : 1.0)
+        .opacity(1.0)
         .animation(Motion.standardSpring, value: isLogged)
         .animation(Motion.standardSpring, value: isFocused)
         .contextMenu {

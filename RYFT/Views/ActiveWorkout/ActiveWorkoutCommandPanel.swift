@@ -30,7 +30,8 @@ struct ActiveWorkoutCommandPanel: View {
                     .padding(.horizontal, Spacing.xl)
             }
             .buttonStyle(.plain)
-            .glassEffect(in: RoundedRectangle(cornerRadius: Radius.sheet, style: .continuous))
+            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: Radius.sheet, style: .continuous))
+            .modifier(CommandPanelElevation(cornerRadius: Radius.sheet))
             .padding(.bottom, Spacing.md)
 
         } else if let focus = vm.currentFocus,
@@ -183,7 +184,8 @@ struct ActiveWorkoutCommandPanel: View {
                 }
                 .frame(height: 52)
             }
-            .glassEffect(in: RoundedRectangle(cornerRadius: Radius.large, style: .continuous))
+            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: Radius.large, style: .continuous))
+            .modifier(CommandPanelElevation(cornerRadius: Radius.large))
             .padding(.horizontal, Spacing.md)
             .padding(.bottom, Spacing.md)
             .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
@@ -206,6 +208,53 @@ struct ActiveWorkoutCommandPanel: View {
 }
 
 // MARK: - Helpers
+
+private struct CommandPanelElevation: ViewModifier {
+    let cornerRadius: CGFloat
+
+    func body(content: Content) -> some View {
+        content
+            .background {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .fill(.ultraThinMaterial.opacity(0.18))
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.18),
+                                Color.white.opacity(0.06)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        lineWidth: 1
+                    )
+            }
+            .overlay(alignment: .top) {
+                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                    .stroke(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.20),
+                                Color.white.opacity(0.00)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        lineWidth: 1.5
+                    )
+                    .blur(radius: 0.2)
+                    .mask(alignment: .top) {
+                        Rectangle()
+                            .frame(height: 18)
+                    }
+            }
+            .shadow(color: Color.black.opacity(0.38), radius: 24, y: 16)
+            .shadow(color: Color.black.opacity(0.26), radius: 8, y: 3)
+    }
+}
 
 // MARK: - Previews
 

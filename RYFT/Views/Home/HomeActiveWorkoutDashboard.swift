@@ -9,7 +9,6 @@ struct HomeActiveWorkoutDashboard: View {
     let onResume: () -> Void
 
     @Environment(\.ryftTheme) private var theme
-    @Environment(\.ryftCardMaterial) private var cardMaterial
 
     // MARK: - Computed
 
@@ -47,8 +46,11 @@ struct HomeActiveWorkoutDashboard: View {
             Divider().opacity(0.2)
             footer
         }
-        .background(cardMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
-        .proGlass()
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
+                .strokeBorder(.white.opacity(0.08), lineWidth: 1)
+        )
         .onTapGesture { onResume() }
     }
 

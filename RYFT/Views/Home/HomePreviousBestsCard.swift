@@ -4,7 +4,6 @@ import SwiftUI
 
 struct HomePreviousBestsCard: View {
     let vm: ActiveWorkoutViewModel
-    @Environment(\.ryftCardMaterial) private var cardMaterial
 
     private var exercisesWithHistory: [(ActiveWorkoutViewModel.DraftExercise, [ActiveWorkoutViewModel.PreviousSet])] {
         vm.draftExercises.compactMap { ex in
@@ -29,8 +28,11 @@ struct HomePreviousBestsCard: View {
                         }
                     }
                 }
-                .background(cardMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
-                .proGlass()
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
+                .overlay(
+                    RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
+                        .strokeBorder(.white.opacity(0.08), lineWidth: 1)
+                )
             }
         }
     }

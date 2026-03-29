@@ -46,7 +46,7 @@ struct SetTypeChip: View {
         switch setType {
         case .normal:  Color.textFaint
         case .warmup:  Color.ryftAmber
-        case .dropset: Color.blue
+        case .dropset: Color.ryftBlue
         }
     }
 }

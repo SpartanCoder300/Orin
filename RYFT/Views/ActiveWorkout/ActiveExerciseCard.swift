@@ -10,7 +10,6 @@ struct ActiveExerciseCard: View {
     let exerciseIndex: Int
     let theme: AccentTheme
 
-    @Environment(\.ryftCardMaterial) private var cardMaterial
     @Environment(\.modelContext) private var modelContext
     @State private var showingRemoveConfirm = false
     @State private var isEditingExercise = false
@@ -161,8 +160,11 @@ struct ActiveExerciseCard: View {
             }
 
         }
-        .background(cardMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
-        .proGlass(exerciseIndex: exerciseIndex)
+        .background(Color.white.opacity(0.10), in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
+                .strokeBorder(.white.opacity(0.08), lineWidth: 1)
+        )
         .alert("Remove \(exercise.exerciseName)?", isPresented: $showingRemoveConfirm) {
             Button("Remove", role: .destructive) {
                 vm.removeExercise(at: exerciseIndex)
