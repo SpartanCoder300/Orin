@@ -10,6 +10,8 @@
 		20A10DC82F7814980053B465 /* ProgressRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20A10DC72F7814980053B465 /* ProgressRootView.swift */; };
 		20A10DD12F78158F0053B465 /* LibraryRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20A10DD02F78158F0053B465 /* LibraryRootView.swift */; };
 		20A10DD72F781E0F0053B465 /* ProgressAnalyticsEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20A10DD52F781E0F0053B465 /* ProgressAnalyticsEngine.swift */; };
+		20A10DD92F781E0F0053B465 /* SwipeValueControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20A10DD82F781E0F0053B465 /* SwipeValueControl.swift */; };
+		20A10E212F79C4C80053B465 /* ActiveWorkoutPreviewData.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20A10E202F79C4C80053B465 /* ActiveWorkoutPreviewData.swift */; };
 		20C236842F732C8A00D5763E /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 20C236832F732C8A00D5763E /* WidgetKit.framework */; };
 		20C236862F732C8A00D5763E /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 20C236852F732C8A00D5763E /* SwiftUI.framework */; };
 		20C236952F732C8C00D5763E /* RYFTWidgetsExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 20C236812F732C8A00D5763E /* RYFTWidgetsExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
@@ -20,7 +22,6 @@
 		20C236F32F746D2300D5763E /* MeshTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236AC2F746D2300D5763E /* MeshTheme.swift */; };
 		20C236F42F746D2300D5763E /* Color+Tokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236AE2F746D2300D5763E /* Color+Tokens.swift */; };
 		20C236F52F746D2300D5763E /* CompactStepper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236AF2F746D2300D5763E /* CompactStepper.swift */; };
-		20A10DD92F781E0F0053B465 /* SwipeValueControl.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20A10DD82F781E0F0053B465 /* SwipeValueControl.swift */; };
 		20C236F62F746D2300D5763E /* GlassPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236B02F746D2300D5763E /* GlassPanel.swift */; };
 		20C236F72F746D2300D5763E /* MeshBackgroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236B12F746D2300D5763E /* MeshBackgroundView.swift */; };
 		20C236F82F746D2300D5763E /* PlaceholderScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236B22F746D2300D5763E /* PlaceholderScreen.swift */; };
@@ -140,6 +141,8 @@
 		20A10DC72F7814980053B465 /* ProgressRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressRootView.swift; sourceTree = "<group>"; };
 		20A10DD02F78158F0053B465 /* LibraryRootView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryRootView.swift; sourceTree = "<group>"; };
 		20A10DD52F781E0F0053B465 /* ProgressAnalyticsEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressAnalyticsEngine.swift; sourceTree = "<group>"; };
+		20A10DD82F781E0F0053B465 /* SwipeValueControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeValueControl.swift; sourceTree = "<group>"; };
+		20A10E202F79C4C80053B465 /* ActiveWorkoutPreviewData.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveWorkoutPreviewData.swift; sourceTree = "<group>"; };
 		20C236812F732C8A00D5763E /* RYFTWidgetsExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = RYFTWidgetsExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
 		20C236832F732C8A00D5763E /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
 		20C236852F732C8A00D5763E /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
@@ -150,7 +153,6 @@
 		20C236AC2F746D2300D5763E /* MeshTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshTheme.swift; sourceTree = "<group>"; };
 		20C236AE2F746D2300D5763E /* Color+Tokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Tokens.swift"; sourceTree = "<group>"; };
 		20C236AF2F746D2300D5763E /* CompactStepper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompactStepper.swift; sourceTree = "<group>"; };
-		20A10DD82F781E0F0053B465 /* SwipeValueControl.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SwipeValueControl.swift; sourceTree = "<group>"; };
 		20C236B02F746D2300D5763E /* GlassPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassPanel.swift; sourceTree = "<group>"; };
 		20C236B12F746D2300D5763E /* MeshBackgroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshBackgroundView.swift; sourceTree = "<group>"; };
 		20C236B22F746D2300D5763E /* PlaceholderScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceholderScreen.swift; sourceTree = "<group>"; };
@@ -402,6 +404,7 @@
 		20C236C32F746D2300D5763E /* Preview */ = {
 			isa = PBXGroup;
 			children = (
+				20A10E202F79C4C80053B465 /* ActiveWorkoutPreviewData.swift */,
 				20C2372A2F7479AC00D5763E /* HomePreviewData.swift */,
 				20C236C22F746D2300D5763E /* HistoryRootPreviewData.swift */,
 			);
@@ -737,6 +740,7 @@
 				20C237022F746D2300D5763E /* SetRecord.swift in Sources */,
 				20C237032F746D2300D5763E /* SetType.swift in Sources */,
 				20C237042F746D2300D5763E /* WorkoutActivityAttributes.swift in Sources */,
+				20A10E212F79C4C80053B465 /* ActiveWorkoutPreviewData.swift in Sources */,
 				20C237052F746D2300D5763E /* WorkoutSession.swift in Sources */,
 				20C237062F746D2300D5763E /* HistoryRootPreviewData.swift in Sources */,
 				20C237072F746D2300D5763E /* DesignTokens.swift in Sources */,

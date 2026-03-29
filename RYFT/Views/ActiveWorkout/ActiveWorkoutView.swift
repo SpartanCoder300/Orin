@@ -243,6 +243,7 @@ private struct RestTimerBar: View {
     private let sideWidth:  CGFloat = 56
     private let skipWidth:  CGFloat = 56
     private let barHeight:  CGFloat = 64
+    private let horizontalInset: CGFloat = Spacing.lg
 
     var body: some View {
         TimelineView(.periodic(from: .now, by: 0.25)) { context in
@@ -269,6 +270,27 @@ private struct RestTimerBar: View {
             .frame(height: barHeight)
             .glassEffect(in: RoundedRectangle(cornerRadius: Radius.large,
                                                style: .continuous))
+            .background {
+                RoundedRectangle(cornerRadius: Radius.large, style: .continuous)
+                    .fill(.regularMaterial.opacity(0.16))
+            }
+            .overlay {
+                RoundedRectangle(cornerRadius: Radius.large, style: .continuous)
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(0.18),
+                                Color.white.opacity(0.06)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        lineWidth: 1
+                    )
+            }
+            .shadow(color: Color.black.opacity(0.22), radius: 14, y: 6)
+            .shadow(color: Color.black.opacity(0.10), radius: 4, y: 1)
+            .padding(.horizontal, horizontalInset)
             .sensoryFeedback(.selection, trigger: adjustTrigger)
             .sensoryFeedback(.impact(weight: .medium), trigger: skipTrigger)
             .sensoryFeedback(.impact(weight: .heavy, intensity: 1.0),
@@ -280,15 +302,16 @@ private struct RestTimerBar: View {
     }
 
     private func timerContent(at now: Date, color: Color) -> some View {
-        VStack(spacing: 4) {
+        VStack(spacing: 6) {
             Text(timer.remainingLabel(at: now) ?? "0:00")
-                .font(.system(size: 24, weight: .semibold, design: .monospaced))
+                .font(.system(size: 26, weight: .bold, design: .monospaced))
                 .monospacedDigit()
                 .foregroundStyle(color)
                 .contentTransition(.numericText(countsDown: true))
+                .shadow(color: color.opacity(0.18), radius: 6)
 
             Capsule()
-                .fill(color.opacity(0.15))
+                .fill(.white.opacity(0.08))
                 .overlay(alignment: .leading) {
                     Capsule()
                         .fill(color)
@@ -304,8 +327,8 @@ private struct RestTimerBar: View {
             adjustTrigger += 1
         } label: {
             Text(label)
-                .font(.system(size: 13, weight: .bold))
-                .foregroundStyle(.secondary)
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(Color.textMuted.opacity(0.9))
                 .frame(width: sideWidth, height: barHeight)
                 .contentShape(Rectangle())
         }
@@ -318,12 +341,16 @@ private struct RestTimerBar: View {
             skipTrigger += 1
         } label: {
             Image(systemName: "forward.end.fill")
-                .font(.system(size: 14, weight: .bold))
-                .foregroundStyle(Color.ryftGreen)
+                .font(.system(size: 13, weight: .bold))
+                .foregroundStyle(colorForSkipButton)
                 .frame(width: skipWidth, height: barHeight)
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+    }
+
+    private var colorForSkipButton: Color {
+        Color.textPrimary.opacity(0.9)
     }
 }
 
@@ -378,75 +405,30 @@ struct EmptyWorkoutPrompt: View {
 
 // MARK: - Previews
 
-private func previewVM(allLogged: Bool = false) -> ActiveWorkoutViewModel {
-    let vm = ActiveWorkoutViewModel(
-        modelContext: PersistenceController.previewContainer.mainContext,
-        pendingRoutineID: nil
-    )
-    let sets: (String, String) -> [ActiveWorkoutViewModel.DraftSet] = { weight, reps in
-        (0..<3).map { _ in
-            var s = ActiveWorkoutViewModel.DraftSet()
-            s.weightText = weight
-            s.repsText = reps
-            s.isLogged = allLogged
-            return s
-        }
-    }
-    vm.draftExercises = [
-        ActiveWorkoutViewModel.DraftExercise(
-            exerciseName: "Bench Press",
-            equipmentType: "Barbell",
-            weightIncrement: 5,
-            sets: sets("135", "8")
-        ),
-        ActiveWorkoutViewModel.DraftExercise(
-            exerciseName: "Squat",
-            equipmentType: "Barbell",
-            weightIncrement: 5,
-            sets: sets("225", "5")
-        ),
-        ActiveWorkoutViewModel.DraftExercise(
-            exerciseName: "Bench Press",
-            equipmentType: "Barbell",
-            weightIncrement: 5,
-            sets: sets("135", "8")
-        ),
-        ActiveWorkoutViewModel.DraftExercise(
-            exerciseName: "Squat",
-            equipmentType: "Barbell",
-            weightIncrement: 5,
-            sets: sets("225", "5")
-        ),
-    ]
-    return vm
-}
-
 #Preview("Editing panel") {
-    ActiveWorkoutView(vm: previewVM(), onDismiss: {})
-        .previewEnvironments()
+    ActiveWorkoutView(vm: ActiveWorkoutPreviewData.makeViewModel(), onDismiss: {})
+        .activeWorkoutPreviewEnvironments()
 }
 
 #Preview("Complete Workout panel") {
-    ActiveWorkoutView(vm: previewVM(allLogged: true), onDismiss: {})
-        .previewEnvironments()
+    ActiveWorkoutView(
+        vm: ActiveWorkoutPreviewData.makeViewModel(allLogged: true),
+        onDismiss: {}
+    )
+    .activeWorkoutPreviewEnvironments()
+}
+
+#Preview("Rest Timer") {
+    ActiveWorkoutView(
+        vm: ActiveWorkoutPreviewData.makeViewModel(
+            restTimer: (duration: 90, elapsed: 38)
+        ),
+        onDismiss: {}
+    )
+    .activeWorkoutPreviewEnvironments()
 }
 
 #Preview("Empty") {
-    let vm = ActiveWorkoutViewModel(
-        modelContext: PersistenceController.previewContainer.mainContext,
-        pendingRoutineID: nil
-    )
-    ActiveWorkoutView(vm: vm, onDismiss: {})
-        .previewEnvironments()
-}
-
-private extension View {
-    func previewEnvironments() -> some View {
-        self
-            .environment(AppState())
-            .environment(MeshEngine())
-            .environment(\.ryftTheme, .midnight)
-            .environment(\.ryftCardMaterial, .regularMaterial)
-            .modelContainer(PersistenceController.previewContainer)
-    }
+    ActiveWorkoutView(vm: ActiveWorkoutPreviewData.emptyViewModel, onDismiss: {})
+        .activeWorkoutPreviewEnvironments()
 }
