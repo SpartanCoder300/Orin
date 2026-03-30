@@ -35,7 +35,12 @@ struct SummaryExerciseCard: View {
             }
             Spacer(minLength: Spacing.sm)
             if row.hasPR {
-                SummaryPRBadge(weight: row.prWeight!, reps: row.prReps!, formatWeight: formatWeight)
+                SummaryPRBadge(
+                    estimatedOneRepMax: row.prOneRepMax!,
+                    weight: row.prWeight!,
+                    reps: row.prReps!,
+                    formatWeight: formatWeight
+                )
             }
         }
         .padding(.horizontal, Spacing.md)
@@ -83,7 +88,7 @@ private let _formatWeight: (Double) -> String = { w in
         volume: 2960,
         prWeight: 185,
         prReps: 5,
-        prOneRepMax: nil
+        prOneRepMax: 216
     )
     SummaryExerciseCard(row: row, formatWeight: _formatWeight)
         .padding()

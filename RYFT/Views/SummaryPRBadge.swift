@@ -3,6 +3,7 @@
 import SwiftUI
 
 struct SummaryPRBadge: View {
+    let estimatedOneRepMax: Double
     let weight: Double
     let reps: Int
     let formatWeight: (Double) -> String
@@ -15,9 +16,12 @@ struct SummaryPRBadge: View {
                 .padding(.horizontal, 6)
                 .padding(.vertical, 3)
                 .background(Color.ryftAmber.opacity(0.15), in: Capsule())
+            Text("\(formatWeight(estimatedOneRepMax)) e1RM")
+                .font(.caption.weight(.semibold))
+                .foregroundStyle(Color.ryftGold)
             Text("\(formatWeight(weight)) × \(reps)")
                 .font(.caption2)
-                .foregroundStyle(Color.ryftAmber.opacity(0.7))
+                .foregroundStyle(Color.ryftAmber.opacity(0.72))
         }
     }
 }
@@ -25,7 +29,7 @@ struct SummaryPRBadge: View {
 // MARK: - Preview
 
 #Preview {
-    SummaryPRBadge(weight: 185, reps: 5, formatWeight: { w in
+    SummaryPRBadge(estimatedOneRepMax: 216, weight: 185, reps: 5, formatWeight: { w in
         w.truncatingRemainder(dividingBy: 1) == 0 ? "\(Int(w))" : String(format: "%.1f", w)
     })
     .padding()
