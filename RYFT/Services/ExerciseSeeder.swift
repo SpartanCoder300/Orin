@@ -7,27 +7,23 @@ import SwiftData
 enum ExerciseSeeder {
     static func seedIfNeeded(in context: ModelContext) {
         let fetchDescriptor = FetchDescriptor<ExerciseDefinition>()
-        let existing: [ExerciseDefinition]
-        if let all = try? context.fetch(fetchDescriptor) {
-            existing = all
-        } else {
-            existing = []
-        }
-        let existingNames = Set(existing.map { $0.name })
+        let existing = (try? context.fetch(fetchDescriptor)) ?? []
 
         var changed = false
 
-        for definition in commonExercises {
-            if !existingNames.contains(definition.name) {
-                context.insert(definition)
-                changed = true
-            } else if definition.isTimed,
-                      let match = existing.first(where: { $0.name == definition.name }),
-                      !match.isTimed {
-                // Migrate existing record to timed
-                match.isTimed = true
-                changed = true
+        for seed in commonExercises {
+            if let match = existing.first(where: { $0.name == seed.name }) {
+                changed = syncSeed(seed, into: match) || changed
+                continue
             }
+
+            if let legacyMatch = existing.first(where: { seed.legacyNames.contains($0.name) }) {
+                changed = syncSeed(seed, into: legacyMatch) || changed
+                continue
+            }
+
+            context.insert(seed.makeDefinition())
+            changed = true
         }
 
         guard changed else { return }
@@ -38,131 +34,248 @@ enum ExerciseSeeder {
         }
     }
 
+    static func resetBuiltInExercises(in context: ModelContext) {
+        let fetchDescriptor = FetchDescriptor<ExerciseDefinition>()
+        let existing = (try? context.fetch(fetchDescriptor)) ?? []
+
+        var changed = false
+
+        for exercise in existing where !exercise.isCustom {
+            guard let seed = commonExercises.first(where: {
+                $0.name == exercise.name || $0.legacyNames.contains(exercise.name)
+            }) else { continue }
+
+            changed = syncSeed(seed, into: exercise) || changed
+            if exercise.isEdited {
+                exercise.isEdited = false
+                changed = true
+            }
+        }
+
+        let existingNames = Set(existing.map(\.name))
+        for seed in commonExercises where !existingNames.contains(seed.name) {
+            let hasLegacy = existing.contains { seed.legacyNames.contains($0.name) }
+            guard !hasLegacy else { continue }
+            context.insert(seed.makeDefinition())
+            changed = true
+        }
+
+        guard changed else { return }
+        do {
+            try context.save()
+        } catch {
+            assertionFailure("Failed to reset built-in exercises: \(error)")
+        }
+    }
+
     /// Returns a fresh copy of the seeded defaults for the given exercise name, or nil if not seeded.
     static func defaultDefinition(named name: String) -> ExerciseDefinition? {
-        commonExercises.first { $0.name == name }
+        commonExercises.first { $0.name == name || $0.legacyNames.contains(name) }?.makeDefinition()
+    }
+
+    private static func syncSeed(_ seed: SeedExercise, into exercise: ExerciseDefinition) -> Bool {
+        var changed = false
+
+        if exercise.isTimed != seed.isTimed {
+            exercise.isTimed = seed.isTimed
+            changed = true
+        }
+        if exercise.loadTrackingMode != seed.loadTrackingMode {
+            exercise.loadTrackingMode = seed.loadTrackingMode
+            changed = true
+        }
+
+        guard !exercise.isCustom, !exercise.isEdited else { return changed }
+
+        if exercise.name != seed.name {
+            exercise.name = seed.name
+            changed = true
+        }
+        if exercise.muscleGroups != seed.muscleGroups {
+            exercise.muscleGroups = seed.muscleGroups
+            changed = true
+        }
+        if exercise.equipmentType != seed.equipmentType {
+            exercise.equipmentType = seed.equipmentType
+            changed = true
+        }
+        if exercise.weightIncrement != seed.weightIncrement {
+            exercise.weightIncrement = seed.weightIncrement
+            changed = true
+        }
+        if exercise.startingWeight != seed.startingWeight {
+            exercise.startingWeight = seed.startingWeight
+            changed = true
+        }
+
+        return changed
+    }
+
+    private struct SeedExercise {
+        let name: String
+        let muscleGroups: [String]
+        let equipmentType: String
+        let weightIncrement: Double?
+        let startingWeight: Double?
+        let loadTrackingMode: LoadTrackingMode
+        let isTimed: Bool
+        let legacyNames: [String]
+
+        func makeDefinition() -> ExerciseDefinition {
+            ExerciseDefinition(
+                name: name,
+                muscleGroups: muscleGroups,
+                equipmentType: equipmentType,
+                weightIncrement: weightIncrement,
+                startingWeight: startingWeight,
+                loadTrackingMode: loadTrackingMode,
+                isTimed: isTimed
+            )
+        }
+    }
+
+    private static func exercise(
+        _ name: String,
+        _ muscleGroups: [String],
+        equipmentType: String,
+        increment: Double? = nil,
+        start: Double? = nil,
+        loadTrackingMode: LoadTrackingMode = .externalWeight,
+        isTimed: Bool = false,
+        legacy legacyNames: [String] = []
+    ) -> SeedExercise {
+        SeedExercise(
+            name: name,
+            muscleGroups: muscleGroups,
+            equipmentType: equipmentType,
+            weightIncrement: increment,
+            startingWeight: start,
+            loadTrackingMode: loadTrackingMode,
+            isTimed: isTimed,
+            legacyNames: legacyNames
+        )
     }
 
     // swiftlint:disable function_body_length
-    private static let commonExercises: [ExerciseDefinition] = [
+    private static let commonExercises: [SeedExercise] = [
 
         // MARK: Chest
-        ExerciseDefinition(name: "Barbell Bench Press",         muscleGroups: ["Chest", "Triceps"],            equipmentType: "Barbell"),
-        ExerciseDefinition(name: "Incline Bench Press",         muscleGroups: ["Chest", "Shoulders"],          equipmentType: "Barbell"),
-        ExerciseDefinition(name: "Decline Bench Press",         muscleGroups: ["Chest", "Triceps"],            equipmentType: "Barbell"),
-        ExerciseDefinition(name: "Dumbbell Bench Press",        muscleGroups: ["Chest", "Triceps"],            equipmentType: "Dumbbell"),
-        ExerciseDefinition(name: "Incline Dumbbell Press",      muscleGroups: ["Chest", "Shoulders"],          equipmentType: "Dumbbell"),
-        ExerciseDefinition(name: "Decline Dumbbell Press",      muscleGroups: ["Chest", "Triceps"],            equipmentType: "Dumbbell"),
-        ExerciseDefinition(name: "Dumbbell Fly",                muscleGroups: ["Chest"],                       equipmentType: "Dumbbell"),
-        ExerciseDefinition(name: "Incline Dumbbell Fly",        muscleGroups: ["Chest"],                       equipmentType: "Dumbbell"),
-        ExerciseDefinition(name: "Cable Fly",                   muscleGroups: ["Chest"],                       equipmentType: "Cable"),
-        ExerciseDefinition(name: "Low Cable Fly",               muscleGroups: ["Chest"],                       equipmentType: "Cable"),
-        ExerciseDefinition(name: "Machine Chest Press",         muscleGroups: ["Chest", "Triceps"],            equipmentType: "Machine"),
-        ExerciseDefinition(name: "Pec Deck",                    muscleGroups: ["Chest"],                       equipmentType: "Machine"),
-        ExerciseDefinition(name: "Push-Up",                     muscleGroups: ["Chest", "Triceps", "Core"],    equipmentType: "Bodyweight"),
-        ExerciseDefinition(name: "Weighted Dip",                muscleGroups: ["Chest", "Triceps"],            equipmentType: "Bodyweight"),
-        ExerciseDefinition(name: "Landmine Press",              muscleGroups: ["Chest", "Shoulders"],          equipmentType: "Barbell"),
+        exercise("Barbell Bench Press", ["Chest", "Triceps"], equipmentType: "Barbell", start: 45),
+        exercise("Incline Barbell Bench Press", ["Chest", "Shoulders"], equipmentType: "Barbell", start: 45, legacy: ["Incline Bench Press"]),
+        exercise("Decline Barbell Bench Press", ["Chest", "Triceps"], equipmentType: "Barbell", start: 45, legacy: ["Decline Bench Press"]),
+        exercise("Dumbbell Bench Press", ["Chest", "Triceps"], equipmentType: "Dumbbell", start: 10),
+        exercise("Incline Dumbbell Press", ["Chest", "Shoulders"], equipmentType: "Dumbbell", start: 10),
+        exercise("Decline Dumbbell Press", ["Chest", "Triceps"], equipmentType: "Dumbbell", start: 10),
+        exercise("Dumbbell Fly", ["Chest"], equipmentType: "Dumbbell", start: 10),
+        exercise("Incline Dumbbell Fly", ["Chest"], equipmentType: "Dumbbell", start: 10),
+        exercise("Cable Fly", ["Chest"], equipmentType: "Cable", increment: 5, start: 10),
+        exercise("Low Cable Fly", ["Chest"], equipmentType: "Cable", increment: 5, start: 10),
+        exercise("Machine Chest Press", ["Chest", "Triceps"], equipmentType: "Machine", increment: 5, start: 10),
+        exercise("Pec Deck", ["Chest"], equipmentType: "Machine", increment: 5, start: 10),
+        exercise("Push-Up", ["Chest", "Triceps", "Core"], equipmentType: "Bodyweight", loadTrackingMode: .none),
+        exercise("Weighted Dip", ["Chest", "Triceps"], equipmentType: "Bodyweight", increment: 2.5, start: 0, loadTrackingMode: .bodyweightPlusLoad),
+        exercise("Landmine Press", ["Chest", "Shoulders"], equipmentType: "Barbell", increment: 5, start: 25),
 
         // MARK: Back
-        ExerciseDefinition(name: "Barbell Deadlift",            muscleGroups: ["Back", "Legs"],                equipmentType: "Barbell"),
-        ExerciseDefinition(name: "Sumo Deadlift",               muscleGroups: ["Back", "Legs"],                equipmentType: "Barbell"),
-        ExerciseDefinition(name: "Trap Bar Deadlift",           muscleGroups: ["Back", "Legs"],                equipmentType: "Barbell"),
-        ExerciseDefinition(name: "Rack Pull",                   muscleGroups: ["Back"],                        equipmentType: "Barbell"),
-        ExerciseDefinition(name: "Barbell Row",                 muscleGroups: ["Back", "Biceps"],              equipmentType: "Barbell"),
-        ExerciseDefinition(name: "Pendlay Row",                 muscleGroups: ["Back", "Biceps"],              equipmentType: "Barbell"),
-        ExerciseDefinition(name: "T-Bar Row",                   muscleGroups: ["Back", "Biceps"],              equipmentType: "Barbell"),
-        ExerciseDefinition(name: "Single-Arm Dumbbell Row",     muscleGroups: ["Back", "Biceps"],              equipmentType: "Dumbbell"),
-        ExerciseDefinition(name: "Chest-Supported Row",         muscleGroups: ["Back"],                        equipmentType: "Machine"),
-        ExerciseDefinition(name: "Seated Cable Row",            muscleGroups: ["Back", "Biceps"],              equipmentType: "Cable"),
-        ExerciseDefinition(name: "Straight-Arm Pulldown",       muscleGroups: ["Back"],                        equipmentType: "Cable"),
-        ExerciseDefinition(name: "Pull-Up",                     muscleGroups: ["Back", "Biceps"],              equipmentType: "Bodyweight"),
-        ExerciseDefinition(name: "Chin-Up",                     muscleGroups: ["Back", "Biceps"],              equipmentType: "Bodyweight"),
-        ExerciseDefinition(name: "Lat Pulldown",                muscleGroups: ["Back", "Biceps"],              equipmentType: "Cable"),
-        ExerciseDefinition(name: "Close-Grip Lat Pulldown",     muscleGroups: ["Back", "Biceps"],              equipmentType: "Cable"),
-        ExerciseDefinition(name: "Good Morning",                muscleGroups: ["Back", "Legs"],                equipmentType: "Barbell"),
-        ExerciseDefinition(name: "Hyperextension",              muscleGroups: ["Back"],                        equipmentType: "Bodyweight"),
+        exercise("Barbell Deadlift", ["Back", "Legs"], equipmentType: "Barbell", start: 45),
+        exercise("Sumo Deadlift", ["Back", "Legs"], equipmentType: "Barbell", start: 45),
+        exercise("Trap Bar Deadlift", ["Back", "Legs"], equipmentType: "Barbell", start: 60),
+        exercise("Rack Pull", ["Back"], equipmentType: "Barbell", start: 45),
+        exercise("Bent-Over Barbell Row", ["Back", "Biceps"], equipmentType: "Barbell", start: 45, legacy: ["Barbell Row"]),
+        exercise("Pendlay Row", ["Back", "Biceps"], equipmentType: "Barbell", start: 45),
+        exercise("T-Bar Row", ["Back", "Biceps"], equipmentType: "Barbell", increment: 5, start: 25),
+        exercise("Single-Arm Dumbbell Row", ["Back", "Biceps"], equipmentType: "Dumbbell", start: 10),
+        exercise("Chest-Supported Machine Row", ["Back"], equipmentType: "Machine", increment: 5, start: 10, legacy: ["Chest-Supported Row"]),
+        exercise("Seated Cable Row", ["Back", "Biceps"], equipmentType: "Cable", increment: 5, start: 10),
+        exercise("Straight-Arm Pulldown", ["Back"], equipmentType: "Cable", increment: 5, start: 10),
+        exercise("Pull-Up", ["Back", "Biceps"], equipmentType: "Bodyweight", loadTrackingMode: .none),
+        exercise("Chin-Up", ["Back", "Biceps"], equipmentType: "Bodyweight", loadTrackingMode: .none),
+        exercise("Lat Pulldown", ["Back", "Biceps"], equipmentType: "Cable", increment: 5, start: 10),
+        exercise("Close-Grip Lat Pulldown", ["Back", "Biceps"], equipmentType: "Cable", increment: 5, start: 10),
+        exercise("Good Morning", ["Back", "Legs"], equipmentType: "Barbell", start: 45),
+        exercise("Back Extension", ["Back"], equipmentType: "Bodyweight", loadTrackingMode: .none, legacy: ["Hyperextension"]),
 
         // MARK: Shoulders
-        ExerciseDefinition(name: "Barbell Overhead Press",      muscleGroups: ["Shoulders", "Triceps"],        equipmentType: "Barbell"),
-        ExerciseDefinition(name: "Seated Dumbbell Shoulder Press", muscleGroups: ["Shoulders", "Triceps"],     equipmentType: "Dumbbell"),
-        ExerciseDefinition(name: "Arnold Press",                muscleGroups: ["Shoulders", "Triceps"],        equipmentType: "Dumbbell"),
-        ExerciseDefinition(name: "Machine Shoulder Press",      muscleGroups: ["Shoulders", "Triceps"],        equipmentType: "Machine"),
-        ExerciseDefinition(name: "Lateral Raise",               muscleGroups: ["Shoulders"],                   equipmentType: "Dumbbell"),
-        ExerciseDefinition(name: "Cable Lateral Raise",         muscleGroups: ["Shoulders"],                   equipmentType: "Cable"),
-        ExerciseDefinition(name: "Dumbbell Front Raise",        muscleGroups: ["Shoulders"],                   equipmentType: "Dumbbell"),
-        ExerciseDefinition(name: "Cable Front Raise",           muscleGroups: ["Shoulders"],                   equipmentType: "Cable"),
-        ExerciseDefinition(name: "Rear Delt Fly",               muscleGroups: ["Shoulders", "Back"],           equipmentType: "Machine"),
-        ExerciseDefinition(name: "Face Pull",                   muscleGroups: ["Shoulders", "Back"],           equipmentType: "Cable"),
-        ExerciseDefinition(name: "Upright Row",                 muscleGroups: ["Shoulders", "Biceps"],         equipmentType: "Barbell"),
-        ExerciseDefinition(name: "Shrug",                       muscleGroups: ["Shoulders"],                   equipmentType: "Barbell"),
-        ExerciseDefinition(name: "Dumbbell Shrug",              muscleGroups: ["Shoulders"],                   equipmentType: "Dumbbell"),
+        exercise("Barbell Overhead Press", ["Shoulders", "Triceps"], equipmentType: "Barbell", start: 45),
+        exercise("Seated Dumbbell Shoulder Press", ["Shoulders", "Triceps"], equipmentType: "Dumbbell", start: 10),
+        exercise("Arnold Press", ["Shoulders", "Triceps"], equipmentType: "Dumbbell", start: 10),
+        exercise("Machine Shoulder Press", ["Shoulders", "Triceps"], equipmentType: "Machine", increment: 5, start: 10),
+        exercise("Lateral Raise", ["Shoulders"], equipmentType: "Dumbbell", start: 5),
+        exercise("Cable Lateral Raise", ["Shoulders"], equipmentType: "Cable", increment: 5, start: 5),
+        exercise("Dumbbell Front Raise", ["Shoulders"], equipmentType: "Dumbbell", start: 5),
+        exercise("Cable Front Raise", ["Shoulders"], equipmentType: "Cable", increment: 5, start: 5),
+        exercise("Reverse Pec Deck", ["Shoulders", "Back"], equipmentType: "Machine", increment: 5, start: 10, legacy: ["Rear Delt Fly"]),
+        exercise("Face Pull", ["Shoulders", "Back"], equipmentType: "Cable", increment: 5, start: 10),
+        exercise("Upright Row", ["Shoulders", "Biceps"], equipmentType: "Barbell", start: 45),
+        exercise("Barbell Shrug", ["Shoulders"], equipmentType: "Barbell", start: 45, legacy: ["Shrug"]),
+        exercise("Dumbbell Shrug", ["Shoulders"], equipmentType: "Dumbbell", start: 20),
 
         // MARK: Biceps
-        ExerciseDefinition(name: "Barbell Curl",                muscleGroups: ["Biceps"],                      equipmentType: "Barbell"),
-        ExerciseDefinition(name: "EZ Bar Curl",                 muscleGroups: ["Biceps"],                      equipmentType: "Barbell"),
-        ExerciseDefinition(name: "Dumbbell Curl",               muscleGroups: ["Biceps"],                      equipmentType: "Dumbbell"),
-        ExerciseDefinition(name: "Hammer Curl",                 muscleGroups: ["Biceps", "Forearms"],          equipmentType: "Dumbbell"),
-        ExerciseDefinition(name: "Incline Dumbbell Curl",       muscleGroups: ["Biceps"],                      equipmentType: "Dumbbell"),
-        ExerciseDefinition(name: "Concentration Curl",          muscleGroups: ["Biceps"],                      equipmentType: "Dumbbell"),
-        ExerciseDefinition(name: "Spider Curl",                 muscleGroups: ["Biceps"],                      equipmentType: "Dumbbell"),
-        ExerciseDefinition(name: "Preacher Curl",               muscleGroups: ["Biceps"],                      equipmentType: "Machine"),
-        ExerciseDefinition(name: "Cable Curl",                  muscleGroups: ["Biceps"],                      equipmentType: "Cable"),
-        ExerciseDefinition(name: "Cable Hammer Curl",           muscleGroups: ["Biceps", "Forearms"],          equipmentType: "Cable"),
-        ExerciseDefinition(name: "Zottman Curl",                muscleGroups: ["Biceps", "Forearms"],          equipmentType: "Dumbbell"),
+        exercise("Barbell Curl", ["Biceps"], equipmentType: "Barbell", start: 45),
+        exercise("EZ Bar Curl", ["Biceps"], equipmentType: "Barbell", start: 30),
+        exercise("Dumbbell Curl", ["Biceps"], equipmentType: "Dumbbell", start: 10),
+        exercise("Hammer Curl", ["Biceps", "Forearms"], equipmentType: "Dumbbell", start: 10),
+        exercise("Incline Dumbbell Curl", ["Biceps"], equipmentType: "Dumbbell", start: 10),
+        exercise("Concentration Curl", ["Biceps"], equipmentType: "Dumbbell", start: 10),
+        exercise("Spider Curl", ["Biceps"], equipmentType: "Dumbbell", start: 10),
+        exercise("Machine Preacher Curl", ["Biceps"], equipmentType: "Machine", increment: 5, start: 10, legacy: ["Preacher Curl"]),
+        exercise("Cable Curl", ["Biceps"], equipmentType: "Cable", increment: 5, start: 10),
+        exercise("Cable Hammer Curl", ["Biceps", "Forearms"], equipmentType: "Cable", increment: 5, start: 10),
+        exercise("Zottman Curl", ["Biceps", "Forearms"], equipmentType: "Dumbbell", start: 10),
 
         // MARK: Triceps
-        ExerciseDefinition(name: "Close-Grip Bench Press",      muscleGroups: ["Triceps", "Chest"],            equipmentType: "Barbell"),
-        ExerciseDefinition(name: "Skull Crusher",               muscleGroups: ["Triceps"],                     equipmentType: "Barbell"),
-        ExerciseDefinition(name: "JM Press",                    muscleGroups: ["Triceps"],                     equipmentType: "Barbell"),
-        ExerciseDefinition(name: "Triceps Pushdown",            muscleGroups: ["Triceps"],                     equipmentType: "Cable"),
-        ExerciseDefinition(name: "Rope Pushdown",               muscleGroups: ["Triceps"],                     equipmentType: "Cable"),
-        ExerciseDefinition(name: "Overhead Cable Extension",    muscleGroups: ["Triceps"],                     equipmentType: "Cable"),
-        ExerciseDefinition(name: "Triceps Dip",                 muscleGroups: ["Triceps", "Chest"],            equipmentType: "Bodyweight"),
-        ExerciseDefinition(name: "Diamond Push-Up",             muscleGroups: ["Triceps", "Chest"],            equipmentType: "Bodyweight"),
-        ExerciseDefinition(name: "Dumbbell Kickback",           muscleGroups: ["Triceps"],                     equipmentType: "Dumbbell"),
-        ExerciseDefinition(name: "Overhead Dumbbell Extension", muscleGroups: ["Triceps"],                     equipmentType: "Dumbbell"),
+        exercise("Close-Grip Bench Press", ["Triceps", "Chest"], equipmentType: "Barbell", start: 45),
+        exercise("Skull Crusher", ["Triceps"], equipmentType: "Barbell", start: 30),
+        exercise("JM Press", ["Triceps"], equipmentType: "Barbell", start: 45),
+        exercise("Triceps Pushdown", ["Triceps"], equipmentType: "Cable", increment: 5, start: 10),
+        exercise("Rope Pushdown", ["Triceps"], equipmentType: "Cable", increment: 5, start: 10),
+        exercise("Overhead Cable Extension", ["Triceps"], equipmentType: "Cable", increment: 5, start: 10),
+        exercise("Triceps Dip", ["Triceps", "Chest"], equipmentType: "Bodyweight", loadTrackingMode: .none),
+        exercise("Diamond Push-Up", ["Triceps", "Chest"], equipmentType: "Bodyweight", loadTrackingMode: .none),
+        exercise("Dumbbell Kickback", ["Triceps"], equipmentType: "Dumbbell", start: 5),
+        exercise("Overhead Dumbbell Extension", ["Triceps"], equipmentType: "Dumbbell", start: 10),
 
         // MARK: Forearms
-        ExerciseDefinition(name: "Wrist Curl",                  muscleGroups: ["Forearms"],                    equipmentType: "Barbell"),
-        ExerciseDefinition(name: "Reverse Wrist Curl",          muscleGroups: ["Forearms"],                    equipmentType: "Barbell"),
-        ExerciseDefinition(name: "Reverse Curl",                muscleGroups: ["Forearms", "Biceps"],          equipmentType: "Barbell"),
-        ExerciseDefinition(name: "Farmer Carry",                muscleGroups: ["Forearms", "Core"],            equipmentType: "Dumbbell"),
+        exercise("Wrist Curl", ["Forearms"], equipmentType: "Barbell", start: 20),
+        exercise("Reverse Wrist Curl", ["Forearms"], equipmentType: "Barbell", start: 20),
+        exercise("Reverse Curl", ["Forearms", "Biceps"], equipmentType: "Barbell", start: 30),
+        exercise("Farmer Carry", ["Forearms", "Core"], equipmentType: "Dumbbell", start: 20),
 
         // MARK: Legs
-        ExerciseDefinition(name: "Barbell Back Squat",          muscleGroups: ["Legs", "Core"],                equipmentType: "Barbell"),
-        ExerciseDefinition(name: "Front Squat",                 muscleGroups: ["Legs", "Core"],                equipmentType: "Barbell"),
-        ExerciseDefinition(name: "Box Squat",                   muscleGroups: ["Legs"],                        equipmentType: "Barbell"),
-        ExerciseDefinition(name: "Pause Squat",                 muscleGroups: ["Legs"],                        equipmentType: "Barbell"),
-        ExerciseDefinition(name: "Goblet Squat",                muscleGroups: ["Legs", "Core"],                equipmentType: "Dumbbell"),
-        ExerciseDefinition(name: "Bulgarian Split Squat",       muscleGroups: ["Legs"],                        equipmentType: "Dumbbell"),
-        ExerciseDefinition(name: "Walking Lunge",               muscleGroups: ["Legs", "Core"],                equipmentType: "Dumbbell"),
-        ExerciseDefinition(name: "Reverse Lunge",               muscleGroups: ["Legs"],                        equipmentType: "Dumbbell"),
-        ExerciseDefinition(name: "Romanian Deadlift",           muscleGroups: ["Legs", "Back"],                equipmentType: "Barbell"),
-        ExerciseDefinition(name: "Dumbbell Romanian Deadlift",  muscleGroups: ["Legs", "Back"],                equipmentType: "Dumbbell"),
-        ExerciseDefinition(name: "Stiff-Leg Deadlift",          muscleGroups: ["Legs", "Back"],                equipmentType: "Barbell"),
-        ExerciseDefinition(name: "Hip Thrust",                  muscleGroups: ["Legs"],                        equipmentType: "Barbell"),
-        ExerciseDefinition(name: "Leg Press",                   muscleGroups: ["Legs"],                        equipmentType: "Machine"),
-        ExerciseDefinition(name: "Hack Squat",                  muscleGroups: ["Legs"],                        equipmentType: "Machine"),
-        ExerciseDefinition(name: "Leg Extension",               muscleGroups: ["Legs"],                        equipmentType: "Machine"),
-        ExerciseDefinition(name: "Hamstring Curl",              muscleGroups: ["Legs"],                        equipmentType: "Machine"),
-        ExerciseDefinition(name: "Seated Leg Curl",             muscleGroups: ["Legs"],                        equipmentType: "Machine"),
-        ExerciseDefinition(name: "Nordic Hamstring Curl",       muscleGroups: ["Legs"],                        equipmentType: "Bodyweight"),
-        ExerciseDefinition(name: "Standing Calf Raise",         muscleGroups: ["Legs"],                        equipmentType: "Machine"),
-        ExerciseDefinition(name: "Seated Calf Raise",           muscleGroups: ["Legs"],                        equipmentType: "Machine"),
-        ExerciseDefinition(name: "Step-Up",                     muscleGroups: ["Legs"],                        equipmentType: "Dumbbell"),
+        exercise("Barbell Back Squat", ["Legs", "Core"], equipmentType: "Barbell", start: 45),
+        exercise("Front Squat", ["Legs", "Core"], equipmentType: "Barbell", start: 45),
+        exercise("Box Squat", ["Legs"], equipmentType: "Barbell", start: 45),
+        exercise("Pause Squat", ["Legs"], equipmentType: "Barbell", start: 45),
+        exercise("Goblet Squat", ["Legs", "Core"], equipmentType: "Dumbbell", start: 10),
+        exercise("Bulgarian Split Squat", ["Legs"], equipmentType: "Dumbbell", start: 10),
+        exercise("Walking Lunge", ["Legs", "Core"], equipmentType: "Dumbbell", start: 10),
+        exercise("Reverse Lunge", ["Legs"], equipmentType: "Dumbbell", start: 10),
+        exercise("Romanian Deadlift", ["Legs", "Back"], equipmentType: "Barbell", start: 45),
+        exercise("Dumbbell Romanian Deadlift", ["Legs", "Back"], equipmentType: "Dumbbell", start: 10),
+        exercise("Stiff-Leg Deadlift", ["Legs", "Back"], equipmentType: "Barbell", start: 45),
+        exercise("Hip Thrust", ["Legs"], equipmentType: "Barbell", start: 45),
+        exercise("Leg Press", ["Legs"], equipmentType: "Machine", increment: 5, start: 45),
+        exercise("Hack Squat", ["Legs"], equipmentType: "Machine", increment: 5, start: 45),
+        exercise("Leg Extension", ["Legs"], equipmentType: "Machine", increment: 5, start: 10),
+        exercise("Lying Leg Curl", ["Legs"], equipmentType: "Machine", increment: 5, start: 10, legacy: ["Hamstring Curl"]),
+        exercise("Seated Leg Curl", ["Legs"], equipmentType: "Machine", increment: 5, start: 10),
+        exercise("Nordic Hamstring Curl", ["Legs"], equipmentType: "Bodyweight", loadTrackingMode: .none),
+        exercise("Standing Calf Raise", ["Legs"], equipmentType: "Machine", increment: 5, start: 25),
+        exercise("Seated Calf Raise", ["Legs"], equipmentType: "Machine", increment: 5, start: 25),
+        exercise("Step-Up", ["Legs"], equipmentType: "Dumbbell", start: 10),
 
         // MARK: Core
-        ExerciseDefinition(name: "Plank",                       muscleGroups: ["Core"],                        equipmentType: "Bodyweight", isTimed: true),
-        ExerciseDefinition(name: "Side Plank",                  muscleGroups: ["Core"],                        equipmentType: "Bodyweight", isTimed: true),
-        ExerciseDefinition(name: "Hanging Leg Raise",           muscleGroups: ["Core"],                        equipmentType: "Bodyweight"),
-        ExerciseDefinition(name: "Ab Wheel Rollout",            muscleGroups: ["Core"],                        equipmentType: "Bodyweight"),
-        ExerciseDefinition(name: "Dead Bug",                    muscleGroups: ["Core"],                        equipmentType: "Bodyweight", isTimed: true),
-        ExerciseDefinition(name: "Dragon Flag",                 muscleGroups: ["Core"],                        equipmentType: "Bodyweight"),
-        ExerciseDefinition(name: "Decline Crunch",              muscleGroups: ["Core"],                        equipmentType: "Bodyweight"),
-        ExerciseDefinition(name: "Russian Twist",               muscleGroups: ["Core"],                        equipmentType: "Bodyweight"),
-        ExerciseDefinition(name: "Cable Crunch",                muscleGroups: ["Core"],                        equipmentType: "Cable"),
-        ExerciseDefinition(name: "Pallof Press",                muscleGroups: ["Core"],                        equipmentType: "Cable"),
-        ExerciseDefinition(name: "Landmine Twist",              muscleGroups: ["Core"],                        equipmentType: "Barbell"),
+        exercise("Plank", ["Core"], equipmentType: "Bodyweight", loadTrackingMode: .none, isTimed: true),
+        exercise("Side Plank", ["Core"], equipmentType: "Bodyweight", loadTrackingMode: .none, isTimed: true),
+        exercise("Hanging Leg Raise", ["Core"], equipmentType: "Bodyweight", loadTrackingMode: .none),
+        exercise("Ab Wheel Rollout", ["Core"], equipmentType: "Bodyweight", loadTrackingMode: .none),
+        exercise("Dead Bug", ["Core"], equipmentType: "Bodyweight", loadTrackingMode: .none, isTimed: true),
+        exercise("Dragon Flag", ["Core"], equipmentType: "Bodyweight", loadTrackingMode: .none),
+        exercise("Decline Crunch", ["Core"], equipmentType: "Bodyweight", loadTrackingMode: .none),
+        exercise("Russian Twist", ["Core"], equipmentType: "Bodyweight", loadTrackingMode: .none),
+        exercise("Cable Crunch", ["Core"], equipmentType: "Cable", increment: 5, start: 10),
+        exercise("Pallof Press", ["Core"], equipmentType: "Cable", increment: 5, start: 10),
+        exercise("Landmine Twist", ["Core"], equipmentType: "Barbell", increment: 5, start: 25),
     ]
     // swiftlint:enable function_body_length
 }

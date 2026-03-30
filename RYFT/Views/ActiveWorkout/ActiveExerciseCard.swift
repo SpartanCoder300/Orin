@@ -136,6 +136,7 @@ struct ActiveExerciseCard: View {
                     repsText: set.repsText,
                     durationText: set.durationText,
                     isTimed: exercise.isTimed,
+                    tracksWeight: exercise.tracksWeight,
                     setType: set.setType,
                     isLogged: set.isLogged,
                     isFocused: vm.currentFocus == ActiveWorkoutViewModel.SetFocus(
@@ -186,8 +187,21 @@ struct ActiveExerciseCard: View {
 
     private func previousLabel(for exercise: ActiveWorkoutViewModel.DraftExercise) -> String {
         if exercise.isTimed {
+            if exercise.tracksWeight {
+                return exercise.previousSets
+                    .map {
+                        let duration = $0.duration.map { formatDuration(Int($0)) } ?? "—"
+                        return "\(vm.formatWeight($0.weight)) lb · \(duration)"
+                    }
+                    .joined(separator: "   ")
+            }
             return exercise.previousSets
                 .map { formatDuration(Int($0.duration ?? 0)) }
+                .joined(separator: "   ")
+        }
+        guard exercise.tracksWeight else {
+            return exercise.previousSets
+                .map { "\($0.reps) reps" }
                 .joined(separator: "   ")
         }
         return exercise.previousSets

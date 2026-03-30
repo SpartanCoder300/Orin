@@ -1,11 +1,14 @@
 // iOS 26+ only. No #available guards.
 
 import SwiftUI
+import SwiftData
 
 struct SettingsRootView: View {
     @Environment(AppState.self) private var appState
+    @Environment(\.modelContext) private var modelContext
     @Environment(\.ryftTheme) private var theme
     @Environment(\.ryftCardMaterial) private var cardMaterial
+    @State private var isShowingResetExercisesConfirm = false
 
     var body: some View {
         List {
@@ -25,6 +28,21 @@ struct SettingsRootView: View {
                 Text("Theme")
             }
 
+            // ── Exercise Library ───────────────────────────────────────
+            Section {
+                Button(role: .destructive) {
+                    isShowingResetExercisesConfirm = true
+                } label: {
+                    LabeledContent("Reset Built-In Exercises") {
+                        Image(systemName: "arrow.uturn.backward.circle")
+                            .foregroundStyle(Color.ryftRed)
+                    }
+                }
+                .listRowBackground(Rectangle().fill(cardMaterial))
+            } footer: {
+                Text("Restores all built-in exercises to their default names, equipment, type, increment, and starting weight. Custom exercises are not changed.")
+            }
+
             // ── About ──────────────────────────────────────────────────
             Section {
                 LabeledContent("Version", value: "1.0")
@@ -36,6 +54,14 @@ struct SettingsRootView: View {
         .scrollContentBackground(.hidden)
         .navigationTitle("Settings")
         .themedBackground()
+        .alert("Reset Built-In Exercises?", isPresented: $isShowingResetExercisesConfirm) {
+            Button("Reset", role: .destructive) {
+                ExerciseSeeder.resetBuiltInExercises(in: modelContext)
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This restores all built-in exercises to the app defaults. Custom exercises will stay as they are.")
+        }
     }
 }
 

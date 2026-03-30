@@ -17,8 +17,10 @@ struct ExerciseEditorView: View {
     @State private var name = ""
     @State private var equipmentType = "Barbell"
     @State private var selectedGroups: Set<String> = []
+    @State private var loadTrackingMode: LoadTrackingMode = .externalWeight
     @State private var isTimed = false
     @State private var weightIncrementText = ""
+    @State private var startingWeightText = ""
 
     private var isNew: Bool { exercise == nil }
     private var isSaveEnabled: Bool { !name.trimmingCharacters(in: .whitespaces).isEmpty }
@@ -61,14 +63,26 @@ struct ExerciseEditorView: View {
                     }
                 }
 
+                Section("Load Tracking") {
+                    Picker("Load Tracking", selection: $loadTrackingMode) {
+                        Text("No Weight").tag(LoadTrackingMode.none)
+                        Text("External Weight").tag(LoadTrackingMode.externalWeight)
+                        Text("Bodyweight + Load").tag(LoadTrackingMode.bodyweightPlusLoad)
+                    }
+                    .pickerStyle(.menu)
+                } footer: {
+                    Text(loadTrackingFooter)
+                }
+
                 // ── Type ──────────────────────────────────────────────
                 Section {
                     Toggle("Timed (holds / isometric)", isOn: $isTimed)
                 }
 
                 // ── Weight Increment ──────────────────────────────────
-                if !isTimed {
+                if loadTrackingMode != .none {
                     let defaultIncrement = ExerciseDefinition.defaultIncrement(for: equipmentType)
+                    let defaultStartingWeight = ExerciseDefinition.defaultStartingWeight(for: equipmentType)
                     Section {
                         TextField(
                             "Default: \(formatIncrement(defaultIncrement)) lbs",
@@ -79,6 +93,18 @@ struct ExerciseEditorView: View {
                         Text("Weight Increment (lbs)")
                     } footer: {
                         Text("Leave blank to use the equipment default (\(formatIncrement(defaultIncrement)) lbs).")
+                    }
+
+                    Section {
+                        TextField(
+                            "Default: \(formatIncrement(defaultStartingWeight)) lbs",
+                            text: $startingWeightText
+                        )
+                        .keyboardType(.decimalPad)
+                    } header: {
+                        Text("Starting Weight (lbs)")
+                    } footer: {
+                        Text("Used when a blank set gets its first weight value. Leave blank to use the equipment default (\(formatIncrement(defaultStartingWeight)) lbs).")
                     }
                 }
 
@@ -91,7 +117,7 @@ struct ExerciseEditorView: View {
                             Label("Reset to Default", systemImage: "arrow.uturn.backward")
                         }
                     } footer: {
-                        Text("Restores the original muscle groups, equipment, and type.")
+                        Text("Restores the original muscle groups, equipment, load tracking, type, increment, and starting weight.")
                     }
                 }
             }
@@ -145,29 +171,36 @@ struct ExerciseEditorView: View {
         name = ex.name
         equipmentType = ex.equipmentType.isEmpty ? "Barbell" : ex.equipmentType
         selectedGroups = Set(ex.muscleGroups)
+        loadTrackingMode = ex.loadTrackingMode
         isTimed = ex.isTimed
         weightIncrementText = ex.weightIncrement.map { formatIncrement($0) } ?? ""
+        startingWeightText = ex.startingWeight.map { formatIncrement($0) } ?? ""
     }
 
     private func save() {
         let trimmedName = name.trimmingCharacters(in: .whitespaces)
         let orderedGroups = editorMuscleGroups.filter { selectedGroups.contains($0) }
-        let increment = Double(weightIncrementText)
+        let increment = loadTrackingMode == .none ? nil : Double(weightIncrementText)
+        let startingWeight = loadTrackingMode == .none ? nil : Double(startingWeightText)
 
         if let ex = exercise {
             if ex.isCustom { ex.name = trimmedName }
             ex.equipmentType = equipmentType
             ex.muscleGroups = orderedGroups
+            ex.loadTrackingMode = loadTrackingMode
             ex.isTimed = isTimed
             ex.weightIncrement = increment
+            ex.startingWeight = startingWeight
             // Mark edited if values differ from the seed
             if !ex.isCustom {
                 let original = ExerciseSeeder.defaultDefinition(named: ex.name)
                 let matchesDefault = original.map {
                     $0.equipmentType == equipmentType &&
                     Set($0.muscleGroups) == selectedGroups &&
+                    $0.loadTrackingMode == loadTrackingMode &&
                     $0.isTimed == isTimed &&
-                    increment == nil
+                    increment == $0.weightIncrement &&
+                    startingWeight == $0.startingWeight
                 } ?? false
                 ex.isEdited = !matchesDefault
             }
@@ -178,6 +211,8 @@ struct ExerciseEditorView: View {
                 equipmentType: equipmentType,
                 isCustom: true,
                 weightIncrement: increment,
+                startingWeight: startingWeight,
+                loadTrackingMode: loadTrackingMode,
                 isTimed: isTimed
             )
             modelContext.insert(newEx)
@@ -187,21 +222,37 @@ struct ExerciseEditorView: View {
 
     private func resetToDefault(_ ex: ExerciseDefinition) {
         guard let original = ExerciseSeeder.defaultDefinition(named: ex.name) else { return }
+        if !ex.isCustom { ex.name = original.name }
         ex.equipmentType = original.equipmentType
         ex.muscleGroups = original.muscleGroups
+        ex.loadTrackingMode = original.loadTrackingMode
         ex.isTimed = original.isTimed
-        ex.weightIncrement = nil
+        ex.weightIncrement = original.weightIncrement
+        ex.startingWeight = original.startingWeight
         ex.isEdited = false
         try? modelContext.save()
         // Refresh draft to reflect restored values
         equipmentType = original.equipmentType
         selectedGroups = Set(original.muscleGroups)
+        loadTrackingMode = original.loadTrackingMode
         isTimed = original.isTimed
-        weightIncrementText = ""
+        weightIncrementText = original.weightIncrement.map { formatIncrement($0) } ?? ""
+        startingWeightText = original.startingWeight.map { formatIncrement($0) } ?? ""
     }
 
     private func formatIncrement(_ v: Double) -> String {
         v.truncatingRemainder(dividingBy: 1) == 0 ? "\(Int(v))" : String(format: "%.1f", v)
+    }
+
+    private var loadTrackingFooter: String {
+        switch loadTrackingMode {
+        case .none:
+            return "Use this for plain bodyweight or duration-only movements that should not show weight controls."
+        case .externalWeight:
+            return "Tracks only the external load, like barbells, dumbbells, cables, and machines."
+        case .bodyweightPlusLoad:
+            return "Tracks added load on top of bodyweight, like weighted dips or weighted pull-ups."
+        }
     }
 }
 

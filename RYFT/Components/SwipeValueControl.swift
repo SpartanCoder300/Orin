@@ -27,6 +27,10 @@ struct SwipeValueEngine {
     func isAtMin(_ v: Double) -> Bool { v <= minValue + step * 0.01 }
     func isAtMax(_ v: Double) -> Bool { v >= maxValue - step * 0.01 }
 
+    func snappedValue(_ v: Double) -> Double {
+        clamped(snapped(v))
+    }
+
     private func snapped(_ v: Double) -> Double {
         let stepsFromMin = ((v - minValue) / step).rounded()
         return minValue + stepsFromMin * step
@@ -123,7 +127,8 @@ struct SwipeValueControl: View {
     /// Starting value for a drag. Blank field uses firstTapDefault so dragging from
     /// an empty weight cell starts at 45 lbs, not 0.
     private var dragBase: Double {
-        text.isEmpty ? (firstTapDefault ?? minValue) : current
+        let base = text.isEmpty ? (firstTapDefault ?? minValue) : current
+        return engine.snappedValue(base)
     }
 
     // MARK: Body
@@ -364,10 +369,8 @@ struct SwipeValueControl: View {
         formatter.locale = .current
         let raw = formatter.number(from: editText)?.doubleValue ?? Double(editText)
         guard let raw else { return }
-        let stepsFromMin = ((raw - minValue) / step).rounded()
-        let snapped = minValue + stepsFromMin * step
-        let clamped = Swift.min(maxValue, Swift.max(minValue, snapped))
-        text = formatted(clamped)
+        let sanitized = Swift.max(minValue, raw)
+        text = formatted(sanitized)
         UISelectionFeedbackGenerator().selectionChanged()
     }
 }

@@ -23,6 +23,7 @@ struct SetRow: View {
     let repsText: String
     let durationText: String
     let isTimed: Bool
+    let tracksWeight: Bool
     let setType: SetType
     let isLogged: Bool
     let isFocused: Bool
@@ -145,7 +146,14 @@ struct SetRow: View {
     private var displayText: String {
         if isTimed {
             let secs = Int(durationText) ?? 0
-            return durationText.isEmpty ? "—" : formatDuration(secs)
+            let durationLabel = durationText.isEmpty ? "—" : formatDuration(secs)
+            guard tracksWeight else { return durationLabel }
+            let w = weightText.isEmpty ? "—" : weightText
+            return "\(w) lb · \(durationLabel)"
+        }
+        guard tracksWeight else {
+            let r = repsText.isEmpty ? "—" : repsText
+            return "\(r) reps"
         }
         let w = weightText.isEmpty ? "—" : weightText
         let r = repsText.isEmpty ? "—" : repsText
@@ -162,6 +170,7 @@ struct SetRow: View {
         repsText: "5",
         durationText: "",
         isTimed: false,
+        tracksWeight: true,
         setType: .normal,
         isLogged: false,
         isFocused: true,
@@ -181,6 +190,7 @@ struct SetRow: View {
         repsText: "3",
         durationText: "",
         isTimed: false,
+        tracksWeight: true,
         setType: .normal,
         isLogged: true,
         isFocused: false,
@@ -200,6 +210,7 @@ struct SetRow: View {
         repsText: "8",
         durationText: "",
         isTimed: false,
+        tracksWeight: true,
         setType: .warmup,
         isLogged: false,
         isFocused: false,

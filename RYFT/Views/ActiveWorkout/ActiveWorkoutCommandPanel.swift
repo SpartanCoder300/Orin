@@ -69,7 +69,7 @@ struct ActiveWorkoutCommandPanel: View {
 
                 // Row 1: Weight | Reps (or Duration for timed exercises)
                 HStack(spacing: 0) {
-                    if !exercise.isTimed {
+                    if exercise.tracksWeight {
                         SwipeValueControl(
                             text: Binding(
                                 get: {
@@ -90,7 +90,7 @@ struct ActiveWorkoutCommandPanel: View {
                             minValue: 0,
                             maxValue: 999,
                             isInteger: false,
-                            firstTapDefault: weightDefault(for: exercise.equipmentType),
+                            firstTapDefault: exercise.startingWeight,
                             milestones: weightMilestones(for: exercise.equipmentType)
                         )
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -99,7 +99,6 @@ struct ActiveWorkoutCommandPanel: View {
                     }
 
                     if exercise.isTimed {
-                        // Duration control — full width for timed exercises
                         SwipeValueControl(
                             text: Binding(
                                 get: {
@@ -324,17 +323,5 @@ private func weightMilestones(for equipmentType: String) -> Set<Double>? {
         return [16, 28, 36, 44, 52, 60, 72, 88]
     default:
         return nil
-    }
-}
-
-private func weightDefault(for equipmentType: String) -> Double? {
-    switch equipmentType {
-    case "Barbell":    return 45
-    case "Dumbbell":   return 10
-    case "Cable":      return 20
-    case "Machine":    return 45
-    case "Kettlebell": return 35
-    case "Bodyweight": return nil
-    default:           return 45
     }
 }

@@ -34,12 +34,16 @@ final class ActiveWorkoutViewModel {
         var exerciseName: String
         var equipmentType: String = ""
         var weightIncrement: Double = 2.5
+        var startingWeight: Double = 45
+        var loadTrackingMode: LoadTrackingMode = .externalWeight
         /// True when sets are measured by duration rather than reps (e.g. planks).
         var isTimed: Bool = false
         var sets: [DraftSet]
         var previousSets: [PreviousSet] = []
         var snapshot: ExerciseSnapshot? = nil
         var restSeconds: Int = 90
+
+        var tracksWeight: Bool { loadTrackingMode != .none }
     }
 
     struct SetFocus: Equatable {
@@ -230,7 +234,16 @@ final class ActiveWorkoutViewModel {
                     }
                     return s
                 }
-                return DraftExercise(exerciseName: def.name, equipmentType: def.equipmentType, weightIncrement: def.resolvedWeightIncrement, isTimed: isTimed, sets: sets, restSeconds: entry.restSeconds)
+                return DraftExercise(
+                    exerciseName: def.name,
+                    equipmentType: def.equipmentType,
+                    weightIncrement: def.resolvedWeightIncrement,
+                    startingWeight: def.resolvedStartingWeight,
+                    loadTrackingMode: def.loadTrackingMode,
+                    isTimed: isTimed,
+                    sets: sets,
+                    restSeconds: entry.restSeconds
+                )
             }
     }
 
@@ -249,9 +262,21 @@ final class ActiveWorkoutViewModel {
                 let defDescriptor = FetchDescriptor<ExerciseDefinition>(
                     predicate: #Predicate { $0.name == name }
                 )
-                let isTimed = (try? modelContext.fetch(defDescriptor))?.first?.isTimed ?? false
+                let def = (try? modelContext.fetch(defDescriptor))?.first ?? ExerciseSeeder.defaultDefinition(named: name)
+                let isTimed = def?.isTimed ?? snap.isTimed
+                let equipmentType = def?.equipmentType ?? snap.equipmentType ?? ""
+                let loadTrackingMode = def?.loadTrackingMode ?? snap.loadTrackingMode
                 // Start with one blank set; applyPreviousPerformance will expand and fill it.
-                return DraftExercise(exerciseName: name, isTimed: isTimed, sets: [DraftSet()], restSeconds: 90)
+                return DraftExercise(
+                    exerciseName: name,
+                    equipmentType: equipmentType,
+                    weightIncrement: def?.resolvedWeightIncrement ?? snap.weightIncrement ?? ExerciseDefinition.defaultIncrement(for: equipmentType),
+                    startingWeight: def?.resolvedStartingWeight ?? snap.startingWeight ?? ExerciseDefinition.defaultStartingWeight(for: equipmentType),
+                    loadTrackingMode: loadTrackingMode,
+                    isTimed: isTimed,
+                    sets: [DraftSet()],
+                    restSeconds: 90
+                )
             }
     }
 
@@ -292,16 +317,20 @@ final class ActiveWorkoutViewModel {
             let defDescriptor = FetchDescriptor<ExerciseDefinition>(
                 predicate: #Predicate { $0.name == name }
             )
-            let def = (try? modelContext.fetch(defDescriptor))?.first
-            let isTimed         = def?.isTimed ?? false
-            let weightIncrement = def?.resolvedWeightIncrement ?? 2.5
-            let equipmentType   = def?.equipmentType ?? ""
+            let def = (try? modelContext.fetch(defDescriptor))?.first ?? ExerciseSeeder.defaultDefinition(named: name)
+            let isTimed         = def?.isTimed ?? snapshot.isTimed
+            let equipmentType   = def?.equipmentType ?? snapshot.equipmentType ?? ""
+            let weightIncrement = def?.resolvedWeightIncrement ?? snapshot.weightIncrement ?? ExerciseDefinition.defaultIncrement(for: equipmentType)
+            let startingWeight  = def?.resolvedStartingWeight ?? snapshot.startingWeight ?? ExerciseDefinition.defaultStartingWeight(for: equipmentType)
+            let loadTrackingMode = def?.loadTrackingMode ?? snapshot.loadTrackingMode
 
             // Reconstruct each persisted set as a logged DraftSet.
             let sortedRecords = snapshot.sets.sorted { $0.loggedAt < $1.loggedAt }
             var draftSets: [DraftSet] = sortedRecords.map { record in
                 var draft = DraftSet()
-                draft.weightText = formatWeight(record.weight)
+                if loadTrackingMode != .none {
+                    draft.weightText = formatWeight(record.weight)
+                }
                 if isTimed {
                     draft.durationText = record.duration.map { "\(Int($0))" } ?? "0"
                 } else {
@@ -330,6 +359,8 @@ final class ActiveWorkoutViewModel {
                     exerciseName:    name,
                     equipmentType:   equipmentType,
                     weightIncrement: weightIncrement,
+                    startingWeight:  startingWeight,
+                    loadTrackingMode: loadTrackingMode,
                     isTimed:         isTimed,
                     sets:            sets,
                     snapshot:        snapshot,
@@ -342,7 +373,9 @@ final class ActiveWorkoutViewModel {
             // Build a blank set seeded from the last logged set (weight/reps carry forward).
             var blankNext = DraftSet()
             if let last = sortedRecords.last {
-                blankNext.weightText = formatWeight(last.weight)
+                if loadTrackingMode != .none {
+                    blankNext.weightText = formatWeight(last.weight)
+                }
                 if isTimed {
                     blankNext.durationText = last.duration.map { "\(Int($0))" } ?? "30"
                 } else {
@@ -372,6 +405,8 @@ final class ActiveWorkoutViewModel {
                 exerciseName:    name,
                 equipmentType:   equipmentType,
                 weightIncrement: weightIncrement,
+                startingWeight:  startingWeight,
+                loadTrackingMode: loadTrackingMode,
                 isTimed:         isTimed,
                 sets:            draftSets,
                 snapshot:        snapshot,
@@ -424,7 +459,9 @@ final class ActiveWorkoutViewModel {
         // Last session's actual reps/duration always win — more accurate than the routine target.
         for i in exercise.sets.indices {
             let source = i < sortedSets.count ? sortedSets[i] : sortedSets[sortedSets.count - 1]
-            exercise.sets[i].weightText = formatWeight(source.weight)
+            if exercise.tracksWeight {
+                exercise.sets[i].weightText = formatWeight(source.weight)
+            }
             if exercise.isTimed {
                 exercise.sets[i].durationText = source.duration.map { "\(Int($0))" } ?? "30"
             } else {
@@ -459,9 +496,11 @@ final class ActiveWorkoutViewModel {
         }
 
         let descriptor = FetchDescriptor<ExerciseDefinition>(predicate: #Predicate { $0.name == name })
-        let def = (try? modelContext.fetch(descriptor))?.first
+        let def = (try? modelContext.fetch(descriptor))?.first ?? ExerciseSeeder.defaultDefinition(named: name)
         let equipmentType = def?.equipmentType ?? ""
-        let weightIncrement = def?.weightIncrement ?? ExerciseDefinition.defaultIncrement(for: equipmentType)
+        let weightIncrement = def?.resolvedWeightIncrement ?? ExerciseDefinition.defaultIncrement(for: equipmentType)
+        let startingWeight = def?.resolvedStartingWeight ?? ExerciseDefinition.defaultStartingWeight(for: equipmentType)
+        let loadTrackingMode = def?.loadTrackingMode ?? .externalWeight
         let isTimed = def?.isTimed ?? false
         // Preserve set count; clear logged state — new exercise starts fresh
         let setCount = max(1, draftExercises[index].sets.count)
@@ -470,6 +509,8 @@ final class ActiveWorkoutViewModel {
             exerciseName: name,
             equipmentType: equipmentType,
             weightIncrement: weightIncrement,
+            startingWeight: startingWeight,
+            loadTrackingMode: loadTrackingMode,
             isTimed: isTimed,
             sets: sets
         )
@@ -482,19 +523,31 @@ final class ActiveWorkoutViewModel {
         guard draftExercises.indices.contains(index) else { return }
         let name = draftExercises[index].exerciseName
         let descriptor = FetchDescriptor<ExerciseDefinition>(predicate: #Predicate { $0.name == name })
-        guard let def = (try? modelContext.fetch(descriptor))?.first else { return }
-        draftExercises[index].weightIncrement = def.weightIncrement ?? ExerciseDefinition.defaultIncrement(for: def.equipmentType)
+        guard let def = (try? modelContext.fetch(descriptor))?.first ?? ExerciseSeeder.defaultDefinition(named: name) else { return }
+        draftExercises[index].weightIncrement = def.resolvedWeightIncrement
+        draftExercises[index].startingWeight = def.resolvedStartingWeight
+        draftExercises[index].loadTrackingMode = def.loadTrackingMode
         draftExercises[index].equipmentType = def.equipmentType
         draftExercises[index].isTimed = def.isTimed
     }
 
     func addExercise(named name: String) {
         let descriptor = FetchDescriptor<ExerciseDefinition>(predicate: #Predicate { $0.name == name })
-        let def = (try? modelContext.fetch(descriptor))?.first
+        let def = (try? modelContext.fetch(descriptor))?.first ?? ExerciseSeeder.defaultDefinition(named: name)
         let equipmentType = def?.equipmentType ?? ""
-        let weightIncrement = def?.weightIncrement ?? ExerciseDefinition.defaultIncrement(for: equipmentType)
+        let weightIncrement = def?.resolvedWeightIncrement ?? ExerciseDefinition.defaultIncrement(for: equipmentType)
+        let startingWeight = def?.resolvedStartingWeight ?? ExerciseDefinition.defaultStartingWeight(for: equipmentType)
+        let loadTrackingMode = def?.loadTrackingMode ?? .externalWeight
         let isTimed = def?.isTimed ?? false
-        var draft = DraftExercise(exerciseName: name, equipmentType: equipmentType, weightIncrement: weightIncrement, isTimed: isTimed, sets: [DraftSet(), DraftSet(), DraftSet()])
+        var draft = DraftExercise(
+            exerciseName: name,
+            equipmentType: equipmentType,
+            weightIncrement: weightIncrement,
+            startingWeight: startingWeight,
+            loadTrackingMode: loadTrackingMode,
+            isTimed: isTimed,
+            sets: [DraftSet(), DraftSet(), DraftSet()]
+        )
         applyPreviousPerformance(to: &draft)
         draftExercises.append(draft)
         UISelectionFeedbackGenerator().selectionChanged()
@@ -608,8 +661,10 @@ final class ActiveWorkoutViewModel {
               !draftExercises[eIdx].sets[sIdx].isLogged else { return }
 
         let draft = draftExercises[eIdx].sets[sIdx]
-        let isTimed = draftExercises[eIdx].isTimed
-        let weight = Double(draft.weightText) ?? 0
+        let exercise = draftExercises[eIdx]
+        let isTimed = exercise.isTimed
+        let tracksWeight = exercise.tracksWeight
+        let weight = tracksWeight ? (Double(draft.weightText) ?? 0) : 0
         let reps = isTimed ? 0 : (Int(draft.repsText) ?? 0)
         let duration: Double? = isTimed ? Double(draft.durationText) : nil
 
@@ -662,10 +717,16 @@ final class ActiveWorkoutViewModel {
                 guard isBlank else { continue }
                 draftExercises[eIdx].sets[i].durationText = draft.durationText
             } else {
-                let isBlank = draftExercises[eIdx].sets[i].weightText.isEmpty ||
-                              draftExercises[eIdx].sets[i].weightText == "0"
-                guard isBlank else { continue }
-                draftExercises[eIdx].sets[i].weightText = draft.weightText
+                if tracksWeight {
+                    let isBlank = draftExercises[eIdx].sets[i].weightText.isEmpty ||
+                                  draftExercises[eIdx].sets[i].weightText == "0"
+                    guard isBlank else { continue }
+                    draftExercises[eIdx].sets[i].weightText = draft.weightText
+                } else {
+                    let isBlank = draftExercises[eIdx].sets[i].repsText.isEmpty ||
+                                  draftExercises[eIdx].sets[i].repsText == "0"
+                    guard isBlank else { continue }
+                }
                 draftExercises[eIdx].sets[i].repsText = draft.repsText
             }
         }
@@ -834,28 +895,16 @@ final class ActiveWorkoutViewModel {
     func adjustWeight(exerciseIndex eIdx: Int, setIndex sIdx: Int, increment: Bool) {
         guard draftExercises.indices.contains(eIdx),
               draftExercises[eIdx].sets.indices.contains(sIdx) else { return }
+        guard draftExercises[eIdx].tracksWeight else { return }
         let step = draftExercises[eIdx].weightIncrement
         let current = Double(draftExercises[eIdx].sets[sIdx].weightText) ?? 0
         if increment && current == 0 {
-            let start = firstTapDefault(for: draftExercises[eIdx].equipmentType)
+            let start = draftExercises[eIdx].startingWeight
             draftExercises[eIdx].sets[sIdx].weightText = formatWeight(start)
             return
         }
         let next = increment ? current + step : max(0, current - step)
         draftExercises[eIdx].sets[sIdx].weightText = formatWeight(next)
-    }
-
-    /// Starting weight for the stepper when a set has no value yet.
-    private func firstTapDefault(for equipmentType: String) -> Double {
-        switch equipmentType {
-        case "Barbell":    return 45   // empty bar
-        case "Dumbbell":   return 10
-        case "Cable":      return 20
-        case "Machine":    return 45
-        case "Kettlebell": return 35
-        case "Bodyweight": return 0    // added weight, stay at 0
-        default:           return 45
-        }
     }
 
     func adjustReps(exerciseIndex eIdx: Int, setIndex sIdx: Int, increment: Bool) {
@@ -872,7 +921,7 @@ final class ActiveWorkoutViewModel {
 
     /// The next unlogged set for the rest timer card — same position as `autoFocus`
     /// so the command bar and rest timer always agree on what's coming next.
-    var nextUnloggedFocus: (exerciseIndex: Int, setIndex: Int, weightText: String, repsText: String, durationText: String, isTimed: Bool, exerciseName: String, totalSets: Int)? {
+    var nextUnloggedFocus: (exerciseIndex: Int, setIndex: Int, weightText: String, repsText: String, durationText: String, isTimed: Bool, tracksWeight: Bool, exerciseName: String, totalSets: Int)? {
         guard let f = autoFocus,
               draftExercises.indices.contains(f.exerciseIndex),
               draftExercises[f.exerciseIndex].sets.indices.contains(f.setIndex)
@@ -886,6 +935,7 @@ final class ActiveWorkoutViewModel {
             repsText: set.repsText,
             durationText: set.durationText,
             isTimed: exercise.isTimed,
+            tracksWeight: exercise.tracksWeight,
             exerciseName: exercise.exerciseName,
             totalSets: exercise.sets.count
         )
@@ -968,15 +1018,19 @@ final class ActiveWorkoutViewModel {
             exerciseSetCount = draftExercise.sets.count
             focusedSetLabel = "Set \(focusedSetNumber!) of \(exerciseSetCount!)"
             if draftExercise.isTimed, !draftSet.durationText.isEmpty {
-                focusedSetDetail = "\(draftSet.durationText)s"
+                if draftExercise.tracksWeight, !draftSet.weightText.isEmpty {
+                    focusedSetDetail = "\(draftSet.weightText) lb · \(draftSet.durationText)s"
+                } else {
+                    focusedSetDetail = "\(draftSet.durationText)s"
+                }
             } else {
                 let weight = draftSet.weightText
                 let reps = draftSet.repsText
-                if !weight.isEmpty && !reps.isEmpty {
+                if draftExercise.tracksWeight && !weight.isEmpty && !reps.isEmpty {
                     focusedSetDetail = "\(weight) × \(reps)"
                 } else if !reps.isEmpty {
                     focusedSetDetail = "\(reps) reps"
-                } else if !weight.isEmpty {
+                } else if draftExercise.tracksWeight && !weight.isEmpty {
                     focusedSetDetail = "\(weight)"
                 } else {
                     focusedSetDetail = nil
@@ -1038,6 +1092,11 @@ final class ActiveWorkoutViewModel {
         if let existing = draftExercises[eIdx].snapshot { return existing }
         let snap = ExerciseSnapshot(
             exerciseName: draftExercises[eIdx].exerciseName,
+            equipmentType: draftExercises[eIdx].equipmentType,
+            weightIncrement: draftExercises[eIdx].weightIncrement,
+            startingWeight: draftExercises[eIdx].startingWeight,
+            loadTrackingModeRaw: draftExercises[eIdx].loadTrackingMode.rawValue,
+            isTimed: draftExercises[eIdx].isTimed,
             order: eIdx,
             workoutSession: session
         )

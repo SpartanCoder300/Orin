@@ -3,6 +3,12 @@
 import Foundation
 import SwiftData
 
+enum LoadTrackingMode: String, CaseIterable, Codable {
+    case none
+    case externalWeight
+    case bodyweightPlusLoad
+}
+
 @Model
 final class ExerciseDefinition {
     @Attribute(.unique) var id: UUID
@@ -18,6 +24,13 @@ final class ExerciseDefinition {
     /// Optional so lightweight migration succeeds for existing rows (nil → resolvedWeightIncrement
     /// returns the equipment default, preserving correct behaviour without data loss).
     var weightIncrement: Double?
+    /// Optional first-tap weight in lbs for a blank set. Nil = use equipment-type default.
+    /// Some implements (EZ bar, trap bar, selectorized stacks) need an explicit
+    /// start load so repeated increments line up with real-world equipment.
+    var startingWeight: Double?
+    /// Controls whether the exercise tracks no weight, external load only,
+    /// or bodyweight plus added load.
+    var loadTrackingModeRaw: String = LoadTrackingMode.externalWeight.rawValue
     /// True for exercises measured by duration (planks, holds) rather than reps.
     /// Defaults to false — safe lightweight migration for existing records.
     var isTimed: Bool = false
@@ -36,6 +49,8 @@ final class ExerciseDefinition {
         previousPR: Double = .zero,
         prDate: Date? = nil,
         weightIncrement: Double? = nil,
+        startingWeight: Double? = nil,
+        loadTrackingMode: LoadTrackingMode = .externalWeight,
         isTimed: Bool = false
     ) {
         self.id = id
@@ -48,6 +63,8 @@ final class ExerciseDefinition {
         self.previousPR = previousPR
         self.prDate = prDate
         self.weightIncrement = weightIncrement
+        self.startingWeight = startingWeight
+        self.loadTrackingModeRaw = loadTrackingMode.rawValue
         self.isTimed = isTimed
     }
 
@@ -55,6 +72,18 @@ final class ExerciseDefinition {
     var resolvedWeightIncrement: Double {
         weightIncrement ?? ExerciseDefinition.defaultIncrement(for: equipmentType)
     }
+
+    /// Effective starting weight: explicit override if set, otherwise equipment-type default.
+    var resolvedStartingWeight: Double {
+        startingWeight ?? ExerciseDefinition.defaultStartingWeight(for: equipmentType)
+    }
+
+    var loadTrackingMode: LoadTrackingMode {
+        get { LoadTrackingMode(rawValue: loadTrackingModeRaw) ?? .externalWeight }
+        set { loadTrackingModeRaw = newValue.rawValue }
+    }
+
+    var tracksWeight: Bool { loadTrackingMode != .none }
 
     /// Epley estimated one-rep max: weight × (1 + reps / 30).
     /// Returns weight as-is for 0–1 reps or 0 weight.
@@ -67,12 +96,27 @@ final class ExerciseDefinition {
     static func defaultIncrement(for equipmentType: String) -> Double {
         switch equipmentType {
         case "Barbell":    return 2.5   // smallest standard plate pair
-        case "Dumbbell":   return 2.0   // typical dumbbell rack step
-        case "Cable":      return 2.5   // standard cable stack pin increment
-        case "Machine":    return 5.0   // typical plate-loaded / selectorised step
-        case "Kettlebell": return 4.0   // ~4kg jump between standard bells
+        case "Dumbbell":   return 2.5   // safer default than 5; some racks include 2.5 lb jumps
+        case "Cable":      return 5.0   // common effective jump on commercial cable stacks
+        case "Machine":    return 5.0   // conservative selectorized-machine default
+        case "Kettlebell": return 5.0   // common lb-labelled increment in US gyms
         case "Bodyweight": return 2.5   // added weight belt
+        case "Band":       return 5.0
         default:           return 2.5
+        }
+    }
+
+    /// Starting load for the first tap on a blank set.
+    static func defaultStartingWeight(for equipmentType: String) -> Double {
+        switch equipmentType {
+        case "Barbell":    return 45
+        case "Dumbbell":   return 10
+        case "Cable":      return 10
+        case "Machine":    return 10
+        case "Kettlebell": return 15
+        case "Bodyweight": return 0
+        case "Band":       return 0
+        default:           return 45
         }
     }
 

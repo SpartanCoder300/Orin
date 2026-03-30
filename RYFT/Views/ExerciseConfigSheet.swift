@@ -52,17 +52,19 @@ struct ExerciseConfigSheet: View {
                     }
                 }
 
-                Section("Weight Increment") {
-                    let incrementBinding = Binding<Double>(
-                        get: { entry.exercise.resolvedWeightIncrement },
-                        set: { entry.exercise.weightIncrement = $0 }
-                    )
-                    Picker("Increment", selection: incrementBinding) {
-                        ForEach(incrementOptions, id: \.value) { option in
-                            Text(option.label).tag(option.value)
+                if entry.exercise.tracksWeight {
+                    Section("Weight Increment") {
+                        let incrementBinding = Binding<Double>(
+                            get: { entry.exercise.resolvedWeightIncrement },
+                            set: { entry.exercise.weightIncrement = $0 }
+                        )
+                        Picker("Increment", selection: incrementBinding) {
+                            ForEach(incrementOptions, id: \.value) { option in
+                                Text(option.label).tag(option.value)
+                            }
                         }
+                        .pickerStyle(.menu)
                     }
-                    .pickerStyle(.menu)
                 }
 
                 Section {
