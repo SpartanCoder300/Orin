@@ -31,6 +31,13 @@ struct LibraryRow: View {
 
                 Spacer()
 
+                if exercise.tracksWeight && exercise.currentPR > 0 {
+                    Text(formattedPR(exercise.currentPR))
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .monospacedDigit()
+                        .foregroundStyle(Color.textFaint)
+                }
+
                 if exercise.isTimed {
                     Image(systemName: "timer")
                         .font(.system(size: 11, weight: .medium))
@@ -58,6 +65,11 @@ struct LibraryRow: View {
                 Label("Edit Exercise", systemImage: "pencil")
             }
         }
+    }
+
+    private func formattedPR(_ weight: Double) -> String {
+        if weight == weight.rounded() { return "\(Int(weight)) lbs" }
+        return String(format: "%.1f lbs", weight)
     }
 
     private var subtitleText: String {

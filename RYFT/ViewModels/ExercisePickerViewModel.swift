@@ -56,7 +56,11 @@ final class ExercisePickerViewModel {
 
         return filtered.sorted {
             if $0.isCustom != $1.isCustom { return $0.isCustom }
-            return scoreFor($0) > scoreFor($1)
+            let fa = scoreFor($0), fb = scoreFor($1)
+            if fa != fb { return fa > fb }
+            let pa = popularityScore(for: $0.name), pb = popularityScore(for: $1.name)
+            if pa != pb { return pa > pb }
+            return $0.name < $1.name
         }
     }
 
@@ -109,6 +113,88 @@ final class ExercisePickerViewModel {
     private func scoreFor(_ def: ExerciseDefinition) -> Double {
         frecencyScores[def.name] ?? 0
     }
+
+    private func popularityScore(for name: String) -> Int {
+        Self.popularityScores[name] ?? 0
+    }
+
+    /// Static popularity tiers for seeded exercises.
+    /// 3 = major compound lifts everyone knows
+    /// 2 = common accessories / second-tier compounds
+    /// 1 = less common but still frequently programmed
+    /// 0 (default) = niche / specialized
+    private static let popularityScores: [String: Int] = [
+        // Tier 3 — the big lifts
+        "Barbell Bench Press": 3,
+        "Barbell Back Squat": 3,
+        "Barbell Deadlift": 3,
+        "Barbell Overhead Press": 3,
+        "Bent-Over Barbell Row": 3,
+        "Pull-Up": 3,
+        "Chin-Up": 3,
+
+        // Tier 2 — very common
+        "Incline Barbell Bench Press": 2,
+        "Dumbbell Bench Press": 2,
+        "Incline Dumbbell Press": 2,
+        "Lat Pulldown": 2,
+        "Seated Cable Row": 2,
+        "Single-Arm Dumbbell Row": 2,
+        "Leg Press": 2,
+        "Romanian Deadlift": 2,
+        "Hip Thrust": 2,
+        "Bulgarian Split Squat": 2,
+        "Walking Lunge": 2,
+        "Barbell Curl": 2,
+        "Dumbbell Curl": 2,
+        "Hammer Curl": 2,
+        "Triceps Pushdown": 2,
+        "Rope Pushdown": 2,
+        "Close-Grip Bench Press": 2,
+        "Skull Crusher": 2,
+        "Lateral Raise": 2,
+        "Face Pull": 2,
+        "Seated Dumbbell Shoulder Press": 2,
+        "Cable Fly": 2,
+        "Leg Extension": 2,
+        "Lying Leg Curl": 2,
+        "Plank": 2,
+
+        // Tier 1 — common enough
+        "Sumo Deadlift": 1,
+        "Trap Bar Deadlift": 1,
+        "Front Squat": 1,
+        "Goblet Squat": 1,
+        "Hack Squat": 1,
+        "Dumbbell Romanian Deadlift": 1,
+        "Arnold Press": 1,
+        "EZ Bar Curl": 1,
+        "Cable Curl": 1,
+        "Machine Preacher Curl": 1,
+        "Overhead Dumbbell Extension": 1,
+        "Overhead Cable Extension": 1,
+        "Machine Chest Press": 1,
+        "Pec Deck": 1,
+        "Incline Dumbbell Curl": 1,
+        "Cable Lateral Raise": 1,
+        "Reverse Pec Deck": 1,
+        "Seated Leg Curl": 1,
+        "Standing Calf Raise": 1,
+        "Seated Calf Raise": 1,
+        "Hanging Leg Raise": 1,
+        "Ab Wheel Rollout": 1,
+        "Cable Crunch": 1,
+        "T-Bar Row": 1,
+        "Straight-Arm Pulldown": 1,
+        "Dumbbell Fly": 1,
+        "Concentration Curl": 1,
+        "Barbell Shrug": 1,
+        "Dumbbell Shrug": 1,
+        "Farmer Carry": 1,
+        "Step-Up": 1,
+        "Reverse Lunge": 1,
+        "Weighted Dip": 1,
+    ]
 
     func fuzzyMatches(query: String, in text: String) -> Bool {
         guard !query.isEmpty else { return true }
