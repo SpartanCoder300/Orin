@@ -138,33 +138,15 @@ struct SwipeValueControl: View {
 
     var body: some View {
         ZStack(alignment: .bottom) {
-            // Range track — shows position in min/max during drag
-            if isDragging {
-                GeometryReader { geo in
-                    let progress = (displayValue - minValue) / max(1, maxValue - minValue)
-                    ZStack(alignment: .leading) {
-                        Capsule()
-                            .fill(Color.white.opacity(0.08))
-                            .frame(height: 2)
-                        Capsule()
-                            .fill(Color.white.opacity(0.3))
-                            .frame(width: geo.size.width * CGFloat(progress), height: 2)
-                    }
-                }
-                .frame(height: 2)
-                .padding(.horizontal, Spacing.md)
-                .transition(.opacity)
-            }
-
-            HStack(spacing: 0) {
+            HStack(spacing: isDragging ? 6 : 0) {
                 Image(systemName: "chevron.left")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(size: isDragging ? 10 : 11, weight: .semibold))
                     .foregroundStyle(Color.textFaint)
                     .opacity(isDragging ? (lastRawSteps <= 0 ? 0.9 : 0.2) : 0)
                     .scaleEffect(isDragging && lastRawSteps < 0
                         ? 1.0 + min(CGFloat(abs(lastRawSteps)) * 0.08, 0.7) : 1.0)
                     .animation(.spring(response: 0.1, dampingFraction: 0.7), value: lastRawSteps)
-                    .frame(width: 24)
+                    .frame(width: isDragging ? 14 : 24)
 
                 VStack(spacing: 2) {
                     if isEditing {
@@ -203,20 +185,22 @@ struct SwipeValueControl: View {
                 .foregroundStyle(Color.textPrimary)
                 .scaleEffect(milestoneFlash ? 1.15 : 1.0)
                 .animation(.spring(response: 0.12, dampingFraction: 0.5), value: milestoneFlash)
-                .frame(maxWidth: .infinity)
+                .frame(minWidth: isDragging ? 72 : 0)
 
                 Image(systemName: "chevron.right")
-                    .font(.system(size: 11, weight: .semibold))
+                    .font(.system(size: isDragging ? 10 : 11, weight: .semibold))
                     .foregroundStyle(Color.textFaint)
                     .opacity(isDragging ? (lastRawSteps >= 0 ? 0.9 : 0.2) : 0)
                     .scaleEffect(isDragging && lastRawSteps > 0
                         ? 1.0 + min(CGFloat(abs(lastRawSteps)) * 0.08, 0.7) : 1.0)
                     .animation(.spring(response: 0.1, dampingFraction: 0.7), value: lastRawSteps)
-                    .frame(width: 24)
+                    .frame(width: isDragging ? 14 : 24)
             }
             // Glass pill — appears only when floating so the number reads clearly
             // over whatever is behind the card. Fades in with the same spring as the lift.
+            .padding(.horizontal, isDragging ? Spacing.sm : 0)
             .padding(.vertical, isDragging ? Spacing.xs : 0)
+            .fixedSize(horizontal: isDragging, vertical: false)
             .background {
                 RoundedRectangle(cornerRadius: Radius.large, style: .continuous)
                     .glassEffect(in: RoundedRectangle(cornerRadius: Radius.large, style: .continuous))
@@ -228,6 +212,7 @@ struct SwipeValueControl: View {
             .offset(x: rubberOffset, y: isDragging ? -56 : 0)
             .scaleEffect(isDragging ? 1.04 : 1.0)
             .animation(.spring(response: 0.2, dampingFraction: 0.75), value: isDragging)
+            .frame(maxWidth: .infinity)
         }
         .animation(.spring(response: 0.2, dampingFraction: 0.75), value: isDragging)
         .frame(maxWidth: .infinity, minHeight: 52, maxHeight: .infinity)
