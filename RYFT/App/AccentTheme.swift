@@ -44,7 +44,7 @@ enum AccentTheme: String, CaseIterable, Identifiable {
     var accentRGB: (r: Double, g: Double, b: Double) {
         switch self {
         case .midnight: return (0.431, 0.447, 0.949) // #6E72F2 deep indigo
-        case .graphite: return (0.498, 0.565, 0.651) // #7F90A6 steel slate
+        case .graphite: return (0.498, 0.714, 0.761) // #7FB6C2 washed cyan
         case .ember:    return (0.722, 0.455, 0.196) // #B87432 burnished copper
         case .mesh:     return (0.780, 0.647, 0.416) // #C7A56A champagne brass
         }
