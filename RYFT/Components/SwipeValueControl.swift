@@ -70,6 +70,9 @@ struct SwipeValueControl: View {
     var pixelsPerStep: Double = 14
     /// Specific values that trigger a stronger milestone haptic (e.g. plate combinations for barbell).
     var milestones: Set<Double>? = nil
+    /// Called when the user starts interacting, either by tapping into manual entry
+    /// or by beginning a horizontal swipe.
+    var onInteractionStart: (() -> Void)? = nil
 
     // MARK: Gesture state
 
@@ -235,6 +238,7 @@ struct SwipeValueControl: View {
         }
         .onTapGesture {
             guard !isEditing else { return }
+            onInteractionStart?()
             editText = text.isEmpty ? (firstTapDefault.map { formatted($0) } ?? "") : text
             isEditing = true
             isEditFocused = true
@@ -268,6 +272,7 @@ struct SwipeValueControl: View {
                     dragStartValue = dragBase
                     previousTranslation = value.translation.width  // seed so first delta is zero
                     isDragging = true
+                    onInteractionStart?()
                     didCommit = false
                     selectionGen.prepare()
                     impactGen.prepare()

@@ -92,6 +92,7 @@ final class ActiveWorkoutViewModel {
     let restTimer = RestTimerState()
     private(set) var lastLoggedFocus: SetFocus? = nil
     private(set) var lastLoggedExerciseIndex: Int? = nil
+    private(set) var focusRevealRequestID = UUID()
     /// Set to the record ID of the most recently detected PR. Cleared after the celebration window.
     private(set) var lastPRSetID: UUID? = nil
     /// Rest duration stored when a PR is detected so it starts after the PR overlay is dismissed.
@@ -150,6 +151,11 @@ final class ActiveWorkoutViewModel {
               !draftExercises[exerciseIndex].sets[setIndex].isLogged else { return }
         manualFocus = SetFocus(exerciseIndex: exerciseIndex, setIndex: setIndex)
         UISelectionFeedbackGenerator().selectionChanged()
+    }
+
+    func requestRevealCurrentFocus() {
+        guard currentFocus != nil else { return }
+        focusRevealRequestID = UUID()
     }
 
     // MARK: - Private
@@ -543,6 +549,7 @@ final class ActiveWorkoutViewModel {
         draftExercises[index] = replacement
         persistDraftState()
         activityManager.update(currentActivityState)
+        requestRevealCurrentFocus()
     }
 
     func syncDefinition(at index: Int) {
@@ -579,6 +586,7 @@ final class ActiveWorkoutViewModel {
         draftExercises.append(draft)
         persistDraftState()
         UISelectionFeedbackGenerator().selectionChanged()
+        requestRevealCurrentFocus()
     }
 
     func copySetFromAbove(exerciseIndex eIdx: Int, setIndex sIdx: Int) {
@@ -593,6 +601,7 @@ final class ActiveWorkoutViewModel {
         draftExercises[eIdx].sets[sIdx].durationText = above.durationText
         persistDraftState()
         UISelectionFeedbackGenerator().selectionChanged()
+        requestRevealCurrentFocus()
     }
 
     func removeSet(exerciseIndex eIdx: Int, setIndex sIdx: Int) {
@@ -626,6 +635,7 @@ final class ActiveWorkoutViewModel {
         persistDraftState()
         try? modelContext.save()
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        requestRevealCurrentFocus()
     }
 
     func addSet(toExerciseAt index: Int) {
@@ -640,6 +650,7 @@ final class ActiveWorkoutViewModel {
         draftExercises[index].sets.append(new)
         persistDraftState()
         UISelectionFeedbackGenerator().selectionChanged()
+        requestRevealCurrentFocus()
     }
 
     func removeExercise(at index: Int) {
@@ -674,6 +685,7 @@ final class ActiveWorkoutViewModel {
         draftExercises.swapAt(index, target)
         persistDraftState()
         activityManager.update(currentActivityState)
+        requestRevealCurrentFocus()
     }
 
     enum MoveDirection { case up, down }
@@ -689,6 +701,7 @@ final class ActiveWorkoutViewModel {
         }
         draftExercises[index].sets.append(dropset)
         persistDraftState()
+        requestRevealCurrentFocus()
     }
 
     func logSet(exerciseIndex eIdx: Int, setIndex sIdx: Int) {
@@ -784,6 +797,7 @@ final class ActiveWorkoutViewModel {
                 pendingRestDuration = TimeInterval(draftExercises[eIdx].restSeconds)
             }
         }
+        requestRevealCurrentFocus()
     }
 
     /// Logs the currently focused set. Returns true if a set was logged.

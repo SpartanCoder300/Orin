@@ -174,6 +174,13 @@ struct AppView: View {
             guard !isRunningInPreview else { return }
             switch newPhase {
             case .active:
+                if appState.workout.hasActiveWorkout {
+                    appState.workout.isShowingFullWorkout = true
+                    Task { @MainActor in
+                        try? await Task.sleep(for: .milliseconds(200))
+                        appState.workout.viewModel?.requestRevealCurrentFocus()
+                    }
+                }
                 appState.workout.viewModel?.handleForeground()
             case .inactive, .background:
                 appState.workout.viewModel?.persistDraftState()

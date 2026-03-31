@@ -63,6 +63,16 @@ struct ActiveWorkoutView: View {
                             )
                         }
                     }
+                    .onChange(of: vm.focusRevealRequestID) { _, _ in
+                        guard let focus = vm.currentFocus,
+                              vm.draftExercises.indices.contains(focus.exerciseIndex) else { return }
+                        withAnimation(Motion.standardSpring) {
+                            proxy.scrollTo(
+                                vm.draftExercises[focus.exerciseIndex].id,
+                                anchor: .center
+                            )
+                        }
+                    }
                 }
                 .themedBackground()
                 .overlay(alignment: .bottom) {

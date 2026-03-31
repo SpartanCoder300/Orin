@@ -91,7 +91,8 @@ struct ActiveWorkoutCommandPanel: View {
                             maxValue: 999,
                             isInteger: false,
                             firstTapDefault: exercise.startingWeight,
-                            milestones: weightMilestones(for: exercise.equipmentType)
+                            milestones: weightMilestones(for: exercise.equipmentType),
+                            onInteractionStart: { vm.requestRevealCurrentFocus() }
                         )
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
 
@@ -119,7 +120,8 @@ struct ActiveWorkoutCommandPanel: View {
                             minValue: 5,
                             maxValue: 600,
                             isInteger: true,
-                            firstTapDefault: 30
+                            firstTapDefault: 30,
+                            onInteractionStart: { vm.requestRevealCurrentFocus() }
                         )
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                     } else {
@@ -143,7 +145,8 @@ struct ActiveWorkoutCommandPanel: View {
                             minValue: 0,
                             maxValue: 50,
                             isInteger: true,
-                            firstTapDefault: 5
+                            firstTapDefault: 5,
+                            onInteractionStart: { vm.requestRevealCurrentFocus() }
                         )
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                     }
