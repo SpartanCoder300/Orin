@@ -20,11 +20,11 @@ struct ThemedBackgroundModifier: ViewModifier {
                         // like restrained top light rather than a full-screen wash.
                         EllipticalGradient(
                             colors: [
-                                theme.accentColor.opacity(0.12),
-                                theme.accentColor.opacity(0.06),
+                                theme.accentColor.opacity(0.16),
+                                theme.accentColor.opacity(0.08),
                                 Color.clear
                             ],
-                            center: UnitPoint(x: 0.5, y: -0.16),
+                            center: UnitPoint(x: 0.5, y: -0.10),
                             startRadiusFraction: 0,
                             endRadiusFraction: 0.50
                         )
