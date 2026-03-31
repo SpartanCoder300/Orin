@@ -170,10 +170,7 @@ struct ActiveExerciseCard: View {
 
         }
         .background(Color.white.opacity(0.10), in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
-                .strokeBorder(.white.opacity(0.08), lineWidth: 1)
-        )
+        .proGlass(exerciseIndex: exerciseIndex)
         .alert("Remove \(exercise.exerciseName)?", isPresented: $showingRemoveConfirm) {
             Button("Remove", role: .destructive) {
                 vm.removeExercise(at: exerciseIndex)

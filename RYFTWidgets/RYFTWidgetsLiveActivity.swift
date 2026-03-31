@@ -427,7 +427,7 @@ extension WorkoutActivityAttributes {
 }
 
 extension WorkoutActivityAttributes.ContentState {
-    // Lux / champagne theme
+    // Nova / cosmic periwinkle theme
     fileprivate static var working: WorkoutActivityAttributes.ContentState {
         .init(startedAt: .now.addingTimeInterval(-720),
               currentExercise: "Barbell Bench Press",
@@ -486,13 +486,13 @@ extension WorkoutActivityAttributes.ContentState {
     }
 }
 
-#Preview("Lock Screen - Working (Lux)", as: .content, using: WorkoutActivityAttributes.preview) {
+#Preview("Lock Screen - Working (Nova)", as: .content, using: WorkoutActivityAttributes.preview) {
     RYFTWidgetsLiveActivity()
 } contentStates: {
     WorkoutActivityAttributes.ContentState.working
 }
 
-#Preview("Lock Screen - Resting (Lux)", as: .content, using: WorkoutActivityAttributes.preview) {
+#Preview("Lock Screen - Resting (Nova)", as: .content, using: WorkoutActivityAttributes.preview) {
     RYFTWidgetsLiveActivity()
 } contentStates: {
     WorkoutActivityAttributes.ContentState.resting

@@ -6,12 +6,13 @@ import SwiftUI
 /// Use `.themedBackground()` on every NavigationStack root view.
 struct ThemedBackgroundModifier: ViewModifier {
     @Environment(\.ryftTheme) private var theme
+    var dimmed: Bool = false
 
     func body(content: Content) -> some View {
         content
             .background {
                 if theme == .mesh {
-                    MeshBackgroundView()
+                    MeshBackgroundView(dimmed: dimmed)
                 } else {
                     ZStack {
                         theme.backgroundColor
@@ -61,7 +62,7 @@ struct ThemedBackgroundModifier: ViewModifier {
 }
 
 extension View {
-    func themedBackground() -> some View {
-        modifier(ThemedBackgroundModifier())
+    func themedBackground(dimmed: Bool = false) -> some View {
+        modifier(ThemedBackgroundModifier(dimmed: dimmed))
     }
 }

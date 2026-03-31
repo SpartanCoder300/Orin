@@ -4,73 +4,63 @@ import SwiftUI
 
 /// Color palette and state arrays for the Pro mesh background.
 ///
-/// Three moments. That's it.
-/// 1. Set logged → steel-blue overhead flare
-/// 2. PR → amber floods the screen (two-stage: hot flash → sustained bloom)
-/// 3. Workout complete → gold wash
+/// Two intertwining galaxy clouds form the base — electric blue (left) and
+/// teal-green (right), blending at the top and falling to void below.
 ///
-/// Everything else is warm-neutral charcoal — aged concrete and raw iron,
-/// not colored. Events fire against that neutral so each rep has something
-/// to push against.
+/// Four event moments:
+/// 1. Set logged       → stellar flare (pale blue-white burst)
+/// 2. Exercise done    → brighter flare
+/// 3. PR               → amber supernova (two-stage: hot flash → sustained bloom)
+/// 4. Workout complete / theme intro → electric violet bloom
 enum MeshTheme {
 
-    // MARK: - Warm-Neutral Rest Palette (stone)
-    // Used for the ambient base state and session intensity blend.
-    // No hue bias — like concrete under tungsten. Slightly warm so it
-    // doesn't feel clinical, but reads as "off" compared to any event color.
+    // MARK: - Void
 
-    /// Near-black warm concrete — corners and shadow regions.
-    private static let stone0 = Color(red: 0.038, green: 0.036, blue: 0.032)
-    /// Center shadow — gap between the two light sources.
-    private static let stone1 = Color(red: 0.052, green: 0.050, blue: 0.046)
-    /// Floor reflection — cool-ish, barely visible at rest.
-    private static let stone2 = Color(red: 0.075, green: 0.072, blue: 0.068)
-    /// Overhead tungsten — the single visible light source at rest.
-    private static let stone3 = Color(red: 0.120, green: 0.110, blue: 0.095)
-    /// Bright tungsten — overhead at full draw during a pulse. Same warmth, more output.
-    private static let stoneBright = Color(red: 0.195, green: 0.178, blue: 0.152)
-    /// Peak tungsten — every overhead at full draw. Only used for workout complete.
-    private static let stonePeak = Color(red: 0.285, green: 0.260, blue: 0.222)
+    private static let void0 = Color(red: 0.022, green: 0.020, blue: 0.048)  // near-black
+    private static let void1 = Color(red: 0.035, green: 0.032, blue: 0.068)  // slight lift
 
-    // MARK: - Steel-Blue Event Palette (iron)
-    // Two sub-groups:
-    //
-    // "steel" — gym-light color-temperature shift. Same luminance as the stone
-    //   sources but warm tungsten → cool steel. TC and BC shift color; corners
-    //   barely move. Used for set-logged and exercise-complete.
-    //
-    // "iron" — high-intensity burst. Much brighter. Reserved for workout-started
-    //   and any future peak-intensity moments.
+    // MARK: - Galaxy Base Palette
 
-    // Steel tints: ≈ stone luma, just blue-cast.
-    // steelCorner   ≈ stone0 (2%)  — barely blue, corners stay dark
-    // steelCenter   ≈ stone1 (3%)  — slight blue lift, center shadow
-    // steelFloor    ≈ stone2 (7%)  — floor reflection shifts cool
-    // steelOverhead ≈ stone3 (11%) — overhead shifts from tungsten to steel
-    private static let steelCorner   = Color(red: 0.038, green: 0.042, blue: 0.080)
-    private static let steelCenter   = Color(red: 0.050, green: 0.058, blue: 0.092)
-    private static let steelFloor    = Color(red: 0.058, green: 0.072, blue: 0.122)
-    private static let steelOverhead = Color(red: 0.088, green: 0.108, blue: 0.188)
+    // Blue cloud — left side
+    private static let blueCorner = Color(red: 0.080, green: 0.085, blue: 0.440)  // TL peak
+    private static let blueBlend  = Color(red: 0.095, green: 0.185, blue: 0.430)  // TC midpoint
+    private static let blueDrip   = Color(red: 0.040, green: 0.050, blue: 0.220)  // ML
 
-    // One tier brighter — exercise-complete. Clearly visible step up from set-logged.
-    private static let steelFloorBright    = Color(red: 0.078, green: 0.098, blue: 0.165)
-    private static let steelOverheadBright = Color(red: 0.125, green: 0.155, blue: 0.265)
+    // Teal-green cloud — right side
+    private static let tealCorner = Color(red: 0.035, green: 0.255, blue: 0.255)  // TR peak
+    private static let tealDrip   = Color(red: 0.018, green: 0.138, blue: 0.148)  // MR
 
-    // Iron — high-output burst for workout-started / peak moments.
-    private static let iron0 = Color(red: 0.035, green: 0.040, blue: 0.075)
-    private static let iron1 = Color(red: 0.065, green: 0.080, blue: 0.145)
-    private static let iron2 = Color(red: 0.110, green: 0.135, blue: 0.230)
-    private static let iron3 = Color(red: 0.175, green: 0.210, blue: 0.355)
-    private static let iron4 = Color(red: 0.260, green: 0.305, blue: 0.490)
-    private static let iron5 = Color(red: 0.360, green: 0.415, blue: 0.600)
+    // Bright versions — used in started state and intenseRGB ceiling
+    private static let blueCornerBright = Color(red: 0.115, green: 0.120, blue: 0.580)
+    private static let blueBlendBright  = Color(red: 0.130, green: 0.250, blue: 0.560)
+    private static let tealCornerBright = Color(red: 0.052, green: 0.348, blue: 0.348)
+    private static let blueDripBright   = Color(red: 0.062, green: 0.075, blue: 0.308)
+    private static let tealDripBright   = Color(red: 0.028, green: 0.198, blue: 0.212)
 
-    // MARK: - Amber/PR Palette
+    // MARK: - Stellar Flare (set logged / exercise complete)
+    // Blue-white burst — cuts clearly against the cool galaxy base.
+
+    private static let flareCorner          = Color(red: 0.045, green: 0.042, blue: 0.100)
+    private static let flareCornerTop       = Color(red: 0.148, green: 0.110, blue: 0.320)
+    private static let flareCenter          = Color(red: 0.068, green: 0.060, blue: 0.138)
+    private static let flareOverhead        = Color(red: 0.268, green: 0.395, blue: 0.630)
+    private static let flareCornerTopBright = Color(red: 0.198, green: 0.148, blue: 0.420)
+    private static let flareOverheadBright  = Color(red: 0.348, green: 0.498, blue: 0.740)
+
+    // MARK: - Amber / PR Palette
+    // Warm amber against the cold galaxy — maximum temperature contrast.
 
     private static let amberDeep = Color(red: 0.100, green: 0.055, blue: 0.008)
     private static let amberMid  = Color(red: 0.220, green: 0.125, blue: 0.015)
     private static let amberGlow = Color(red: 0.310, green: 0.185, blue: 0.020)
-    /// Hot flash — the initial PR snap, almost too bright.
     private static let amberHot  = Color(red: 0.460, green: 0.285, blue: 0.030)
+
+    // MARK: - Violet Palette (workout complete + theme intro)
+    // Electric violet bloom — distinct from amber PR, distinct from the cold galaxy base.
+
+    private static let violetDeep   = Color(red: 0.055, green: 0.018, blue: 0.165)
+    private static let violetCorner = Color(red: 0.115, green: 0.038, blue: 0.345)
+    private static let violetCore   = Color(red: 0.320, green: 0.065, blue: 0.680)
 
     // MARK: - Session Intensity Interpolation
 
@@ -83,34 +73,29 @@ enum MeshTheme {
         }
     }
 
-    // Resting layout — two warm sources, everything else near-black:
-    //   TC = overhead tungsten (brightest)
-    //   BC = floor reflection (dimmer, cooler)
-    //   Center = shadow between sources
-    //   Corners/sides = near-black concrete
+    // TL, TC, TR, ML, MC, MR, BL, BC, BR
     private static let baseRGB: [RGB] = [
-        RGB(r: 0.038, g: 0.036, b: 0.032),  // TL — dark corner (stone0)
-        RGB(r: 0.120, g: 0.110, b: 0.095),  // TC — overhead tungsten (stone3)
-        RGB(r: 0.038, g: 0.036, b: 0.032),  // TR — dark corner (stone0)
-        RGB(r: 0.038, g: 0.036, b: 0.032),  // ML — dark side (stone0)
-        RGB(r: 0.052, g: 0.050, b: 0.046),  // center — shadow (stone1)
-        RGB(r: 0.038, g: 0.036, b: 0.032),  // MR — dark side (stone0)
-        RGB(r: 0.038, g: 0.036, b: 0.032),  // BL — dark corner (stone0)
-        RGB(r: 0.075, g: 0.072, b: 0.068),  // BC — floor reflection (stone2)
-        RGB(r: 0.038, g: 0.036, b: 0.032),  // BR — dark corner (stone0)
+        RGB(r: 0.080, g: 0.085, b: 0.440),  // TL — blue cloud peak
+        RGB(r: 0.095, g: 0.185, b: 0.430),  // TC — blue-teal blend
+        RGB(r: 0.035, g: 0.255, b: 0.255),  // TR — teal cloud peak
+        RGB(r: 0.040, g: 0.050, b: 0.220),  // ML — blue drip
+        RGB(r: 0.035, g: 0.032, b: 0.068),  // MC — void center
+        RGB(r: 0.018, g: 0.138, b: 0.148),  // MR — teal drip
+        RGB(r: 0.022, g: 0.020, b: 0.048),  // BL — void anchor
+        RGB(r: 0.022, g: 0.020, b: 0.048),  // BC — void anchor
+        RGB(r: 0.022, g: 0.020, b: 0.048),  // BR — void anchor
     ]
 
-    // At full intensity both sources brighten — still warm, just more presence.
     private static let intenseRGB: [RGB] = [
-        RGB(r: 0.065, g: 0.060, b: 0.053),  // TL — wakes up
-        RGB(r: 0.185, g: 0.168, b: 0.145),  // TC — overhead peaks
-        RGB(r: 0.065, g: 0.060, b: 0.053),  // TR — wakes up
-        RGB(r: 0.060, g: 0.057, b: 0.052),  // ML — wakes up
-        RGB(r: 0.082, g: 0.078, b: 0.070),  // center — lifts slightly
-        RGB(r: 0.060, g: 0.057, b: 0.052),  // MR — wakes up
-        RGB(r: 0.038, g: 0.036, b: 0.032),  // BL — stays dark (anchor)
-        RGB(r: 0.115, g: 0.108, b: 0.098),  // BC — reflection brightens
-        RGB(r: 0.038, g: 0.036, b: 0.032),  // BR — stays dark (anchor)
+        RGB(r: 0.115, g: 0.120, b: 0.580),  // TL — blue peaks
+        RGB(r: 0.130, g: 0.250, b: 0.560),  // TC — blend brightens
+        RGB(r: 0.052, g: 0.348, b: 0.348),  // TR — teal peaks
+        RGB(r: 0.062, g: 0.075, b: 0.308),  // ML — blue drip deepens
+        RGB(r: 0.035, g: 0.032, b: 0.068),  // MC — stays void
+        RGB(r: 0.028, g: 0.198, b: 0.212),  // MR — teal drip deepens
+        RGB(r: 0.022, g: 0.020, b: 0.048),  // BL — void anchor
+        RGB(r: 0.022, g: 0.020, b: 0.048),  // BC — void anchor
+        RGB(r: 0.022, g: 0.020, b: 0.048),  // BR — void anchor
     ]
 
     /// Returns base colors blended toward the intense palette.
@@ -130,30 +115,28 @@ enum MeshTheme {
 
     // MARK: - State Color Arrays
 
-    /// Workout started — warm overhead flares wide, like gym lights coming on.
-    /// More spread than a set pulse; settles back over 0.5s.
+    /// Workout started — both galaxy clouds at full intensity.
     static let started: [Color] = [
-        stone1, stoneBright, stone1,
-        stone1, stone2,      stone1,
-        stone0, stone2,      stone0,
+        blueCornerBright, blueBlendBright, tealCornerBright,
+        blueDripBright,   void1,           tealDripBright,
+        void0,            void0,           void0,
     ]
 
-    /// Set logged — overhead and floor shift from warm tungsten to cool steel.
-    /// Same brightness as base; only the color temperature changes. Subtle but physical.
+    /// Set logged — stellar flare. Overhead ignites blue-white; corners lift.
     static let pulse: [Color] = [
-        steelCorner,  steelOverhead,       steelCorner,
-        steelCorner,  steelCenter,         steelCorner,
-        steelCorner,  steelFloor,          steelCorner,
+        flareCornerTop,  flareOverhead,      flareCornerTop,
+        flareCorner,     flareCenter,        flareCorner,
+        flareCorner,     flareCorner,        flareCorner,
     ]
 
-    /// Exercise complete — same color shift, one clear tier brighter.
+    /// Exercise complete — same flare, one clear tier brighter.
     static let exercisePulse: [Color] = [
-        steelCorner,  steelOverheadBright, steelCorner,
-        steelCorner,  steelCenter,         steelCorner,
-        steelCorner,  steelFloorBright,    steelCorner,
+        flareCornerTopBright,  flareOverheadBright,  flareCornerTopBright,
+        flareCorner,           flareCenter,           flareCorner,
+        flareCorner,           flareCorner,           flareCorner,
     ]
 
-    /// PR — initial hot amber flash. Top brighter, bottom cooler.
+    /// PR — initial hot amber flash. Warm supernova against the cold galaxy.
     static let prPeak: [Color] = [
         amberMid,  amberHot,  amberMid,
         amberMid,  amberHot,  amberMid,
@@ -167,11 +150,11 @@ enum MeshTheme {
         amberDeep, amberMid,  amberDeep,
     ]
 
-    /// Workout complete — every overhead at full draw. The room fully lit, warm white.
+    /// Workout complete / theme intro — electric violet bloom.
     static let complete: [Color] = [
-        stone1,       stonePeak,   stone1,
-        stone2,       stoneBright, stone2,
-        stone1,       stoneBright, stone1,
+        violetCorner, violetCore,   violetCorner,
+        violetDeep,   violetDeep,   violetDeep,
+        void0,        void0,        void0,
     ]
 
     // MARK: - Transition Durations
@@ -179,7 +162,7 @@ enum MeshTheme {
     static func transitionDuration(for state: MeshState) -> TimeInterval {
         switch state {
         case .base:             return 1.5
-        case .themeIntro:       return 1.5   // slow, deliberate bloom
+        case .themeIntro:       return 1.5
         case .workoutStarted:   return 0.5
         case .setLogged:        return 0.15
         case .exerciseComplete: return 0.15

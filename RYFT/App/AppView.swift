@@ -131,7 +131,7 @@ struct AppView: View {
             // Push new accent colour to the Live Activity so the island updates immediately.
             appState.workout.viewModel?.refreshActivityState()
             guard newTheme == .mesh else { return }
-            // Slow warm white bloom — welcome to Lux. Deliberate, not reactive.
+            // Slow cosmic bloom — welcome to Nova. Deliberate, not reactive.
             // Holds for 2.5s so the 1.5s fade-in has room to breathe, then returns to base.
             playWorkoutStartHaptic()
             meshIntroTask?.cancel()

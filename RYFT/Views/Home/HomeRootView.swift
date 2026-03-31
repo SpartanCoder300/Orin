@@ -108,28 +108,15 @@ private struct RoutineBuilderRequest: Identifiable {
 }
 
 #Preview("Active Workout") {
-    {
-        let container = HomePreviewData.featuredRootContainer
-        let appState = AppState()
-        appState.workout.startWorkout(routineID: nil, modelContext: container.mainContext)
-        if let vm = appState.workout.viewModel {
-            vm.addExercise(named: "Bench Press")
-            vm.addExercise(named: "Squat")
-            vm.addExercise(named: "Romanian Deadlift")
-            vm.addSet(toExerciseAt: 0)
-            vm.addSet(toExerciseAt: 0)
-            vm.draftExercises[0].sets[0].isLogged = true
-            vm.draftExercises[0].sets[1].isLogged = true
-            vm.draftExercises[1].sets[0].isLogged = true
-        }
-        return NavigationStack {
-            HomeRootView()
-        }
-        .environment(appState)
-        .environment(MeshEngine())
-        .modelContainer(container)
-        .preferredColorScheme(.dark)
-    }()
+    let container = HomePreviewData.featuredRootContainer
+    let appState = HomeRootPreviewFactory.makeActiveWorkoutAppState(container: container)
+    return NavigationStack {
+        HomeRootView()
+    }
+    .environment(appState)
+    .environment(MeshEngine())
+    .modelContainer(container)
+    .preferredColorScheme(.dark)
 }
 
 #Preview("Featured") {
@@ -142,7 +129,7 @@ private struct RoutineBuilderRequest: Identifiable {
     .preferredColorScheme(.dark)
 }
 
-#Preview("Lux Featured") {
+#Preview("Nova Featured") {
     let appState = AppState()
     appState.accentTheme = .mesh
 
@@ -175,4 +162,22 @@ private struct RoutineBuilderRequest: Identifiable {
     .environment(MeshEngine())
     .modelContainer(HomePreviewData.emptyRootContainer)
     .preferredColorScheme(.dark)
+}
+
+private enum HomeRootPreviewFactory {
+    static func makeActiveWorkoutAppState(container: ModelContainer) -> AppState {
+        let appState = AppState()
+        appState.workout.startWorkout(routineID: nil, modelContext: container.mainContext)
+        if let vm = appState.workout.viewModel {
+            vm.addExercise(named: "Bench Press")
+            vm.addExercise(named: "Squat")
+            vm.addExercise(named: "Romanian Deadlift")
+            vm.addSet(toExerciseAt: 0)
+            vm.addSet(toExerciseAt: 0)
+            vm.draftExercises[0].sets[0].isLogged = true
+            vm.draftExercises[0].sets[1].isLogged = true
+            vm.draftExercises[1].sets[0].isLogged = true
+        }
+        return appState
+    }
 }

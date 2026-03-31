@@ -56,7 +56,7 @@ final class MeshEngine {
             colors = MeshTheme.base(intensity: sessionIntensity)
 
         case .themeIntro:
-            // Slow warm white bloom — "welcome to Lux". Same palette as workout
+            // Slow cosmic bloom — "welcome to Nova". Same palette as workout
             // complete but 1.5s fade-in so it feels deliberate, not reactive.
             transitionDuration = MeshTheme.transitionDuration(for: .themeIntro)
             colors = MeshTheme.complete

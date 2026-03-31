@@ -74,7 +74,7 @@ struct ActiveWorkoutView: View {
                         }
                     }
                 }
-                .themedBackground()
+                .themedBackground(dimmed: theme == .mesh)
                 .overlay(alignment: .bottom) {
                     BottomCommandBackdrop(theme: theme)
                         .allowsHitTesting(false)
