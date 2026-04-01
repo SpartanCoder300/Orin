@@ -45,7 +45,7 @@ final class ExercisePickerViewModel {
     }
 
     /// Exercises to show in the full library section.
-    /// Multiple active filters are joined as a union.
+    /// Filters are joined as OR within a row and AND across rows.
     /// Custom exercises float to the top within their group.
     func libraryExercises(from all: [ExerciseDefinition]) -> [ExerciseDefinition] {
         var filtered = applyFilters(selectedFilters, to: all.filter { !$0.isArchived })
@@ -64,17 +64,29 @@ final class ExercisePickerViewModel {
         }
     }
 
-    /// Returns exercises matching any of the active filters (union). Empty set = no filtering.
+    /// Returns exercises matching the active picker rows.
+    /// Muscle filters union together, equipment/custom filters union together,
+    /// and the two groups intersect. Empty set = no filtering.
     private func applyFilters(_ filters: Set<PickerFilter>, to exercises: [ExerciseDefinition]) -> [ExerciseDefinition] {
         guard !filters.isEmpty else { return exercises }
+
+        let muscleGroups = Set(filters.compactMap { filter in
+            if case .muscleGroup(let group) = filter { return group }
+            return nil
+        })
+        let equipmentTypes = Set(filters.compactMap { filter in
+            if case .equipment(let equipment) = filter { return equipment }
+            return nil
+        })
+        let includesCustom = filters.contains(.custom)
+
         return exercises.filter { exercise in
-            filters.contains { filter in
-                switch filter {
-                case .muscleGroup(let g): return exercise.muscleGroups.contains(g)
-                case .equipment(let e):   return exercise.equipmentType == e
-                case .custom:             return exercise.isCustom
-                }
-            }
+            let matchesMuscleRow = muscleGroups.isEmpty || !muscleGroups.isDisjoint(with: exercise.muscleGroups)
+            let matchesTypeRow = (equipmentTypes.isEmpty && !includesCustom)
+                || equipmentTypes.contains(exercise.equipmentType)
+                || (includesCustom && exercise.isCustom)
+
+            return matchesMuscleRow && matchesTypeRow
         }
     }
 
