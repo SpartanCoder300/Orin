@@ -37,6 +37,13 @@ enum MeshTheme {
     private static let blueDripBright   = Color(red: 0.062, green: 0.075, blue: 0.308)
     private static let tealDripBright   = Color(red: 0.028, green: 0.198, blue: 0.212)
 
+    // Workout-start boost — same Nova hue family, but with a clearer launch flash.
+    private static let blueCornerStart = Color(red: 0.170, green: 0.185, blue: 0.760)
+    private static let blueBlendStart  = Color(red: 0.215, green: 0.365, blue: 0.760)
+    private static let tealCornerStart = Color(red: 0.095, green: 0.455, blue: 0.445)
+    private static let blueDripStart   = Color(red: 0.085, green: 0.110, blue: 0.405)
+    private static let tealDripStart   = Color(red: 0.050, green: 0.260, blue: 0.270)
+
     // MARK: - Stellar Flare (set logged / exercise complete)
     // Blue-white burst — cuts clearly against the cool galaxy base.
 
@@ -115,10 +122,10 @@ enum MeshTheme {
 
     // MARK: - State Color Arrays
 
-    /// Workout started — both galaxy clouds at full intensity.
+    /// Workout started — both galaxy clouds surge brighter than the steady-state base.
     static let started: [Color] = [
-        blueCornerBright, blueBlendBright, tealCornerBright,
-        blueDripBright,   void1,           tealDripBright,
+        blueCornerStart, blueBlendStart, tealCornerStart,
+        blueDripStart,   void1,           tealDripStart,
         void0,            void0,           void0,
     ]
 
@@ -163,7 +170,7 @@ enum MeshTheme {
         switch state {
         case .base:             return 1.5
         case .themeIntro:       return 1.5
-        case .workoutStarted:   return 0.5
+        case .workoutStarted:   return 0.9
         case .setLogged:        return 0.15
         case .exerciseComplete: return 0.15
         case .prBloom:          return 0.20

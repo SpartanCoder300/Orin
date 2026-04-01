@@ -8,11 +8,15 @@ struct ThemedBackgroundModifier: ViewModifier {
     @Environment(\.OrinTheme) private var theme
     var dimmed: Bool = false
 
+    private var usesDimmedMesh: Bool {
+        theme == .mesh || dimmed
+    }
+
     func body(content: Content) -> some View {
         content
             .background {
                 if theme == .mesh {
-                    MeshBackgroundView(dimmed: dimmed)
+                    MeshBackgroundView(dimmed: usesDimmedMesh)
                 } else {
                     ZStack {
                         theme.backgroundColor
