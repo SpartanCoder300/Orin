@@ -32,15 +32,26 @@ struct SetRow: View {
     let isPR: Bool
     let justGotPR: Bool
     let accentColor: Color
+    /// When non-nil and the set has no user-entered values, this text is shown greyed
+    /// out to signal that the app will pre-fill from set 1.
+    let placeholderDisplayText: String?
+    /// Animation delay for the placeholder fade-in (stagger effect across sets).
+    let placeholderDelay: Double
     let onCycleType: () -> Void
     let onFocus: () -> Void
     let onLog: () -> Void
     let onDelete: () -> Void
     let onUndo: () -> Void
     let onCopyFromAbove: (() -> Void)?
+    let onAdoptPlaceholder: (() -> Void)?
 
     @State private var rowScale: CGFloat = 1.0
     @State private var badgeScale: CGFloat = 0
+
+    private var isShowingPlaceholder: Bool {
+        guard let _ = placeholderDisplayText else { return false }
+        return !isLogged && weightText.isEmpty && repsText.isEmpty && durationText.isEmpty
+    }
 
     var body: some View {
         HStack(spacing: 6) {
@@ -55,19 +66,26 @@ struct SetRow: View {
                 .frame(width: 20, alignment: .center)
 
             VStack(alignment: .leading, spacing: 2) {
-                Text(displayText)
+                Text(isShowingPlaceholder ? placeholderDisplayText! : displayText)
                     .font(.system(size: 16, weight: .medium, design: .rounded))
                     .monospacedDigit()
                     .foregroundStyle(
                         isLogged
                             ? Color.textMuted.opacity(0.76)
-                            : isFocused
-                                ? Color.white.opacity(0.98)
-                                : Color.textPrimary
+                            : isShowingPlaceholder
+                                ? Color.textFaint.opacity(0.6)
+                                : isFocused
+                                    ? Color.white.opacity(0.98)
+                                    : Color.textPrimary
                     )
                     .contentTransition(.numericText())
                     .animation(Motion.standardSpring, value: weightText)
                     .animation(Motion.standardSpring, value: repsText)
+                    .animation(
+                        .spring(response: 0.35, dampingFraction: 0.85)
+                            .delay(isShowingPlaceholder ? placeholderDelay : 0),
+                        value: isShowingPlaceholder
+                    )
             }
             .animation(Motion.standardSpring, value: isPR)
 
@@ -127,7 +145,12 @@ struct SetRow: View {
         }
         .contentShape(Rectangle())
         .onTapGesture {
-            if !isLogged { onFocus() }
+            guard !isLogged else { return }
+            if isShowingPlaceholder {
+                onAdoptPlaceholder?()
+            } else {
+                onFocus()
+            }
         }
         .opacity(1.0)
         .animation(Motion.standardSpring, value: isLogged)
@@ -231,7 +254,33 @@ struct SetRow: View {
         isPR: false,
         justGotPR: false,
         accentColor: AccentTheme.midnight.accentColor,
-        onCycleType: {}, onFocus: {}, onLog: {}, onDelete: {}, onUndo: {}, onCopyFromAbove: nil
+        placeholderDisplayText: nil,
+        placeholderDelay: 0,
+        onCycleType: {}, onFocus: {}, onLog: {}, onDelete: {}, onUndo: {}, onCopyFromAbove: nil, onAdoptPlaceholder: nil
+    )
+    .padding()
+    .preferredColorScheme(.dark)
+}
+
+#Preview("Placeholder") {
+    SetRow(
+        setNumber: 2,
+        weightText: "",
+        repsText: "",
+        durationText: "",
+        isTimed: false,
+        tracksWeight: true,
+        setType: .normal,
+        isLogged: false,
+        isFocused: false,
+        isFirstInCard: false,
+        isLastInCard: false,
+        isPR: false,
+        justGotPR: false,
+        accentColor: AccentTheme.midnight.accentColor,
+        placeholderDisplayText: "185 × 5",
+        placeholderDelay: 0.05,
+        onCycleType: {}, onFocus: {}, onLog: {}, onDelete: {}, onUndo: {}, onCopyFromAbove: {}, onAdoptPlaceholder: {}
     )
     .padding()
     .preferredColorScheme(.dark)
@@ -253,7 +302,9 @@ struct SetRow: View {
         isPR: true,
         justGotPR: false,
         accentColor: AccentTheme.midnight.accentColor,
-        onCycleType: {}, onFocus: {}, onLog: {}, onDelete: {}, onUndo: {}, onCopyFromAbove: {}
+        placeholderDisplayText: nil,
+        placeholderDelay: 0,
+        onCycleType: {}, onFocus: {}, onLog: {}, onDelete: {}, onUndo: {}, onCopyFromAbove: {}, onAdoptPlaceholder: nil
     )
     .padding()
     .preferredColorScheme(.dark)
@@ -275,7 +326,9 @@ struct SetRow: View {
         isPR: false,
         justGotPR: false,
         accentColor: AccentTheme.midnight.accentColor,
-        onCycleType: {}, onFocus: {}, onLog: {}, onDelete: {}, onUndo: {}, onCopyFromAbove: {}
+        placeholderDisplayText: nil,
+        placeholderDelay: 0,
+        onCycleType: {}, onFocus: {}, onLog: {}, onDelete: {}, onUndo: {}, onCopyFromAbove: {}, onAdoptPlaceholder: nil
     )
     .padding()
     .preferredColorScheme(.dark)

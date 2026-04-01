@@ -131,9 +131,7 @@ struct SwipeValueControl: View {
     /// The control re-applies `formatted()` when displaying, so consistent width is preserved.
     private func cleanFormatted(_ v: Double) -> String {
         if isInteger { return "\(Int(v.rounded()))" }
-        let rounded = (v * 10).rounded() / 10
-        if rounded == rounded.rounded() { return "\(Int(rounded))" }
-        return String(format: "%.1f", rounded)
+        return String(format: "%.1f", (v * 10).rounded() / 10)
     }
 
     /// Starting value for a drag. Blank field uses firstTapDefault so dragging from
@@ -325,6 +323,7 @@ struct SwipeValueControl: View {
                 }
 
                 liveValue = newValue
+                text = cleanFormatted(newValue)
             }
             .onEnded { _ in
                 commitAndReset()

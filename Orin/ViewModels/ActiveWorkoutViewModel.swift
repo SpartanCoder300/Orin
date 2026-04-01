@@ -631,6 +631,21 @@ final class ActiveWorkoutViewModel {
         requestRevealCurrentFocus()
     }
 
+    /// Copies values from set 0 into the target set and focuses it.
+    /// Called when the user taps a set that is showing a first-set placeholder.
+    func adoptPlaceholderValues(exerciseIndex eIdx: Int, setIndex sIdx: Int) {
+        guard draftExercises.indices.contains(eIdx),
+              sIdx > 0,
+              draftExercises[eIdx].sets.indices.contains(sIdx),
+              !draftExercises[eIdx].sets[sIdx].isLogged else { return }
+        let source = draftExercises[eIdx].sets[0]
+        draftExercises[eIdx].sets[sIdx].weightText = source.weightText
+        draftExercises[eIdx].sets[sIdx].repsText = source.repsText
+        draftExercises[eIdx].sets[sIdx].durationText = source.durationText
+        persistDraftState()
+        setManualFocus(exerciseIndex: eIdx, setIndex: sIdx)
+    }
+
     func copySetFromAbove(exerciseIndex eIdx: Int, setIndex sIdx: Int) {
         guard draftExercises.indices.contains(eIdx),
               sIdx > 0,

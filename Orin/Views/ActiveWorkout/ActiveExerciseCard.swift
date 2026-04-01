@@ -153,12 +153,15 @@ struct ActiveExerciseCard: View {
                     isPR: set.isPR,
                     justGotPR: vm.lastPRSetID != nil && vm.lastPRSetID == set.loggedRecord?.id,
                     accentColor: theme.accentColor,
+                    placeholderDisplayText: placeholderText(for: exercise, setIndex: sIdx),
+                    placeholderDelay: Double(max(0, sIdx - 1)) * 0.05,
                     onCycleType: { vm.cycleSetType(exerciseIndex: exerciseIndex, setIndex: sIdx) },
                     onFocus: { vm.setManualFocus(exerciseIndex: exerciseIndex, setIndex: sIdx) },
                     onLog: { vm.logSet(exerciseIndex: exerciseIndex, setIndex: sIdx) },
                     onDelete: { vm.removeSet(exerciseIndex: exerciseIndex, setIndex: sIdx) },
                     onUndo: { vm.unlogSet(exerciseIndex: exerciseIndex, setIndex: sIdx) },
-                    onCopyFromAbove: sIdx > 0 ? { vm.copySetFromAbove(exerciseIndex: exerciseIndex, setIndex: sIdx) } : nil
+                    onCopyFromAbove: sIdx > 0 ? { vm.copySetFromAbove(exerciseIndex: exerciseIndex, setIndex: sIdx) } : nil,
+                    onAdoptPlaceholder: sIdx > 0 ? { vm.adoptPlaceholderValues(exerciseIndex: exerciseIndex, setIndex: sIdx) } : nil
                 )
 
                 if sIdx < exercise.sets.count - 1 {
@@ -188,6 +191,32 @@ struct ActiveExerciseCard: View {
             ExerciseHistoryView(exerciseName: exercise.exerciseName, exerciseLineageID: exercise.exerciseLineageID)
                 .environment(\.OrinCardMaterial, .regularMaterial)
         }
+    }
+
+    /// Returns the placeholder display string for a set that has no user-entered values,
+    /// derived reactively from set 0. Returns nil if set 0 is also empty or this is set 0.
+    private func placeholderText(for exercise: ActiveWorkoutViewModel.DraftExercise, setIndex: Int) -> String? {
+        guard setIndex > 0 else { return nil }
+        let set = exercise.sets[setIndex]
+        guard !set.isLogged,
+              set.weightText.isEmpty, set.repsText.isEmpty, set.durationText.isEmpty else { return nil }
+        let first = exercise.sets[0]
+        guard !first.weightText.isEmpty || !first.repsText.isEmpty || !first.durationText.isEmpty else { return nil }
+
+        if exercise.isTimed {
+            let secs = Int(first.durationText) ?? 0
+            let durationLabel = first.durationText.isEmpty ? "—" : formatDuration(secs)
+            guard exercise.tracksWeight else { return durationLabel }
+            let w = first.weightText.isEmpty ? "—" : first.weightText
+            return "\(w) lb · \(durationLabel)"
+        }
+        guard exercise.tracksWeight else {
+            let r = first.repsText.isEmpty ? "—" : first.repsText
+            return "\(r) reps"
+        }
+        let w = first.weightText.isEmpty ? "—" : first.weightText
+        let r = first.repsText.isEmpty ? "—" : first.repsText
+        return "\(w) × \(r)"
     }
 
     private func previousLabel(for exercise: ActiveWorkoutViewModel.DraftExercise) -> String {
