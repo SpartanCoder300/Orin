@@ -7,6 +7,7 @@ import UIKit
 struct RoutineBuilderView: View {
     @State private var vm: RoutineBuilderViewModel
     @State private var isShowingExercisePicker = false
+    @State private var pickerSessionCounts: [String: Int] = [:]
     @State private var configEntryID: UUID? = nil
     @State private var isShowingDeleteConfirm = false
     @State private var isShowingDiscardConfirm = false
@@ -39,13 +40,6 @@ struct RoutineBuilderView: View {
         }
     }
 
-    private var pickerRemovableExerciseCounts: [String: Int] {
-        pickerExistingExerciseCounts
-    }
-
-    private var pickerRemovableExerciseNames: Set<String> {
-        Set(vm.entries.map(\.exercise.name))
-    }
 
     var body: some View {
         @Bindable var vm = vm
@@ -144,16 +138,19 @@ struct RoutineBuilderView: View {
                     }
                 }
             }
-            .sheet(isPresented: $isShowingExercisePicker) {
+            .sheet(isPresented: $isShowingExercisePicker, onDismiss: {
+                pickerSessionCounts = [:]
+            }) {
                 ExercisePicker(
                     onSelect: { exercise in
+                        pickerSessionCounts[exercise.name, default: 0] += 1
                         vm.addExercise(exercise)
                     },
                     dismissesOnSelection: false,
                     existingExerciseCounts: pickerExistingExerciseCounts,
-                    removableExerciseCounts: pickerRemovableExerciseCounts,
-                    removableExerciseNames: pickerRemovableExerciseNames,
+                    removableExerciseCounts: pickerSessionCounts,
                     onRemoveExisting: { exercise in
+                        pickerSessionCounts[exercise.name, default: 0] = max(0, (pickerSessionCounts[exercise.name] ?? 0) - 1)
                         _ = vm.removeMostRecentExercise(named: exercise.name)
                     }
                 )

@@ -10,6 +10,7 @@ struct ActiveWorkoutView: View {
 
     @State private var completedSession: WorkoutSession?
     @State private var isShowingCancelPRWarning = false
+    @State private var pickerSessionCounts: [String: Int] = [:]
     @Environment(\.OrinTheme) private var theme
 
     private var shouldRunSetupTask: Bool {
@@ -26,18 +27,6 @@ struct ActiveWorkoutView: View {
         }
     }
 
-    private var pickerRemovableExerciseNames: Set<String> {
-        Set(vm.draftExercises.compactMap { exercise in
-            exercise.sets.allSatisfy { !$0.isLogged } ? exercise.exerciseName : nil
-        })
-    }
-
-    private var pickerRemovableExerciseCounts: [String: Int] {
-        vm.draftExercises.reduce(into: [:]) { counts, exercise in
-            guard exercise.sets.allSatisfy({ !$0.isLogged }) else { return }
-            counts[exercise.exerciseName, default: 0] += 1
-        }
-    }
 
     var body: some View {
         @Bindable var vm = vm
@@ -189,23 +178,29 @@ struct ActiveWorkoutView: View {
                     WorkoutSummaryView(session: session, onDone: { onDismiss() })
                 }
                 .sheet(isPresented: $vm.isShowingExercisePicker, onDismiss: {
-                    vm.cancelSwap()
+                    if vm.swappingExerciseIndex != nil { vm.cancelSwap() }
+                    pickerSessionCounts = [:]
                 }) {
+                    let isSwapping = vm.swappingExerciseIndex != nil
                     ExercisePicker(
                         onSelect: { exercise in
+                            if !isSwapping {
+                                pickerSessionCounts[exercise.name, default: 0] += 1
+                            }
                             if let idx = vm.swappingExerciseIndex {
                                 vm.swapExercise(at: idx, named: exercise.name)
                             } else {
                                 vm.addExercise(named: exercise.name)
                             }
                         },
-                        dismissesOnSelection: vm.swappingExerciseIndex != nil,
+                        dismissesOnSelection: isSwapping,
                         existingExerciseCounts: pickerExistingExerciseCounts,
-                        removableExerciseCounts: vm.swappingExerciseIndex == nil ? pickerRemovableExerciseCounts : [:],
-                        removableExerciseNames: vm.swappingExerciseIndex == nil ? pickerRemovableExerciseNames : [],
-                        onRemoveExisting: vm.swappingExerciseIndex == nil ? { exercise in
+                        removableExerciseCounts: isSwapping ? [:] : pickerSessionCounts,
+                        onRemoveExisting: isSwapping ? nil : { exercise in
+                            pickerSessionCounts[exercise.name, default: 0] = max(0, (pickerSessionCounts[exercise.name] ?? 0) - 1)
                             _ = vm.removeMostRecentUnloggedExercise(named: exercise.name)
-                        } : nil
+                        },
+                        title: isSwapping ? "Replace Exercise" : "Add Exercise"
                     )
                 }
             }

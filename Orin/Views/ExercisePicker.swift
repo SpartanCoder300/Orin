@@ -11,19 +11,17 @@ struct ExercisePicker: View {
     var dismissesOnSelection: Bool = true
     var existingExerciseCounts: [String: Int] = [:]
     var removableExerciseCounts: [String: Int] = [:]
-    var removableExerciseNames: Set<String> = []
     var onRemoveExisting: ((ExerciseDefinition) -> Void)? = nil
+    var title: String = "Add Exercise"
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
     @Environment(\.OrinTheme) private var theme
-    @AppStorage("Orin.exercisePickerSwipeHintSeen") private var hasSeenSwipeHint = false
 
     @Query(sort: \ExerciseDefinition.name) private var allExercises: [ExerciseDefinition]
 
     @State private var vm = ExercisePickerViewModel()
     @State private var editorTarget: ExerciseEditorTarget? = nil
-    @State private var isShowingSwipeHint = false
 
     private let muscleFilters    = allMuscleGroups.map    { PickerFilter.muscleGroup($0) }
     private let equipmentFilters = allEquipmentTypes.map  { PickerFilter.equipment($0)  }
@@ -31,107 +29,87 @@ struct ExercisePicker: View {
 
     var body: some View {
         NavigationStack {
-            ScrollView {
-                VStack(alignment: .leading, spacing: Spacing.xl) {
+            VStack(spacing: 0) {
 
-                    // ── Filter chips ───────────────────────────────────────────
-                    VStack(alignment: .leading, spacing: Spacing.xs) {
-                        // Row 1: muscle groups
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: Spacing.xs) {
-                                filterChip("All", isSelected: vm.selectedFilters.isEmpty) {
-                                    vm.selectedFilters.removeAll()
-                                }
-                                filterSeparator
-                                ForEach(muscleFilters, id: \.self) { option in
-                                    let on = vm.selectedFilters.contains(option)
-                                    filterChip(option.label, isSelected: on) { toggle(option) }
-                                }
+                // ── Filter chips ───────────────────────────────────────────
+                VStack(alignment: .leading, spacing: Spacing.xs) {
+                    // Row 1: muscle groups
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: Spacing.xs) {
+                            filterChip("All", isSelected: vm.selectedFilters.isEmpty) {
+                                vm.selectedFilters.removeAll()
                             }
-                            .padding(.horizontal, Spacing.xs)
-                            .padding(.vertical, Spacing.xs)
-                        }
-                        .scrollClipDisabled()
-                        // Row 2: equipment + custom
-                        ScrollView(.horizontal, showsIndicators: false) {
-                            HStack(spacing: Spacing.xs) {
-                                ForEach(equipmentFilters, id: \.self) { option in
-                                    let on = vm.selectedFilters.contains(option)
-                                    filterChip(option.label, isSelected: on) { toggle(option) }
-                                }
-                                filterSeparator
-                                ForEach(specialFilters, id: \.self) { option in
-                                    let on = vm.selectedFilters.contains(option)
-                                    filterChip(option.label, isSelected: on) { toggle(option) }
-                                }
+                            filterSeparator
+                            ForEach(muscleFilters, id: \.self) { option in
+                                let on = vm.selectedFilters.contains(option)
+                                filterChip(option.label, isSelected: on) { toggle(option) }
                             }
-                            .padding(.horizontal, Spacing.xs)
-                            .padding(.vertical, Spacing.xs)
                         }
-                        .scrollClipDisabled()
+                        .padding(.horizontal, Spacing.xs)
+                        .padding(.vertical, Spacing.xs)
                     }
+                    .scrollClipDisabled()
+                    // Row 2: equipment + custom
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: Spacing.xs) {
+                            ForEach(equipmentFilters, id: \.self) { option in
+                                let on = vm.selectedFilters.contains(option)
+                                filterChip(option.label, isSelected: on) { toggle(option) }
+                            }
+                            filterSeparator
+                            ForEach(specialFilters, id: \.self) { option in
+                                let on = vm.selectedFilters.contains(option)
+                                filterChip(option.label, isSelected: on) { toggle(option) }
+                            }
+                        }
+                        .padding(.horizontal, Spacing.xs)
+                        .padding(.vertical, Spacing.xs)
+                    }
+                    .scrollClipDisabled()
+                }
+                .padding(.vertical, Spacing.xs)
+                Divider()
 
-                    // ── Recents ────────────────────────────────────────────────
+                // ── Exercise List ──────────────────────────────────────────
+                List {
                     let recents = vm.recentExercises(from: allExercises, filters: vm.selectedFilters)
                     if vm.searchText.isEmpty && !recents.isEmpty {
-                        VStack(alignment: .leading, spacing: Spacing.sm) {
-                            pickerSectionLabel("Recents")
-
-                            exerciseCard(recents) { exercise in
-                                LibraryRow(
-                                    exercise: exercise,
-                                    matchRanges: [],
-                                    accentColor: theme.accentColor,
-                                    statusText: statusText(for: exercise),
-                                    secondaryActionTitle: removableExerciseNames.contains(exercise.name) ? "Undo" : nil,
-                                    secondaryAction: removableExerciseNames.contains(exercise.name) ? { remove(exercise) } : nil,
-                                    onTap: { select(exercise) },
-                                    onEdit: { editorTarget = .edit(exercise) }
-                                )
+                        Section("Recents") {
+                            ForEach(recents) { exercise in
+                                exerciseRow(exercise, matchRanges: [])
                             }
                         }
                     }
 
-                    // ── Full Library ───────────────────────────────────────────
                     let library = vm.libraryExercises(from: allExercises)
-                    VStack(alignment: .leading, spacing: Spacing.sm) {
-                        pickerSectionLabel(vm.searchText.isEmpty && vm.selectedFilters.isEmpty
-                                           ? "All Exercises"
-                                           : "Results (\(library.count))")
-
+                    Section(vm.searchText.isEmpty && vm.selectedFilters.isEmpty
+                            ? "All Exercises"
+                            : "Results (\(library.count))") {
                         if library.isEmpty {
                             Text("No exercises found")
                                 .font(Typography.caption)
                                 .foregroundStyle(Color.textFaint)
-                                .frame(maxWidth: .infinity)
+                                .frame(maxWidth: .infinity, alignment: .center)
                                 .padding(.vertical, Spacing.lg)
                         } else {
-                            exerciseCard(library) { exercise in
-                                LibraryRow(
-                                    exercise: exercise,
-                                    matchRanges: vm.matchRanges(query: vm.searchText, in: exercise.name),
-                                    accentColor: theme.accentColor,
-                                    statusText: statusText(for: exercise),
-                                    secondaryActionTitle: removableExerciseNames.contains(exercise.name) ? "Undo" : nil,
-                                    secondaryAction: removableExerciseNames.contains(exercise.name) ? { remove(exercise) } : nil,
-                                    onTap: { select(exercise) },
-                                    onEdit: { editorTarget = .edit(exercise) }
-                                )
+                            ForEach(library) { exercise in
+                                exerciseRow(exercise,
+                                            matchRanges: vm.matchRanges(query: vm.searchText, in: exercise.name))
                             }
                         }
                     }
                 }
-                .padding(.horizontal, Spacing.md)
-                .padding(.vertical, Spacing.lg)
+                .listStyle(.insetGrouped)
+                .scrollContentBackground(.hidden)
             }
-            .navigationTitle("Add Exercise")
+            .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .searchable(text: $vm.searchText,
                         placement: .navigationBarDrawer(displayMode: .always),
                         prompt: "Search exercises")
             .toolbar {
                 ToolbarItem(placement: .topBarTrailing) {
-                    Button(dismissesOnSelection ? "Cancel" : "Done") { dismiss() }
+                    Button(dismissButtonTitle) { dismiss() }
                         .fontWeight(.semibold)
                 }
                 ToolbarItem(placement: .bottomBar) {
@@ -145,19 +123,10 @@ struct ExercisePicker: View {
             .sheet(item: $editorTarget) { target in
                 ExerciseEditorView(exercise: target.exercise)
             }
-            .safeAreaInset(edge: .bottom, spacing: 0) {
-                if isShowingSwipeHint {
-                    undoHintBanner
-                        .padding(.horizontal, Spacing.md)
-                        .padding(.bottom, Spacing.sm)
-                        .transition(.move(edge: .bottom).combined(with: .opacity))
-                }
-            }
         }
         .onAppear {
             vm.load(container: modelContext.container)
         }
-        .animation(Motion.standardSpring, value: isShowingSwipeHint)
     }
 
     // MARK: - Helpers
@@ -170,13 +139,23 @@ struct ExercisePicker: View {
         }
     }
 
+    private var dismissButtonTitle: String {
+        dismissesOnSelection ? "Cancel" : "Done"
+    }
+
     private func select(_ exercise: ExerciseDefinition) {
-        let impact = UIImpactFeedbackGenerator(style: .medium)
-        impact.impactOccurred()
-        onSelect(exercise)
-        maybeShowSwipeHint()
-        if dismissesOnSelection {
-            dismiss()
+        let isAlreadyAdded = (removableExerciseCounts[exercise.name] ?? 0) > 0
+        if isAlreadyAdded {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            vm.sessionAddedIDs.remove(exercise.id)
+            remove(exercise)
+        } else {
+            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+            vm.sessionAddedIDs.insert(exercise.id)
+            onSelect(exercise)
+            if dismissesOnSelection {
+                dismiss()
+            }
         }
     }
 
@@ -185,27 +164,20 @@ struct ExercisePicker: View {
         let removableCount = removableExerciseCounts[exercise.name] ?? 0
 
         if removableCount > 0 {
+            let preExisting = totalCount - removableCount
+            if preExisting > 0 {
+                // Exercise was already in the workout before this session + more were added
+                return "\(totalCount)x In Routine"
+            }
             return removableCount == 1 ? "Added" : "\(removableCount)x Added"
         }
         guard totalCount > 0 else { return nil }
         return totalCount == 1 ? "In Use" : "\(totalCount)x In Use"
     }
 
-    private func maybeShowSwipeHint() {
-        guard !dismissesOnSelection,
-              onRemoveExisting != nil,
-              !hasSeenSwipeHint else { return }
-
-        hasSeenSwipeHint = true
-        isShowingSwipeHint = true
-
-        Task { @MainActor in
-            try? await Task.sleep(for: .seconds(4.5))
-            guard isShowingSwipeHint else { return }
-            withAnimation(Motion.standardSpring) {
-                isShowingSwipeHint = false
-            }
-        }
+    private func addAgain(_ exercise: ExerciseDefinition) {
+        UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+        onSelect(exercise)
     }
 
     private func remove(_ exercise: ExerciseDefinition) {
@@ -214,24 +186,18 @@ struct ExercisePicker: View {
 
     // MARK: - View builders
 
-    /// Renders a list of exercises in a grouped card with inset dividers.
     @ViewBuilder
-    private func exerciseCard(_ exercises: [ExerciseDefinition],
-                               row: @escaping (ExerciseDefinition) -> LibraryRow) -> some View {
-        LazyVStack(spacing: 0) {
-            ForEach(Array(exercises.enumerated()), id: \.element.id) { idx, exercise in
-                row(exercise)
-                if idx < exercises.count - 1 {
-                    Divider()
-                        .padding(.leading, Spacing.md)
-                }
-            }
-        }
-        .background(.thinMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
-                .strokeBorder(.white.opacity(0.08), lineWidth: 1)
-        }
+    private func exerciseRow(_ exercise: ExerciseDefinition, matchRanges: [Range<String.Index>]) -> some View {
+        LibraryRow(
+            exercise: exercise,
+            matchRanges: matchRanges,
+            accentColor: theme.accentColor,
+            statusText: statusText(for: exercise),
+            onTap: { select(exercise) },
+            onEdit: { editorTarget = .edit(exercise) },
+            onAddAgain: (removableExerciseCounts[exercise.name] ?? 0) > 0 ? { addAgain(exercise) } : nil
+        )
+        .listRowInsets(.init(top: 0, leading: 0, bottom: 0, trailing: 0))
     }
 
     @ViewBuilder
@@ -254,36 +220,7 @@ struct ExercisePicker: View {
             .padding(.horizontal, 2)
     }
 
-    private var undoHintBanner: some View {
-        HStack(spacing: Spacing.sm) {
-            Image(systemName: "arrow.uturn.backward.circle.fill")
-                .font(.system(size: 14, weight: .semibold))
-                .foregroundStyle(theme.accentColor)
 
-            Text("Added. Tap Undo on a row to remove the last one.")
-                .font(Typography.caption)
-                .foregroundStyle(Color.textPrimary)
-
-            Spacer(minLength: 0)
-        }
-        .padding(.horizontal, Spacing.md)
-        .padding(.vertical, Spacing.sm)
-        .background(.regularMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
-        .overlay {
-            RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
-                .strokeBorder(.white.opacity(0.08), lineWidth: 1)
-        }
-    }
-
-    @ViewBuilder
-    private func pickerSectionLabel(_ title: String) -> some View {
-        Text(title)
-            .font(Typography.caption)
-            .fontWeight(.semibold)
-            .foregroundStyle(Color.textFaint)
-            .textCase(.uppercase)
-            .tracking(0.8)
-    }
 }
 
 // MARK: - Editor Target

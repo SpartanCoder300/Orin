@@ -30,16 +30,24 @@ final class ExercisePickerViewModel {
     // MARK: - Loaded data
 
     private(set) var frecencyScores: [UUID: Double] = [:]
+    /// Exercises added during this picker session — boosts them into recents immediately.
+    var sessionAddedIDs: Set<UUID> = []
 
     // MARK: - Filtering / search
 
     /// Top-5 exercises by frecency score the user has actually used (score > 0).
     /// Scoped to the active filter set.
     func recentExercises(from all: [ExerciseDefinition], filters: Set<PickerFilter> = []) -> [ExerciseDefinition] {
-        var candidates = all.filter { !$0.isArchived && scoreFor($0) > 0 }
+        var candidates = all.filter { !$0.isArchived && (scoreFor($0) > 0 || sessionAddedIDs.contains($0.id)) }
         candidates = applyFilters(filters, to: candidates)
         return candidates
-            .sorted { scoreFor($0) > scoreFor($1) }
+            .sorted {
+                // Session additions float to the top; then sort by frecency
+                let aSession = sessionAddedIDs.contains($0.id)
+                let bSession = sessionAddedIDs.contains($1.id)
+                if aSession != bSession { return aSession }
+                return scoreFor($0) > scoreFor($1)
+            }
             .prefix(5)
             .map { $0 }
     }
