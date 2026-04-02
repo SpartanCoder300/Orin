@@ -5,7 +5,7 @@ import SwiftUI
 /// Color palette and state arrays for the Pro mesh background.
 ///
 /// Two intertwining galaxy clouds form the base — electric blue (left) and
-/// teal-green (right), blending at the top and falling to void below.
+/// deep violet (right), blending at the top and falling to void below.
 ///
 /// Four event moments:
 /// 1. Set logged       → stellar flare (pale blue-white burst)
@@ -22,27 +22,27 @@ enum MeshTheme {
     // MARK: - Galaxy Base Palette
 
     // Blue cloud — left side
-    private static let blueCorner = Color(red: 0.080, green: 0.085, blue: 0.440)  // TL peak
-    private static let blueBlend  = Color(red: 0.095, green: 0.185, blue: 0.430)  // TC midpoint
-    private static let blueDrip   = Color(red: 0.040, green: 0.050, blue: 0.220)  // ML
+    private static let blueCorner = Color(red: 0.140, green: 0.150, blue: 0.580)  // TL peak
+    private static let blueBlend  = Color(red: 0.150, green: 0.260, blue: 0.540)  // TC midpoint
+    private static let blueDrip   = Color(red: 0.068, green: 0.082, blue: 0.310)  // ML
 
-    // Teal-green cloud — right side
-    private static let tealCorner = Color(red: 0.035, green: 0.255, blue: 0.255)  // TR peak
-    private static let tealDrip   = Color(red: 0.018, green: 0.138, blue: 0.148)  // MR
+    // Violet cloud — right side
+    private static let tealCorner = Color(red: 0.200, green: 0.048, blue: 0.420)  // TR peak
+    private static let tealDrip   = Color(red: 0.095, green: 0.025, blue: 0.210)  // MR
 
     // Bright versions — used in started state and intenseRGB ceiling
-    private static let blueCornerBright = Color(red: 0.115, green: 0.120, blue: 0.580)
-    private static let blueBlendBright  = Color(red: 0.130, green: 0.250, blue: 0.560)
-    private static let tealCornerBright = Color(red: 0.052, green: 0.348, blue: 0.348)
-    private static let blueDripBright   = Color(red: 0.062, green: 0.075, blue: 0.308)
-    private static let tealDripBright   = Color(red: 0.028, green: 0.198, blue: 0.212)
+    private static let blueCornerBright = Color(red: 0.175, green: 0.185, blue: 0.680)
+    private static let blueBlendBright  = Color(red: 0.185, green: 0.310, blue: 0.650)
+    private static let tealCornerBright = Color(red: 0.250, green: 0.065, blue: 0.520)
+    private static let blueDripBright   = Color(red: 0.095, green: 0.110, blue: 0.400)
+    private static let tealDripBright   = Color(red: 0.125, green: 0.035, blue: 0.280)
 
     // Workout-start boost — same Nova hue family, but with a clearer launch flash.
     private static let blueCornerStart = Color(red: 0.170, green: 0.185, blue: 0.760)
     private static let blueBlendStart  = Color(red: 0.215, green: 0.365, blue: 0.760)
-    private static let tealCornerStart = Color(red: 0.095, green: 0.455, blue: 0.445)
+    private static let tealCornerStart = Color(red: 0.225, green: 0.058, blue: 0.520)
     private static let blueDripStart   = Color(red: 0.085, green: 0.110, blue: 0.405)
-    private static let tealDripStart   = Color(red: 0.050, green: 0.260, blue: 0.270)
+    private static let tealDripStart   = Color(red: 0.110, green: 0.032, blue: 0.268)
 
     // MARK: - Stellar Flare (set logged / exercise complete)
     // Blue-white burst — cuts clearly against the cool galaxy base.
@@ -82,24 +82,24 @@ enum MeshTheme {
 
     // TL, TC, TR, ML, MC, MR, BL, BC, BR
     private static let baseRGB: [RGB] = [
-        RGB(r: 0.080, g: 0.085, b: 0.440),  // TL — blue cloud peak
-        RGB(r: 0.095, g: 0.185, b: 0.430),  // TC — blue-teal blend
-        RGB(r: 0.035, g: 0.255, b: 0.255),  // TR — teal cloud peak
-        RGB(r: 0.040, g: 0.050, b: 0.220),  // ML — blue drip
-        RGB(r: 0.035, g: 0.032, b: 0.068),  // MC — void center
-        RGB(r: 0.018, g: 0.138, b: 0.148),  // MR — teal drip
+        RGB(r: 0.140, g: 0.150, b: 0.580),  // TL — blue cloud peak
+        RGB(r: 0.150, g: 0.260, b: 0.540),  // TC — blue-violet blend
+        RGB(r: 0.200, g: 0.048, b: 0.420),  // TR — violet cloud peak
+        RGB(r: 0.068, g: 0.082, b: 0.310),  // ML — blue drip
+        RGB(r: 0.042, g: 0.038, b: 0.090),  // MC — void center
+        RGB(r: 0.095, g: 0.025, b: 0.210),  // MR — violet drip
         RGB(r: 0.022, g: 0.020, b: 0.048),  // BL — void anchor
         RGB(r: 0.022, g: 0.020, b: 0.048),  // BC — void anchor
         RGB(r: 0.022, g: 0.020, b: 0.048),  // BR — void anchor
     ]
 
     private static let intenseRGB: [RGB] = [
-        RGB(r: 0.115, g: 0.120, b: 0.580),  // TL — blue peaks
-        RGB(r: 0.130, g: 0.250, b: 0.560),  // TC — blend brightens
-        RGB(r: 0.052, g: 0.348, b: 0.348),  // TR — teal peaks
-        RGB(r: 0.062, g: 0.075, b: 0.308),  // ML — blue drip deepens
-        RGB(r: 0.035, g: 0.032, b: 0.068),  // MC — stays void
-        RGB(r: 0.028, g: 0.198, b: 0.212),  // MR — teal drip deepens
+        RGB(r: 0.175, g: 0.185, b: 0.680),  // TL — blue peaks
+        RGB(r: 0.185, g: 0.310, b: 0.650),  // TC — blend brightens
+        RGB(r: 0.250, g: 0.065, b: 0.520),  // TR — violet peaks
+        RGB(r: 0.095, g: 0.110, b: 0.400),  // ML — blue drip deepens
+        RGB(r: 0.042, g: 0.038, b: 0.090),  // MC — stays void
+        RGB(r: 0.125, g: 0.035, b: 0.280),  // MR — violet drip deepens
         RGB(r: 0.022, g: 0.020, b: 0.048),  // BL — void anchor
         RGB(r: 0.022, g: 0.020, b: 0.048),  // BC — void anchor
         RGB(r: 0.022, g: 0.020, b: 0.048),  // BR — void anchor
