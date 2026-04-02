@@ -1088,6 +1088,10 @@ final class ActiveWorkoutViewModel {
         guard let s = session else { return nil }
         s.completedAt = .now
         applyPendingPRs()
+        // Drop any exercises the user added but never logged a set for.
+        for snapshot in s.exercises where snapshot.sets.isEmpty {
+            modelContext.delete(snapshot)
+        }
         try? modelContext.save()
         cancelRestNotification()
         activityManager.end(currentActivityState)
