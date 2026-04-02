@@ -10,6 +10,7 @@ struct ExerciseEditorView: View {
     /// Pass an existing exercise to edit, or nil to create a new custom one.
     let exercise: ExerciseDefinition?
     var allowsLifecycleActions: Bool = true
+    var onSave: ((ExerciseDefinition) -> Void)? = nil
 
     @Environment(\.dismiss) private var dismiss
     @Environment(\.modelContext) private var modelContext
@@ -340,6 +341,7 @@ struct ExerciseEditorView: View {
                 archived.weightIncrement = increment.value
                 archived.startingWeight = startingWeight.value
                 attachHistory(to: archived, matchingLegacyName: trimmedName)
+                onSave?(archived)
             } else {
                 let newEx = ExerciseDefinition(
                     name: trimmedName,
@@ -352,6 +354,7 @@ struct ExerciseEditorView: View {
                     isTimed: isTimed
                 )
                 modelContext.insert(newEx)
+                onSave?(newEx)
             }
         }
         do {

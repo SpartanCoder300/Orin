@@ -101,6 +101,7 @@ struct ExercisePicker: View {
                 }
                 .listStyle(.insetGrouped)
                 .scrollContentBackground(.hidden)
+                .scrollDismissesKeyboard(.interactively)
             }
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
@@ -112,6 +113,24 @@ struct ExercisePicker: View {
                     Button(dismissButtonTitle) { dismiss() }
                         .fontWeight(.semibold)
                 }
+                // When the search bar is active it takes over .topBarTrailing with its own
+                // Cancel button, hiding Done. Mirror it in .topBarLeading while searching.
+                if !dismissesOnSelection {
+                    SearchingDoneButton(action: { dismiss() })
+                }
+                ToolbarItem(placement: .keyboard) {
+                    HStack {
+                        Spacer()
+                        Button {
+                            UIApplication.shared.sendAction(
+                                #selector(UIResponder.resignFirstResponder),
+                                to: nil, from: nil, for: nil
+                            )
+                        } label: {
+                            Image(systemName: "keyboard.chevron.compact.down")
+                        }
+                    }
+                }
                 ToolbarItem(placement: .bottomBar) {
                     Button { editorTarget = .new } label: {
                         Label("New Exercise", systemImage: "plus.circle.fill")
@@ -121,7 +140,9 @@ struct ExercisePicker: View {
                 }
             }
             .sheet(item: $editorTarget) { target in
-                ExerciseEditorView(exercise: target.exercise)
+                ExerciseEditorView(exercise: target.exercise) { newExercise in
+                    if case .new = target { select(newExercise) }
+                }
             }
         }
         .onAppear {
@@ -208,6 +229,25 @@ struct ExercisePicker: View {
     }
 
 
+}
+
+// MARK: - Search-aware Done button
+
+/// Reads `isSearching` (must be a descendant of `.searchable`) and shows a
+/// leading Done button only while the search bar is active — filling the gap
+/// left by the search Cancel button which takes over `.topBarTrailing`.
+private struct SearchingDoneButton: ToolbarContent {
+    @Environment(\.isSearching) private var isSearching
+    let action: () -> Void
+
+    var body: some ToolbarContent {
+        if isSearching {
+            ToolbarItem(placement: .topBarLeading) {
+                Button("Done", action: action)
+                    .fontWeight(.semibold)
+            }
+        }
+    }
 }
 
 // MARK: - Editor Target
