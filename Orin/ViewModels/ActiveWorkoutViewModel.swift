@@ -365,7 +365,7 @@ final class ActiveWorkoutViewModel {
 
             // Reconstruct each persisted set as a logged DraftSet.
             let sortedRecords = snapshot.sets.sorted { $0.loggedAt < $1.loggedAt }
-            if let restored = restorePersistedDraft(
+            if var restored = restorePersistedDraft(
                 from: snapshot,
                 sortedRecords: sortedRecords,
                 exerciseName: name,
@@ -378,6 +378,7 @@ final class ActiveWorkoutViewModel {
                 isTimed: isTimed,
                 restSeconds: restSeconds
             ) {
+                applyPreviousPerformance(to: &restored)
                 return restored
             }
             var draftSets: [DraftSet] = sortedRecords.map { record in
@@ -457,7 +458,7 @@ final class ActiveWorkoutViewModel {
             }
 
             let routineRestSecs = routineEntriesByName[name]?.restSeconds ?? 90
-            return DraftExercise(
+            var exercise = DraftExercise(
                 exerciseDefinitionID: def?.id,
                 exerciseLineageID: snapshot.exerciseLineageID ?? def?.id,
                 exerciseName:    name,
@@ -470,6 +471,8 @@ final class ActiveWorkoutViewModel {
                 snapshot:        snapshot,
                 restSeconds:     routineRestSecs
             )
+            applyPreviousPerformance(to: &exercise)
+            return exercise
         }
 
         // Restore focus to the last logged set so autoFocus advances to the correct next set.
@@ -707,7 +710,6 @@ final class ActiveWorkoutViewModel {
         draftExercises[index].sets.append(new)
         persistDraftState()
         UISelectionFeedbackGenerator().selectionChanged()
-        requestRevealCurrentFocus()
     }
 
     func removeExercise(at index: Int) {

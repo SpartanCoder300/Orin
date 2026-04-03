@@ -70,11 +70,7 @@ struct ActiveExerciseCard: View {
                         Label("Add Superset", systemImage: "arrow.2.squarepath")
                     }
 
-                    Button {
-                        vm.addSet(toExerciseAt: exerciseIndex)
-                    } label: {
-                        Label("Add Set", systemImage: "plus")
-                    }
+                    Divider()
 
                     Button {
                         vm.addDropset(toExerciseAt: exerciseIndex)
@@ -103,12 +99,6 @@ struct ActiveExerciseCard: View {
                     } label: {
                         Label("Remove from Workout", systemImage: "trash")
                     }
-
-                    Button(role: .destructive) {
-                        vm.isShowingEndConfirm = true
-                    } label: {
-                        Label("End Workout", systemImage: "xmark.circle")
-                    }
                 } label: {
                     Image(systemName: "ellipsis")
                         .font(.system(size: 16, weight: .medium))
@@ -121,16 +111,6 @@ struct ActiveExerciseCard: View {
             .padding(.horizontal, Spacing.md)
             .padding(.top, Spacing.sm)
 
-            // ── Previous session ──────────────────────────────────────
-            if !exercise.previousSets.isEmpty {
-                Text("Last \(previousLabel(for: exercise))")
-                    .font(.caption)
-                    .foregroundStyle(Color.textFaint)
-                    .padding(.horizontal, Spacing.md)
-                    .padding(.bottom, Spacing.sm)
-            } else {
-                Color.clear.frame(height: Spacing.sm)
-            }
 
             Divider().overlay(Color.white.opacity(0.07))
 
@@ -155,6 +135,8 @@ struct ActiveExerciseCard: View {
                     accentColor: theme.accentColor,
                     placeholderDisplayText: placeholderText(for: exercise, setIndex: sIdx),
                     placeholderDelay: Double(max(0, sIdx - 1)) * 0.05,
+                    previousSet: sIdx < exercise.previousSets.count ? exercise.previousSets[sIdx] : exercise.previousSets.last,
+                    justLogged: vm.lastLoggedFocus == ActiveWorkoutViewModel.SetFocus(exerciseIndex: exerciseIndex, setIndex: sIdx),
                     onCycleType: { vm.cycleSetType(exerciseIndex: exerciseIndex, setIndex: sIdx) },
                     onFocus: { vm.setManualFocus(exerciseIndex: exerciseIndex, setIndex: sIdx) },
                     onLog: { vm.logSet(exerciseIndex: exerciseIndex, setIndex: sIdx) },
@@ -163,6 +145,7 @@ struct ActiveExerciseCard: View {
                     onCopyFromAbove: sIdx > 0 ? { vm.copySetFromAbove(exerciseIndex: exerciseIndex, setIndex: sIdx) } : nil,
                     onAdoptPlaceholder: sIdx > 0 ? { vm.adoptPlaceholderValues(exerciseIndex: exerciseIndex, setIndex: sIdx) } : nil
                 )
+                .transition(.opacity.combined(with: .move(edge: .bottom)))
 
                 if sIdx < exercise.sets.count - 1 {
                     Divider()
@@ -170,6 +153,25 @@ struct ActiveExerciseCard: View {
                         .padding(.horizontal, Spacing.md)
                 }
             }
+            .animation(Motion.standardSpring, value: exercise.sets.count)
+
+            // ── Add Set ───────────────────────────────────────────────
+            Divider()
+                .overlay(Color.white.opacity(0.05))
+                .padding(.horizontal, Spacing.md)
+
+            Button {
+                vm.addSet(toExerciseAt: exerciseIndex)
+            } label: {
+                Label("Add Set", systemImage: "plus")
+                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                    .foregroundStyle(Color.textFaint)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, Spacing.md)
+                    .padding(.vertical, Spacing.sm)
+                    .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
 
         }
         .background(Color.white.opacity(0.10), in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
@@ -219,29 +221,6 @@ struct ActiveExerciseCard: View {
         return "\(w) × \(r)"
     }
 
-    private func previousLabel(for exercise: ActiveWorkoutViewModel.DraftExercise) -> String {
-        if exercise.isTimed {
-            if exercise.tracksWeight {
-                return exercise.previousSets
-                    .map {
-                        let duration = $0.duration.map { formatDuration(Int($0)) } ?? "—"
-                        return "\(vm.formatWeight($0.weight)) lb · \(duration)"
-                    }
-                    .joined(separator: "   ")
-            }
-            return exercise.previousSets
-                .map { formatDuration(Int($0.duration ?? 0)) }
-                .joined(separator: "   ")
-        }
-        guard exercise.tracksWeight else {
-            return exercise.previousSets
-                .map { "\($0.reps) reps" }
-                .joined(separator: "   ")
-        }
-        return exercise.previousSets
-            .map { "\(vm.formatWeight($0.weight)) × \($0.reps)" }
-            .joined(separator: "   ")
-    }
 }
 
 

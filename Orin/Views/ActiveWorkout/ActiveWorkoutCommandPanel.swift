@@ -68,6 +68,23 @@ struct ActiveWorkoutCommandPanel: View {
                     )
                 }
 
+                // Context label — mirrors the accent bar in SetRow to visually connect panel to row
+                HStack(spacing: Spacing.xs) {
+                    RoundedRectangle(cornerRadius: 1.5)
+                        .fill(theme.accentColor)
+                        .frame(width: 3, height: 14)
+                    Text("\(exercise.exerciseName)  ·  Set \(focus.setIndex + 1)")
+                        .font(.system(size: 12, weight: .semibold, design: .rounded))
+                        .foregroundStyle(Color.textMuted)
+                        .lineLimit(1)
+                }
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, Spacing.md)
+                .padding(.top, Spacing.sm)
+                .padding(.bottom, 2)
+                .contentTransition(.opacity)
+                .animation(Motion.standardSpring, value: focus.setIndex)
+
                 // Row 1: Weight | Reps (or Duration for timed exercises)
                 HStack(spacing: 0) {
                     if exercise.tracksWeight {
@@ -171,18 +188,20 @@ struct ActiveWorkoutCommandPanel: View {
                     )
                     vm.logFocusedSet()
                 } label: {
-                    HStack(spacing: Spacing.xs) {
-                        Image(systemName: "checkmark")
-                            .font(.system(size: 15, weight: .bold))
-                        Text("Log Set")
-                            .font(.system(size: 16, weight: .semibold))
+                    VStack(spacing: 2) {
+                        HStack(spacing: Spacing.xs) {
+                            Image(systemName: "checkmark")
+                                .font(.system(size: 15, weight: .bold))
+                            Text("Log Set")
+                                .font(.system(size: 16, weight: .semibold))
+                        }
                     }
                     .foregroundStyle(theme.accentColor)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
-                .frame(height: 52)
+                .frame(height: 60)
             }
             .glassEffect(.regular, in: RoundedRectangle(cornerRadius: Radius.large, style: .continuous))
             .modifier(CommandPanelElevation(cornerRadius: Radius.large))
