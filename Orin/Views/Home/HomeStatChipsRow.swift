@@ -92,6 +92,5 @@ private struct HomeStatChipsRowPreview: View {
 #Preview {
     HomeStatChipsRowPreview()
         .padding()
-        .environment(MeshEngine())
         .preferredColorScheme(.dark)
 }

@@ -114,7 +114,6 @@ private struct RoutineBuilderRequest: Identifiable {
         HomeRootView()
     }
     .environment(appState)
-    .environment(MeshEngine())
     .modelContainer(container)
     .preferredColorScheme(.dark)
 }
@@ -124,22 +123,6 @@ private struct RoutineBuilderRequest: Identifiable {
         HomeRootView()
     }
     .environment(AppState())
-    .environment(MeshEngine())
-    .modelContainer(HomePreviewData.featuredRootContainer)
-    .preferredColorScheme(.dark)
-}
-
-#Preview("Nova Featured") {
-    let appState = AppState()
-    appState.accentTheme = .mesh
-
-    return NavigationStack {
-        HomeRootView()
-    }
-    .environment(appState)
-    .environment(\.OrinTheme, .mesh)
-    .environment(\.OrinCardMaterial, .ultraThinMaterial)
-    .environment(MeshEngine())
     .modelContainer(HomePreviewData.featuredRootContainer)
     .preferredColorScheme(.dark)
 }
@@ -149,7 +132,6 @@ private struct RoutineBuilderRequest: Identifiable {
         HomeRootView()
     }
     .environment(AppState())
-    .environment(MeshEngine())
     .modelContainer(HomePreviewData.routinesOnlyRootContainer)
     .preferredColorScheme(.dark)
 }
@@ -159,7 +141,6 @@ private struct RoutineBuilderRequest: Identifiable {
         HomeRootView()
     }
     .environment(AppState())
-    .environment(MeshEngine())
     .modelContainer(HomePreviewData.emptyRootContainer)
     .preferredColorScheme(.dark)
 }

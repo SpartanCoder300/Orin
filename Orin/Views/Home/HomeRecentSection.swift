@@ -100,7 +100,6 @@ private struct RecentWorkoutListRow: View {
                 .padding()
         }
     }
-    .environment(MeshEngine())
     .modelContainer(HomePreviewData.container)
     .preferredColorScheme(.dark)
 }
@@ -112,7 +111,6 @@ private struct RecentWorkoutListRow: View {
                 .padding()
         }
     }
-    .environment(MeshEngine())
     .modelContainer(HomePreviewData.container)
     .preferredColorScheme(.dark)
 }

@@ -15,6 +15,5 @@ struct ProgressRootView: View {
         ProgressRootView()
     }
     .environment(AppState())
-    .environment(MeshEngine())
     .modelContainer(HistoryRootPreviewData.populatedContainer)
 }

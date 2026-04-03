@@ -19,11 +19,9 @@
 		20C236F02F746D2300D5763E /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236A92F746D2300D5763E /* AppState.swift */; };
 		20C236F12F746D2300D5763E /* AppView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236AA2F746D2300D5763E /* AppView.swift */; };
 		20C236F22F746D2300D5763E /* HeftApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236AB2F746D2300D5763E /* HeftApp.swift */; };
-		20C236F32F746D2300D5763E /* MeshTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236AC2F746D2300D5763E /* MeshTheme.swift */; };
 		20C236F42F746D2300D5763E /* Color+Tokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236AE2F746D2300D5763E /* Color+Tokens.swift */; };
 		20C236F52F746D2300D5763E /* CompactStepper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236AF2F746D2300D5763E /* CompactStepper.swift */; };
 		20C236F62F746D2300D5763E /* GlassPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236B02F746D2300D5763E /* GlassPanel.swift */; };
-		20C236F72F746D2300D5763E /* MeshBackgroundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236B12F746D2300D5763E /* MeshBackgroundView.swift */; };
 		20C236F82F746D2300D5763E /* PlaceholderScreen.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236B22F746D2300D5763E /* PlaceholderScreen.swift */; };
 		20C236F92F746D2300D5763E /* ProGlassModifier.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236B32F746D2300D5763E /* ProGlassModifier.swift */; };
 		20C236FA2F746D2300D5763E /* SetTypeChip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236B42F746D2300D5763E /* SetTypeChip.swift */; };
@@ -44,7 +42,6 @@
 		20C237092F746D2300D5763E /* ExerciseFrecencyActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236C72F746D2300D5763E /* ExerciseFrecencyActor.swift */; };
 		20C2370A2F746D2300D5763E /* ExerciseSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236C82F746D2300D5763E /* ExerciseSeeder.swift */; };
 		20C2370B2F746D2300D5763E /* HomeStatsActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236C92F746D2300D5763E /* HomeStatsActor.swift */; };
-		20C2370C2F746D2300D5763E /* MeshEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236CA2F746D2300D5763E /* MeshEngine.swift */; };
 		20C2370D2F746D2300D5763E /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236CB2F746D2300D5763E /* PersistenceController.swift */; };
 		20C2370E2F746D2300D5763E /* RestTimerState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236CC2F746D2300D5763E /* RestTimerState.swift */; };
 		20C2370F2F746D2300D5763E /* WorkoutActivityManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236CD2F746D2300D5763E /* WorkoutActivityManager.swift */; };
@@ -150,11 +147,9 @@
 		20C236A92F746D2300D5763E /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		20C236AA2F746D2300D5763E /* AppView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppView.swift; sourceTree = "<group>"; };
 		20C236AB2F746D2300D5763E /* HeftApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeftApp.swift; sourceTree = "<group>"; };
-		20C236AC2F746D2300D5763E /* MeshTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshTheme.swift; sourceTree = "<group>"; };
 		20C236AE2F746D2300D5763E /* Color+Tokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Tokens.swift"; sourceTree = "<group>"; };
 		20C236AF2F746D2300D5763E /* CompactStepper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompactStepper.swift; sourceTree = "<group>"; };
 		20C236B02F746D2300D5763E /* GlassPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassPanel.swift; sourceTree = "<group>"; };
-		20C236B12F746D2300D5763E /* MeshBackgroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshBackgroundView.swift; sourceTree = "<group>"; };
 		20C236B22F746D2300D5763E /* PlaceholderScreen.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PlaceholderScreen.swift; sourceTree = "<group>"; };
 		20C236B32F746D2300D5763E /* ProGlassModifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProGlassModifier.swift; sourceTree = "<group>"; };
 		20C236B42F746D2300D5763E /* SetTypeChip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetTypeChip.swift; sourceTree = "<group>"; };
@@ -175,7 +170,6 @@
 		20C236C72F746D2300D5763E /* ExerciseFrecencyActor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseFrecencyActor.swift; sourceTree = "<group>"; };
 		20C236C82F746D2300D5763E /* ExerciseSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseSeeder.swift; sourceTree = "<group>"; };
 		20C236C92F746D2300D5763E /* HomeStatsActor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeStatsActor.swift; sourceTree = "<group>"; };
-		20C236CA2F746D2300D5763E /* MeshEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MeshEngine.swift; sourceTree = "<group>"; };
 		20C236CB2F746D2300D5763E /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
 		20C236CC2F746D2300D5763E /* RestTimerState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestTimerState.swift; sourceTree = "<group>"; };
 		20C236CD2F746D2300D5763E /* WorkoutActivityManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WorkoutActivityManager.swift; sourceTree = "<group>"; };
@@ -364,7 +358,6 @@
 				20C236A92F746D2300D5763E /* AppState.swift */,
 				20C236AA2F746D2300D5763E /* AppView.swift */,
 				20C236AB2F746D2300D5763E /* HeftApp.swift */,
-				20C236AC2F746D2300D5763E /* MeshTheme.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -376,7 +369,6 @@
 				20C236AF2F746D2300D5763E /* CompactStepper.swift */,
 				20A10DD82F781E0F0053B465 /* SwipeValueControl.swift */,
 				20C236B02F746D2300D5763E /* GlassPanel.swift */,
-				20C236B12F746D2300D5763E /* MeshBackgroundView.swift */,
 				20C236B22F746D2300D5763E /* PlaceholderScreen.swift */,
 				20C236B42F746D2300D5763E /* SetTypeChip.swift */,
 				20C236B52F746D2300D5763E /* ThemedBackground.swift */,
@@ -426,7 +418,6 @@
 				20C236C72F746D2300D5763E /* ExerciseFrecencyActor.swift */,
 				20C236C82F746D2300D5763E /* ExerciseSeeder.swift */,
 				20C236C92F746D2300D5763E /* HomeStatsActor.swift */,
-				20C236CA2F746D2300D5763E /* MeshEngine.swift */,
 				20C236CB2F746D2300D5763E /* PersistenceController.swift */,
 				20C236CC2F746D2300D5763E /* RestTimerState.swift */,
 				20C236CD2F746D2300D5763E /* WorkoutActivityManager.swift */,
@@ -719,12 +710,10 @@
 				20C236F12F746D2300D5763E /* AppView.swift in Sources */,
 				20C236F22F746D2300D5763E /* HeftApp.swift in Sources */,
 				20C2372B2F7479AC00D5763E /* HomePreviewData.swift in Sources */,
-				20C236F32F746D2300D5763E /* MeshTheme.swift in Sources */,
 				20C236F42F746D2300D5763E /* Color+Tokens.swift in Sources */,
 				20C236F52F746D2300D5763E /* CompactStepper.swift in Sources */,
 				20A10DD92F781E0F0053B465 /* SwipeValueControl.swift in Sources */,
 				20C236F62F746D2300D5763E /* GlassPanel.swift in Sources */,
-				20C236F72F746D2300D5763E /* MeshBackgroundView.swift in Sources */,
 				20C236F82F746D2300D5763E /* PlaceholderScreen.swift in Sources */,
 				20A10DD72F781E0F0053B465 /* ProgressAnalyticsEngine.swift in Sources */,
 				20A10DC82F7814980053B465 /* ProgressRootView.swift in Sources */,
@@ -749,7 +738,6 @@
 				20C237092F746D2300D5763E /* ExerciseFrecencyActor.swift in Sources */,
 				20C2370A2F746D2300D5763E /* ExerciseSeeder.swift in Sources */,
 				20C2370B2F746D2300D5763E /* HomeStatsActor.swift in Sources */,
-				20C2370C2F746D2300D5763E /* MeshEngine.swift in Sources */,
 				20C2370D2F746D2300D5763E /* PersistenceController.swift in Sources */,
 				20C2370E2F746D2300D5763E /* RestTimerState.swift in Sources */,
 				20C2370F2F746D2300D5763E /* WorkoutActivityManager.swift in Sources */,

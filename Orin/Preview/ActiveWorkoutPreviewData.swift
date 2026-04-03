@@ -73,7 +73,6 @@ extension View {
     func activeWorkoutPreviewEnvironments() -> some View {
         self
             .environment(AppState())
-            .environment(MeshEngine())
             .environment(\.OrinTheme, .midnight)
             .environment(\.OrinCardMaterial, .regularMaterial)
             .modelContainer(PersistenceController.previewContainer)

@@ -8,10 +8,6 @@ struct AppView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.modelContext) private var modelContext
 
-    @State private var meshEngine = MeshEngine()
-    @State private var setLoggedTask: Task<Void, Never>?
-    @State private var workoutStartTask: Task<Void, Never>?
-    @State private var meshIntroTask: Task<Void, Never>?
     @Environment(\.scenePhase) private var scenePhase
 
     private var isRunningInPreview: Bool {
@@ -64,22 +60,12 @@ struct AppView: View {
         .tint(appState.accentTheme.accentColor)
         .preferredColorScheme(.dark)
         .environment(\.OrinTheme, appState.accentTheme)
-        .environment(\.OrinCardMaterial, appState.accentTheme == .mesh ? .ultraThinMaterial : .regularMaterial)
-        .environment(meshEngine)
-        // ── Mesh: persistent state ────────────────────────────────────────────
-        .onChange(of: derivedMeshState) { _, newState in
-            meshEngine.state = newState
-        }
-        // ── Set logged: pulse + haptic + intensity ────────────────────────────
+        // ── Set logged: haptic ────────────────────────────────────────────────
         .onChange(of: appState.workout.viewModel?.loggedSetCount) { oldCount, newCount in
             guard let oldCount, let newCount, newCount > oldCount else { return }
             let vm = appState.workout.viewModel
             guard vm?.showingPRMoment == nil else { return }
 
-            // Haptic — always, every theme.
-            // Exercise complete → success notification (distinctive double-pulse).
-            // Last set of the whole workout → skip; workoutComplete haptic takes over.
-            // Everything else → medium impact (single thud).
             let isWorkoutComplete = vm?.isAllSetsLogged == true
             let isExerciseComplete: Bool = {
                 guard !isWorkoutComplete,
@@ -94,71 +80,19 @@ struct AppView: View {
             } else if !isWorkoutComplete {
                 UIImpactFeedbackGenerator(style: .medium).impactOccurred()
             }
-
-            // Mesh: intensity + pulse — Pro only
-            if appState.accentTheme == .mesh {
-                meshEngine.updateIntensity(min(Double(newCount) / 20.0, 1.0), pulse: true)
-                meshEngine.lastLoggedExerciseIndex = vm?.lastLoggedExerciseIndex
-                setLoggedTask?.cancel()
-                meshEngine.state = isExerciseComplete ? .exerciseComplete : .setLogged
-                setLoggedTask = Task {
-                    // Hold exercise-complete green slightly longer so it reads clearly
-                    try? await Task.sleep(for: .milliseconds(isExerciseComplete ? 700 : 500))
-                    guard !Task.isCancelled else { return }
-                    meshEngine.state = derivedMeshState
-                }
+        }
+        // ── Workout complete haptic ───────────────────────────────────────────
+        .onChange(of: appState.workout.viewModel?.isAllSetsLogged) { _, isComplete in
+            guard isComplete == true else { return }
+            Task {
+                UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
+                try? await Task.sleep(for: .milliseconds(150))
+                UINotificationFeedbackGenerator().notificationOccurred(.success)
             }
         }
-        // ── Workout start/end: pulse + haptic ────────────────────────────────
-        .onChange(of: appState.workout.hasActiveWorkout) { _, isActive in
-            if isActive {
-                guard appState.accentTheme == .mesh else { return }
-                playWorkoutStartHaptic()
-                workoutStartTask?.cancel()
-                meshEngine.state = .workoutStarted
-                workoutStartTask = Task {
-                    try? await Task.sleep(for: .milliseconds(1000))
-                    guard !Task.isCancelled else { return }
-                    meshEngine.state = derivedMeshState
-                }
-            } else {
-                workoutStartTask?.cancel()
-                meshEngine.updateIntensity(0, pulse: false)
-            }
-        }
-        // ── Mesh theme intro ──────────────────────────────────────────────────
-        .onChange(of: appState.accentTheme) { _, newTheme in
-            // Push new accent colour to the Live Activity so the island updates immediately.
+        // ── Theme change: refresh Live Activity ───────────────────────────────
+        .onChange(of: appState.accentTheme) { _, _ in
             appState.workout.viewModel?.refreshActivityState()
-            guard newTheme == .mesh else { return }
-            // Slow cosmic bloom — welcome to Nova. Deliberate, not reactive.
-            // Holds for 2.5s so the 1.5s fade-in has room to breathe, then returns to base.
-            playWorkoutStartHaptic()
-            meshIntroTask?.cancel()
-            meshEngine.state = .themeIntro
-            meshIntroTask = Task {
-                try? await Task.sleep(for: .milliseconds(2500))
-                guard !Task.isCancelled else { return }
-                meshEngine.state = derivedMeshState
-            }
-        }
-        // ── PR & complete haptics ─────────────────────────────────────────────
-        .onChange(of: meshEngine.state) { _, newState in
-            switch newState {
-            case .prBloom:
-                // Ascending flourish is mesh-only — firePRCelebration() in the VM
-                // already handles the primary haptic for all themes.
-                guard appState.accentTheme == .mesh else { break }
-                playPRHaptics()
-            case .workoutComplete:
-                Task {
-                    UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
-                    try? await Task.sleep(for: .milliseconds(150))
-                    UINotificationFeedbackGenerator().notificationOccurred(.success)
-                }
-            default:
-                break
-            }
         }
         .onOpenURL { url in
             guard url.scheme == "Orin", url.host == "workout" else { return }
@@ -190,32 +124,7 @@ struct AppView: View {
         }
     }
 
-    private var derivedMeshState: MeshState {
-        guard let vm = appState.workout.viewModel else { return .base }
-        if vm.showingPRMoment != nil { return .prBloom }
-        if vm.isAllSetsLogged { return .workoutComplete }
-        return .base
-    }
 
-    /// Two beats — medium then heavy — like a starting signal.
-    private func playWorkoutStartHaptic() {
-        Task {
-            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-            try? await Task.sleep(for: .milliseconds(90))
-            UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
-        }
-    }
-
-    /// Three ascending impacts timed to the amber flood-in.
-    private func playPRHaptics() {
-        Task {
-            UIImpactFeedbackGenerator(style: .light).impactOccurred()
-            try? await Task.sleep(for: .milliseconds(120))
-            UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-            try? await Task.sleep(for: .milliseconds(140))
-            UIImpactFeedbackGenerator(style: .heavy).impactOccurred()
-        }
-    }
 }
 
 #Preview {

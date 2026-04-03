@@ -31,6 +31,5 @@ struct LibraryRootView: View {
         LibraryRootView()
     }
     .environment(AppState())
-    .environment(MeshEngine())
     .preferredColorScheme(.dark)
 }

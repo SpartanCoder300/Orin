@@ -86,18 +86,9 @@ private struct ThemeRow: View {
                 .frame(width: 32, height: 32)
                 .overlay(Circle().strokeBorder(.white.opacity(0.12), lineWidth: 1))
 
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(theme.displayName)
-                        .font(Typography.body)
-                        .foregroundStyle(Color.textPrimary)
-                    if theme.isPro {
-                        Text("Pro")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(Color.OrinAmber)
-                            .textCase(.uppercase)
-                            .tracking(0.5)
-                    }
-                }
+                Text(theme.displayName)
+                    .font(Typography.body)
+                    .foregroundStyle(Color.textPrimary)
 
                 Spacer()
 

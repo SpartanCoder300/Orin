@@ -169,7 +169,6 @@ private struct HistoryEmptyState: View {
         HistoryRootView()
     }
     .environment(AppState())
-    .environment(MeshEngine())
     .modelContainer(HistoryRootPreviewData.emptyContainer)
 }
 
@@ -178,6 +177,5 @@ private struct HistoryEmptyState: View {
         HistoryRootView()
     }
     .environment(AppState())
-    .environment(MeshEngine())
     .modelContainer(HistoryRootPreviewData.populatedContainer)
 }

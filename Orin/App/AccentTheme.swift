@@ -6,7 +6,6 @@ enum AccentTheme: String, CaseIterable, Identifiable {
     case midnight
     case graphite
     case ember
-    case mesh           // Pro only
 
     var id: String { rawValue }
 
@@ -15,7 +14,6 @@ enum AccentTheme: String, CaseIterable, Identifiable {
         case .midnight: "Midnight"
         case .graphite: "Graphite"
         case .ember:    "Copper"
-        case .mesh:     "Nova"
         }
     }
 
@@ -24,7 +22,6 @@ enum AccentTheme: String, CaseIterable, Identifiable {
         case .midnight: Color("Accent")
         case .graphite: Color("AccentGraphite")
         case .ember:    Color("AccentEmber")
-        case .mesh:     Color("AccentMesh")
         }
     }
 
@@ -33,11 +30,8 @@ enum AccentTheme: String, CaseIterable, Identifiable {
         case .midnight: Color("BackgroundMidnight")
         case .graphite: Color("BackgroundGraphite")
         case .ember:    Color("BackgroundEmber")
-        case .mesh:     Color("BackgroundMesh")
         }
     }
-
-    var isPro: Bool { self == .mesh }
 
     /// Raw sRGB doubles for encoding into Live Activity ContentState.
     /// Color is not Codable so the widget reconstructs it from these values.
@@ -46,7 +40,6 @@ enum AccentTheme: String, CaseIterable, Identifiable {
         case .midnight: return (0.290, 0.482, 0.800) // #4A7BCC steel navy
         case .graphite: return (0.498, 0.714, 0.761) // #7FB6C2 washed cyan
         case .ember:    return (0.722, 0.455, 0.196) // #B87432 burnished copper
-        case .mesh:     return (0.580, 0.600, 0.839) // #9499D6 cosmic periwinkle
         }
     }
 
@@ -64,8 +57,7 @@ private struct OrinThemeKey: EnvironmentKey {
     static let defaultValue: AccentTheme = .midnight
 }
 
-// Card material — ultraThinMaterial for Pro/Mesh so cards become translucent
-// windows into the mesh beneath. RegularMaterial for all other themes.
+// Card material — regularMaterial by default.
 private struct OrinCardMaterialKey: EnvironmentKey {
     static let defaultValue: Material = .regularMaterial
 }

@@ -135,6 +135,5 @@ struct WorkoutDetailView: View {
         WorkoutDetailView(session: HistoryRootPreviewData.detailPreviewSession)
     }
     .environment(AppState())
-    .environment(MeshEngine())
     .modelContainer(HistoryRootPreviewData.populatedContainer)
 }

@@ -83,7 +83,6 @@ private struct NewRoutineCard: View {
         onStartEmpty: {}
     )
     .padding()
-    .environment(MeshEngine())
     .preferredColorScheme(.dark)
 }
 
@@ -102,7 +101,6 @@ private struct NewRoutineCard: View {
         )
         .padding()
     }
-    .environment(MeshEngine())
     .modelContainer(scenario.container)
     .preferredColorScheme(.dark)
 }

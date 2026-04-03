@@ -129,6 +129,5 @@ struct WorkoutSummaryView: View {
         WorkoutSummaryView(session: session, onDone: {})
     }
     .environment(AppState())
-    .environment(MeshEngine())
     .modelContainer(container)
 }
