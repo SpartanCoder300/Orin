@@ -5,13 +5,13 @@ import SwiftData
 
 @Model
 final class RoutineEntry {
-    @Attribute(.unique) var id: UUID
+    var id: UUID = UUID()
     var exerciseDefinition: ExerciseDefinition?
-    var order: Int
-    var targetSets: Int
-    var targetRepsMin: Int
-    var targetRepsMax: Int
-    var restSeconds: Int
+    var order: Int = 0
+    var targetSets: Int = 3
+    var targetRepsMin: Int = 8
+    var targetRepsMax: Int = 12
+    var restSeconds: Int = 90
     var routineTemplate: RoutineTemplate?
 
     init(

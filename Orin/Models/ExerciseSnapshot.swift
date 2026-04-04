@@ -5,8 +5,8 @@ import SwiftData
 
 @Model
 final class ExerciseSnapshot {
-    @Attribute(.unique) var id: UUID
-    var exerciseName: String
+    var id: UUID = UUID()
+    var exerciseName: String = ""
     var exerciseLineageID: UUID?
     var equipmentType: String?
     var weightIncrement: Double?
@@ -15,8 +15,8 @@ final class ExerciseSnapshot {
     var isTimed: Bool = false
     var restSeconds: Int?
     var draftStateJSON: String?
-    var order: Int
-    @Relationship(deleteRule: .cascade, inverse: \SetRecord.exerciseSnapshot) var sets: [SetRecord]
+    var order: Int = 0
+    @Relationship(deleteRule: .cascade, inverse: \SetRecord.exerciseSnapshot) var sets: [SetRecord] = []
     var workoutSession: WorkoutSession?
 
     var loadTrackingMode: LoadTrackingMode {

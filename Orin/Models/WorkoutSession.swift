@@ -5,12 +5,12 @@ import SwiftData
 
 @Model
 final class WorkoutSession {
-    @Attribute(.unique) var id: UUID
+    var id: UUID = UUID()
     var startedAt: Date?
     var completedAt: Date?
     var routineTemplateId: UUID?
     var notes: String?
-    @Relationship(deleteRule: .cascade, inverse: \ExerciseSnapshot.workoutSession) var exercises: [ExerciseSnapshot]
+    @Relationship(deleteRule: .cascade, inverse: \ExerciseSnapshot.workoutSession) var exercises: [ExerciseSnapshot] = []
 
     init(
         id: UUID = UUID(),

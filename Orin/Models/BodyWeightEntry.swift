@@ -5,10 +5,10 @@ import SwiftData
 
 @Model
 final class BodyWeightEntry {
-    @Attribute(.unique) var id: UUID
-    var date: Date
-    var weight: Double
-    var unit: String
+    var id: UUID = UUID()
+    var date: Date = Date.now
+    var weight: Double = 0
+    var unit: String = "lbs"
 
     init(
         id: UUID = UUID(),

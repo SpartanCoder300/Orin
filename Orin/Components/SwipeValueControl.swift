@@ -234,14 +234,16 @@ struct SwipeValueControl: View {
             if !active { commitAndReset() }
         }
         .onChange(of: hintToken) { _, token in
-            guard token != nil else { return }
+            guard token != nil else {
+                withAnimation(.spring(response: 0.2, dampingFraction: 0.85)) { hintOffset = 0 }
+                return
+            }
             Task { @MainActor in
-                try? await Task.sleep(for: .milliseconds(400))
-                withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) { hintOffset = -6 }
-                try? await Task.sleep(for: .milliseconds(300))
-                withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) { hintOffset = 6 }
-                try? await Task.sleep(for: .milliseconds(300))
-                withAnimation(.spring(response: 0.36, dampingFraction: 0.82)) { hintOffset = 0 }
+                withAnimation(.spring(response: 0.28, dampingFraction: 0.76)) { hintOffset = -6 }
+                try? await Task.sleep(for: .milliseconds(210))
+                withAnimation(.spring(response: 0.28, dampingFraction: 0.76)) { hintOffset = 6 }
+                try? await Task.sleep(for: .milliseconds(210))
+                withAnimation(.spring(response: 0.30, dampingFraction: 0.82)) { hintOffset = 0 }
                 UISelectionFeedbackGenerator().selectionChanged()
             }
         }

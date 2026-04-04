@@ -11,15 +11,15 @@ enum LoadTrackingMode: String, CaseIterable, Codable {
 
 @Model
 final class ExerciseDefinition {
-    @Attribute(.unique) var id: UUID
-    var name: String
-    var muscleGroups: [String]
-    var equipmentType: String
-    var isCustom: Bool
+    var id: UUID = UUID()
+    var name: String = ""
+    var muscleGroups: [String] = []
+    var equipmentType: String = ""
+    var isCustom: Bool = false
     var archivedAt: Date?
-    var createdAt: Date
-    var currentPR: Double
-    var previousPR: Double
+    var createdAt: Date = Date.now
+    var currentPR: Double = 0
+    var previousPR: Double = 0
     var prDate: Date?
     /// Explicitly overridden weight increment in lbs. Nil = use equipment-type default.
     /// Optional so lightweight migration succeeds for existing rows (nil → resolvedWeightIncrement

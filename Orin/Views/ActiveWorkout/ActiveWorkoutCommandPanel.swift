@@ -12,12 +12,13 @@ struct ActiveWorkoutCommandPanel: View {
     let onDismiss: () -> Void
 
     @AppStorage("hasUsedSwipeControl") private var hasUsedSwipeControl: Bool = false
-    /// Counts how many sessions have shown the hint. Stops at 3.
+    /// Counts how many sessions have shown the hint. Stops at 2.
     @AppStorage("Orin.swipeHintSessionCount") private var swipeHintSessionCount: Int = 0
     @State private var isKeyboardVisible = false
     @State private var hintToken: UUID? = nil
     /// Prevents the hint from firing more than once within the same session.
     @State private var didShowHintThisSession: Bool = false
+    @State private var hintTask: Task<Void, Never>? = nil
 
     private let horizontalInset: CGFloat = Spacing.lg
 
@@ -116,7 +117,7 @@ struct ActiveWorkoutCommandPanel: View {
                             isInteger: false,
                             firstTapDefault: exercise.startingWeight,
                             milestones: weightMilestones(for: exercise.equipmentType),
-                            onInteractionStart: { vm.requestRevealCurrentFocus(); hasUsedSwipeControl = true },
+                            onInteractionStart: { vm.requestRevealCurrentFocus(); hasUsedSwipeControl = true; cancelHint() },
                             hintToken: hintToken
                         )
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -147,7 +148,7 @@ struct ActiveWorkoutCommandPanel: View {
                             maxValue: 600,
                             isInteger: true,
                             firstTapDefault: 30,
-                            onInteractionStart: { vm.requestRevealCurrentFocus(); hasUsedSwipeControl = true },
+                            onInteractionStart: { vm.requestRevealCurrentFocus(); hasUsedSwipeControl = true; cancelHint() },
                             hintToken: hintToken
                         )
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -174,7 +175,7 @@ struct ActiveWorkoutCommandPanel: View {
                             maxValue: 50,
                             isInteger: true,
                             firstTapDefault: 5,
-                            onInteractionStart: { vm.requestRevealCurrentFocus(); hasUsedSwipeControl = true },
+                            onInteractionStart: { vm.requestRevealCurrentFocus(); hasUsedSwipeControl = true; cancelHint() },
                             hintToken: hintToken
                         )
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -193,6 +194,7 @@ struct ActiveWorkoutCommandPanel: View {
                 Divider()
 
                 Button {
+                    cancelHint()
                     UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     UIApplication.shared.sendAction(
                         #selector(UIResponder.resignFirstResponder),
@@ -238,10 +240,21 @@ struct ActiveWorkoutCommandPanel: View {
     }
 
     private func triggerHintIfNeeded() {
-        guard swipeHintSessionCount < 3, !didShowHintThisSession else { return }
-        didShowHintThisSession = true
-        swipeHintSessionCount += 1
-        hintToken = UUID()
+        guard swipeHintSessionCount < 2, !didShowHintThisSession else { return }
+        hintTask?.cancel()
+        hintTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(1400))
+            guard !Task.isCancelled else { return }
+            didShowHintThisSession = true
+            swipeHintSessionCount += 1
+            hintToken = UUID()
+        }
+    }
+
+    private func cancelHint() {
+        hintTask?.cancel()
+        hintTask = nil
+        hintToken = nil
     }
 }
 

@@ -5,12 +5,12 @@ import SwiftData
 
 @Model
 final class SetRecord {
-    @Attribute(.unique) var id: UUID
-    var weight: Double
-    var reps: Int
-    var setType: SetType
-    var loggedAt: Date
-    var isPersonalRecord: Bool
+    var id: UUID = UUID()
+    var weight: Double = 0
+    var reps: Int = 0
+    var setType: SetType = SetType.normal
+    var loggedAt: Date = Date.now
+    var isPersonalRecord: Bool = false
     var duration: Double?
     var exerciseSnapshot: ExerciseSnapshot?
 

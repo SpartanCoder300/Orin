@@ -5,10 +5,10 @@ import SwiftData
 
 @Model
 final class RoutineTemplate {
-    @Attribute(.unique) var id: UUID
-    var name: String
-    @Relationship(deleteRule: .cascade, inverse: \RoutineEntry.routineTemplate) var entries: [RoutineEntry]
-    var createdAt: Date
+    var id: UUID = UUID()
+    var name: String = ""
+    @Relationship(deleteRule: .cascade, inverse: \RoutineEntry.routineTemplate) var entries: [RoutineEntry] = []
+    var createdAt: Date = Date.now
     var lastUsedAt: Date?
 
     init(
