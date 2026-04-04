@@ -213,7 +213,18 @@ struct ActiveWorkoutCommandPanel: View {
                     }
                     .foregroundStyle(theme.accentColor)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(theme.accentColor.opacity(0.22))
+                    .background {
+                        UnevenRoundedRectangle(
+                            cornerRadii: .init(
+                                topLeading: 0,
+                                bottomLeading: Radius.large,
+                                bottomTrailing: Radius.large,
+                                topTrailing: 0
+                            ),
+                            style: .continuous
+                        )
+                        .fill(theme.accentColor.opacity(0.22))
+                    }
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(LogSetButtonStyle())
