@@ -10,6 +10,8 @@ struct PRMomentOverlay: View {
     let onDismiss: () -> Void
 
     @State private var symbolAnimated = false
+    @State private var cardScale: CGFloat = 0.92
+    @State private var glowOpacity: Double = 0.0
     /// Drives the countdown bar: 1.0 → 0.0 over 3 seconds.
     @State private var dismissProgress: Double = 1.0
 
@@ -58,7 +60,6 @@ struct PRMomentOverlay: View {
                     .controlSize(.large)
                     .tint(Color.OrinGold)
 
-                // Countdown bar — drains left-to-right over autoDismissDuration
                 GeometryReader { geo in
                     RoundedRectangle(cornerRadius: 2, style: .continuous)
                         .fill(Color.OrinGold.opacity(0.35))
@@ -72,8 +73,30 @@ struct PRMomentOverlay: View {
         }
         .padding(28)
         .frame(maxWidth: 320)
+        .background {
+            RoundedRectangle(cornerRadius: 30, style: .continuous)
+                .stroke(Color.OrinGold.opacity(0.34), lineWidth: 1.2)
+                .background(
+                    RoundedRectangle(cornerRadius: 30, style: .continuous)
+                        .fill(Color.OrinGold.opacity(0.08))
+                )
+                .blur(radius: 10)
+                .opacity(glowOpacity)
+                .scaleEffect(1.04)
+        }
         .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 28, style: .continuous))
-        .onAppear { symbolAnimated = true }
+        .scaleEffect(cardScale)
+        .onAppear {
+            symbolAnimated = true
+            withAnimation(.spring(response: 0.28, dampingFraction: 0.72)) {
+                cardScale = 1.03
+                glowOpacity = 1.0
+            }
+            withAnimation(.easeOut(duration: 0.55).delay(0.10)) {
+                cardScale = 1.0
+                glowOpacity = 0.42
+            }
+        }
         .task {
             // Start countdown bar one frame after appear so animation is visible
             await Task.yield()

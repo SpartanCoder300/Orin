@@ -211,7 +211,7 @@ struct ActiveWorkoutView: View {
 
             // ── PR moment overlay ──────────────────────────────────────────────
             if let moment = vm.showingPRMoment {
-                Color.black.opacity(0.55)
+                PRCelebrationBackdrop()
                     .ignoresSafeArea()
                     .transition(.opacity)
 
@@ -242,6 +242,114 @@ struct ActiveWorkoutView: View {
         }
     }
 
+}
+
+private struct PRCelebrationBackdrop: View {
+    @State private var scrimOpacity: Double = 0.78
+    @State private var washOpacity: Double = 0.0
+    @State private var spotlightOpacity: Double = 0.0
+    @State private var spotlightScale: CGFloat = 0.72
+    @State private var haloOpacity: Double = 0.0
+    @State private var flashOpacity: Double = 0.0
+
+    var body: some View {
+        ZStack {
+            Color.black.opacity(scrimOpacity)
+
+            LinearGradient(
+                stops: [
+                    .init(color: Color.white.opacity(0.34), location: 0.00),
+                    .init(color: Color.OrinAmber.opacity(0.18), location: 0.06),
+                    .init(color: .clear, location: 0.20)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .opacity(flashOpacity)
+            .blur(radius: 20)
+
+            LinearGradient(
+                stops: [
+                    .init(color: Color.white.opacity(0.08), location: 0.00),
+                    .init(color: Color.OrinAmber.opacity(0.10), location: 0.08),
+                    .init(color: Color.OrinAmber.opacity(0.035), location: 0.22),
+                    .init(color: Color.black.opacity(0.00), location: 0.46),
+                    .init(color: .clear, location: 1.00)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .opacity(washOpacity)
+
+            EllipticalGradient(
+                colors: [
+                    Color.white.opacity(0.80),
+                    Color.OrinAmber.opacity(0.42),
+                    Color.OrinAmber.opacity(0.08),
+                    .clear
+                ],
+                center: .top
+            )
+            .scaleEffect(x: 1.28, y: spotlightScale, anchor: .top)
+            .opacity(spotlightOpacity)
+            .blur(radius: 26)
+            .offset(y: -132)
+
+            LinearGradient(
+                stops: [
+                    .init(color: Color.white.opacity(0.14), location: 0.00),
+                    .init(color: Color.OrinAmber.opacity(0.10), location: 0.08),
+                    .init(color: Color.OrinAmber.opacity(0.03), location: 0.20),
+                    .init(color: .clear, location: 0.36)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .opacity(spotlightOpacity)
+            .blur(radius: 34)
+
+            RadialGradient(
+                colors: [
+                    Color.white.opacity(0.10),
+                    Color.OrinAmber.opacity(0.20),
+                    Color.OrinAmber.opacity(0.06),
+                    .clear
+                ],
+                center: .center,
+                startRadius: 70,
+                endRadius: 255
+            )
+            .opacity(haloOpacity)
+            .blur(radius: 18)
+        }
+        .onAppear {
+            withAnimation(.easeOut(duration: 0.10)) {
+                flashOpacity = 1.0
+            }
+            withAnimation(.easeOut(duration: 0.12)) {
+                scrimOpacity = 0.82
+            }
+            withAnimation(.easeOut(duration: 0.18)) {
+                washOpacity = 1.0
+            }
+            withAnimation(.spring(response: 0.32, dampingFraction: 0.78)) {
+                spotlightOpacity = 1.0
+                spotlightScale = 1.04
+            }
+            withAnimation(.easeOut(duration: 0.22).delay(0.04)) {
+                haloOpacity = 1.0
+            }
+            withAnimation(.easeOut(duration: 0.22).delay(0.08)) {
+                flashOpacity = 0.0
+            }
+            withAnimation(.easeOut(duration: 0.95).delay(0.14)) {
+                scrimOpacity = 0.66
+                washOpacity = 0.52
+                spotlightOpacity = 0.64
+                haloOpacity = 0.54
+            }
+        }
+    }
 }
 
 // MARK: - Rest Timer Bar
