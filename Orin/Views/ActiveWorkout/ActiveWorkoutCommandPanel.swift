@@ -79,8 +79,8 @@ struct ActiveWorkoutCommandPanel: View {
                         .fill(theme.accentColor)
                         .frame(width: 3, height: 14)
                     Text("\(exercise.exerciseName)  ·  Set \(focus.setIndex + 1)")
-                        .font(.system(size: 12, weight: .semibold, design: .rounded))
-                        .foregroundStyle(Color.textMuted)
+                        .font(.system(size: 13, weight: .semibold, design: .rounded))
+                        .foregroundStyle(Color.white.opacity(0.68))
                         .lineLimit(1)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -208,7 +208,7 @@ struct ActiveWorkoutCommandPanel: View {
                     }
                     .foregroundStyle(theme.accentColor)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .background(theme.accentColor.opacity(0.10))
+                    .background(theme.accentColor.opacity(0.22))
                     .contentShape(Rectangle())
                 }
                 .buttonStyle(LogSetButtonStyle())

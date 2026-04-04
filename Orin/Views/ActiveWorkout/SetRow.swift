@@ -74,7 +74,6 @@ struct SetRow: View {
     @State private var badgeScale: CGFloat = 0
     @State private var showDelta = false
     @State private var deltaFadeTask: Task<Void, Never>? = nil
-    @State private var pulseOpacity: Double = 0
     @State private var logFlash: Bool = false
 
     private var isShowingPlaceholder: Bool {
@@ -87,13 +86,13 @@ struct SetRow: View {
             // Focused accent bar
             RoundedRectangle(cornerRadius: 1.5)
                 .fill(isFocused ? accentColor.opacity(1.0) : .clear)
-                .frame(width: 3, height: isFocused ? 34 : 26)
+                .frame(width: 4, height: isFocused ? 34 : 26)
 
             Text("\(setNumber)")
                 .font(.system(size: 13, weight: .semibold, design: .rounded))
                 .foregroundStyle(
                     isLogged
-                        ? Color.white.opacity(0.22)
+                        ? Color.white.opacity(0.16)
                         : isFocused
                             ? accentColor.opacity(0.70)
                             : Color.textFaint
@@ -118,7 +117,7 @@ struct SetRow: View {
                     .monospacedDigit()
                     .foregroundStyle(
                         isLogged
-                            ? Color.white.opacity(0.30)
+                            ? Color.white.opacity(0.16)
                             : isShowingPlaceholder
                                 ? Color.white.opacity(0.32)
                                 : isFocused
@@ -166,7 +165,7 @@ struct SetRow: View {
                     .font(.system(size: 20))
                     .foregroundStyle(
                         isLogged
-                            ? Color.OrinGreen.opacity(0.60)
+                            ? Color.OrinGreen.opacity(0.82)
                             : isFocused
                                 ? accentColor.opacity(0.90)
                                 : Color.white.opacity(0.28)
@@ -193,19 +192,12 @@ struct SetRow: View {
         .padding(.trailing, Spacing.sm)
         .background(rowBackground)
         .overlay {
-            // Living highlight — very slow breathe (5–7%) on the focused row only
-            if isFocused {
-                rowShape.fill(accentColor.opacity(pulseOpacity))
-                    .allowsHitTesting(false)
-            }
-        }
-        .overlay {
             if isLogged || isFocused {
                 rowShape
                     .strokeBorder(
                         isLogged
                             ? Color.white.opacity(0.025)
-                            : accentColor.opacity(0.42),
+                            : accentColor.opacity(0.50),
                         lineWidth: 1
                     )
             }
@@ -244,10 +236,6 @@ struct SetRow: View {
         }
         .onAppear {
             if isPR { badgeScale = 1.0 }
-            if isFocused { startPulse() }
-        }
-        .onChange(of: isFocused) { _, focused in
-            if focused { startPulse() } else { stopPulse() }
         }
         .onChange(of: justLogged) { _, isJust in
             deltaFadeTask?.cancel()
@@ -287,18 +275,6 @@ struct SetRow: View {
                     rowScale = 1.0
                 }
             }
-        }
-    }
-
-    private func startPulse() {
-        withAnimation(.easeInOut(duration: 2.2).repeatForever(autoreverses: true)) {
-            pulseOpacity = 0.07
-        }
-    }
-
-    private func stopPulse() {
-        withAnimation(.easeInOut(duration: 0.4)) {
-            pulseOpacity = 0
         }
     }
 
@@ -401,7 +377,7 @@ struct SetRow: View {
                 isLogged
                 ? Color.white.opacity(0.04)
                 : isFocused
-                    ? accentColor.opacity(0.34)
+                    ? accentColor.opacity(0.40)
                     : .clear
             )
     }
