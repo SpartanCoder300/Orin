@@ -74,7 +74,8 @@ struct SetRow: View {
     @State private var badgeScale: CGFloat = 0
     @State private var showDelta = false
     @State private var deltaFadeTask: Task<Void, Never>? = nil
-    @State private var logFlash: Bool = false
+    @State private var logHighlightOpacity: Double = 0
+    @State private var checkScale: CGFloat = 1.0
 
     private var isShowingPlaceholder: Bool {
         guard let _ = placeholderDisplayText else { return false }
@@ -181,16 +182,22 @@ struct SetRow: View {
                     .contentShape(Rectangle())
                     .contentTransition(.symbolEffect(.replace))
                     .animation(.easeOut(duration: 0.10), value: isLogged)
+                    .scaleEffect(checkScale)
+                    .animation(.spring(response: 0.24, dampingFraction: 0.72), value: checkScale)
             }
             .buttonStyle(.plain)
         }
-        .brightness(logFlash ? 0.06 : 0)
-        .animation(.easeOut(duration: 0.10), value: logFlash)
         .scaleEffect(rowScale)
         .padding(.vertical, isLogged ? 3 : isFocused ? 7 : 4)
         .padding(.leading, Spacing.xs)
         .padding(.trailing, Spacing.sm)
         .background(rowBackground)
+        .overlay {
+            rowShape
+                .fill(accentColor.opacity(0.16))
+                .opacity(logHighlightOpacity)
+                .allowsHitTesting(false)
+        }
         .overlay {
             if isLogged || isFocused {
                 rowShape
@@ -246,16 +253,26 @@ struct SetRow: View {
                     guard !Task.isCancelled else { return }
                     withAnimation(Motion.standardSpring) { showDelta = false }
                 }
-                // Immediate ack: brightness flash + micro-scale dip
-                withAnimation(.easeOut(duration: 0.07)) { logFlash = true }
-                withAnimation(.easeOut(duration: 0.08)) { rowScale = 0.99 }
+                // Immediate ack: accent-tinted highlight with a restrained settle.
+                withAnimation(.easeOut(duration: 0.08)) {
+                    logHighlightOpacity = 1.0
+                    rowScale = 0.992
+                    checkScale = 1.08
+                }
                 Task { @MainActor in
-                    try? await Task.sleep(for: .milliseconds(100))
-                    withAnimation(.easeOut(duration: 0.14)) { logFlash = false }
-                    withAnimation(Motion.standardSpring) { rowScale = 1.0 }
+                    try? await Task.sleep(for: .milliseconds(110))
+                    withAnimation(.easeOut(duration: 0.16)) {
+                        logHighlightOpacity = 0.0
+                    }
+                    withAnimation(Motion.standardSpring) {
+                        rowScale = 1.0
+                        checkScale = 1.0
+                    }
                 }
             } else {
                 withAnimation(Motion.standardSpring) { showDelta = false }
+                logHighlightOpacity = 0
+                checkScale = 1.0
             }
         }
         .onChange(of: justGotPR) { _, newVal in
