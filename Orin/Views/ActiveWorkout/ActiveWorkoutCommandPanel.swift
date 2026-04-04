@@ -19,6 +19,9 @@ struct ActiveWorkoutCommandPanel: View {
     /// Prevents the hint from firing more than once within the same session.
     @State private var didShowHintThisSession: Bool = false
     @State private var hintTask: Task<Void, Never>? = nil
+    @State private var isShowingLogSuccess = false
+    @State private var logSuccessTrigger = 0
+    @State private var logSuccessResetTask: Task<Void, Never>? = nil
 
     private let horizontalInset: CGFloat = Spacing.lg
 
@@ -198,20 +201,22 @@ struct ActiveWorkoutCommandPanel: View {
 
                 Button {
                     cancelHint()
-                    UIImpactFeedbackGenerator(style: .light).impactOccurred()
                     UIApplication.shared.sendAction(
                         #selector(UIResponder.resignFirstResponder),
                         to: nil, from: nil, for: nil
                     )
-                    vm.logFocusedSet()
+                    if vm.logFocusedSet() {
+                        triggerLogSuccess()
+                    }
                 } label: {
                     HStack(spacing: Spacing.xs) {
-                        Image(systemName: "checkmark")
+                        Image(systemName: isShowingLogSuccess ? "checkmark.circle.fill" : "checkmark")
                             .font(.system(size: 15, weight: .bold))
-                        Text("Log Set")
+                            .contentTransition(.symbolEffect(.replace))
+                        Text(isShowingLogSuccess ? "Logged" : "Log Set")
                             .font(.system(size: 16, weight: .semibold))
                     }
-                    .foregroundStyle(theme.accentColor)
+                    .foregroundStyle(isShowingLogSuccess ? Color.OrinGreen : theme.accentColor)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background {
                         UnevenRoundedRectangle(
@@ -223,9 +228,10 @@ struct ActiveWorkoutCommandPanel: View {
                             ),
                             style: .continuous
                         )
-                        .fill(theme.accentColor.opacity(0.22))
+                        .fill((isShowingLogSuccess ? Color.OrinGreen : theme.accentColor).opacity(isShowingLogSuccess ? 0.26 : 0.22))
                     }
                     .contentShape(Rectangle())
+                    .animation(Motion.standardSpring, value: isShowingLogSuccess)
                 }
                 .buttonStyle(LogSetButtonStyle())
                 .frame(height: 60)
@@ -240,6 +246,10 @@ struct ActiveWorkoutCommandPanel: View {
             }
             .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
                 withAnimation(.easeInOut(duration: 0.2)) { isKeyboardVisible = false }
+            }
+            .sensoryFeedback(.success, trigger: logSuccessTrigger)
+            .onDisappear {
+                logSuccessResetTask?.cancel()
             }
 
         } else if !vm.draftExercises.isEmpty {
@@ -269,6 +279,21 @@ struct ActiveWorkoutCommandPanel: View {
         hintTask?.cancel()
         hintTask = nil
         hintToken = nil
+    }
+
+    private func triggerLogSuccess() {
+        logSuccessResetTask?.cancel()
+        withAnimation(Motion.standardSpring) {
+            isShowingLogSuccess = true
+        }
+        logSuccessTrigger += 1
+        logSuccessResetTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(450))
+            guard !Task.isCancelled else { return }
+            withAnimation(Motion.standardSpring) {
+                isShowingLogSuccess = false
+            }
+        }
     }
 }
 
