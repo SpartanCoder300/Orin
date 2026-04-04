@@ -1216,7 +1216,7 @@ final class ActiveWorkoutViewModel {
     }
 
     func formatWeight(_ v: Double) -> String {
-        v.truncatingRemainder(dividingBy: 1) == 0 ? "\(Int(v))" : String(format: "%.1f", v)
+        String(format: "%.1f", (v * 10).rounded() / 10)
     }
 
     /// Dismisses the PR moment overlay and starts the deferred rest timer.
