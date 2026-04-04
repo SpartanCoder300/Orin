@@ -493,19 +493,25 @@ private struct RestTimerBar: View {
     }
 
     private func timerContent(at now: Date, color: Color) -> some View {
-        VStack(spacing: 5) {
-            HStack(spacing: 6) {
+        VStack(spacing: 2) {
+            HStack(spacing: 5) {
                 Image(systemName: "timer")
-                    .font(.system(size: 12, weight: .semibold))
-                    .foregroundStyle(color.opacity(0.82))
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(color.opacity(0.72))
 
-                Text(timer.remainingLabel(at: now) ?? "0:00")
-                    .font(.system(size: 22, weight: .bold, design: .monospaced))
-                    .monospacedDigit()
-                    .foregroundStyle(color)
-                    .contentTransition(.numericText(countsDown: true))
-                    .shadow(color: color.opacity(0.18), radius: 6)
+                Text("Rest")
+                    .font(.system(size: 11, weight: .semibold, design: .rounded))
+                    .tracking(0.3)
+                    .foregroundStyle(Color.textPrimary.opacity(0.55))
             }
+
+            Text(timer.remainingLabel(at: now) ?? "0:00")
+                .font(.system(size: 22, weight: .bold, design: .monospaced))
+                .monospacedDigit()
+                .foregroundStyle(color)
+                .contentTransition(.numericText(countsDown: true))
+                .shadow(color: color.opacity(0.18), radius: 6)
+                .padding(.top, -1)
 
             Capsule()
                 .fill(.white.opacity(0.14))
