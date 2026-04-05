@@ -38,6 +38,8 @@ final class ExerciseDefinition {
     /// True when a seeded exercise has been manually modified by the user.
     /// Always false for custom exercises (user owns them entirely).
     var isEdited: Bool = false
+    /// CloudKit requires an inverse for every relationship. RoutineEntry.exerciseDefinition points here.
+    @Relationship var routineEntries: [RoutineEntry]?
 
     init(
         id: UUID = UUID(),
@@ -133,6 +135,7 @@ final class ExerciseDefinition {
         case "Triceps":   "figure.gymnastics"
         case "Forearms":  "hand.raised.fill"
         case "Legs":      "figure.step.training"
+        case "Glutes":    "figure.run"
         case "Core":      "figure.core.training.mixed"
         default:          "dumbbell.fill"
         }

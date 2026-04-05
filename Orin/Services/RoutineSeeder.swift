@@ -8,13 +8,10 @@ enum RoutineSeeder {
     private static let seededKey = "Orin.hasSeededStarterRoutines"
 
     static func seedStarterRoutinesIfNeeded(in context: ModelContext) {
-        // Skip if already seeded once, or if the user has their own routines.
         guard !UserDefaults.standard.bool(forKey: seededKey) else { return }
+
         let existing = (try? context.fetch(FetchDescriptor<RoutineTemplate>())) ?? []
-        guard existing.isEmpty else {
-            UserDefaults.standard.set(true, forKey: seededKey)
-            return
-        }
+        let existingNames = Set(existing.map(\.name))
 
         let allDefs = (try? context.fetch(FetchDescriptor<ExerciseDefinition>())) ?? []
         func def(named name: String) -> ExerciseDefinition? {
@@ -47,7 +44,12 @@ enum RoutineSeeder {
             ]),
         ]
 
+        var changed = false
         for starter in starters {
+            // Skip any routine whose name already exists — prevents duplicates after a
+            // reinstall where CloudKit delivers data before (or concurrently with) seeding.
+            guard !existingNames.contains(starter.name) else { continue }
+
             let routine = RoutineTemplate(name: starter.name)
             context.insert(routine)
             for (order, ex) in starter.exercises.enumerated() {
@@ -63,9 +65,38 @@ enum RoutineSeeder {
                 )
                 context.insert(entry)
             }
+            changed = true
         }
 
-        try? context.save()
+        if changed { try? context.save() }
         UserDefaults.standard.set(true, forKey: seededKey)
+    }
+
+    /// Removes duplicate routine templates that share the same name, keeping the oldest
+    /// (earliest createdAt) or the one that has been used. Safe to call on every launch.
+    static func deduplicateIfNeeded(in context: ModelContext) {
+        let all = (try? context.fetch(FetchDescriptor<RoutineTemplate>())) ?? []
+        guard all.count > 1 else { return }
+
+        // Group by name; if any name has more than one entry, keep the best and delete the rest.
+        var byName: [String: [RoutineTemplate]] = [:]
+        for r in all { byName[r.name, default: []].append(r) }
+
+        var changed = false
+        for (_, group) in byName where group.count > 1 {
+            // Prefer the one that has been used, then the oldest.
+            let sorted = group.sorted {
+                if ($0.lastUsedAt != nil) != ($1.lastUsedAt != nil) {
+                    return $0.lastUsedAt != nil
+                }
+                return $0.createdAt < $1.createdAt
+            }
+            for duplicate in sorted.dropFirst() {
+                context.delete(duplicate)
+                changed = true
+            }
+        }
+
+        if changed { try? context.save() }
     }
 }

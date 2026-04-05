@@ -7,7 +7,13 @@ import SwiftData
 final class RoutineTemplate {
     var id: UUID = UUID()
     var name: String = ""
-    @Relationship(deleteRule: .cascade, inverse: \RoutineEntry.routineTemplate) var entries: [RoutineEntry] = []
+    // CloudKit requires to-many relationships to be optional at the CoreData layer.
+    // Public `entries` computed wrapper preserves the non-optional API so no call sites change.
+    @Relationship(deleteRule: .cascade, inverse: \RoutineEntry.routineTemplate) var _entries: [RoutineEntry]?
+    var entries: [RoutineEntry] {
+        get { _entries ?? [] }
+        set { _entries = newValue }
+    }
     var createdAt: Date = Date.now
     var lastUsedAt: Date?
 
@@ -20,7 +26,7 @@ final class RoutineTemplate {
     ) {
         self.id = id
         self.name = name
-        self.entries = entries
+        self._entries = entries
         self.createdAt = createdAt
         self.lastUsedAt = lastUsedAt
     }

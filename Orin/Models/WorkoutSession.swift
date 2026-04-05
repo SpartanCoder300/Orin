@@ -10,7 +10,13 @@ final class WorkoutSession {
     var completedAt: Date?
     var routineTemplateId: UUID?
     var notes: String?
-    @Relationship(deleteRule: .cascade, inverse: \ExerciseSnapshot.workoutSession) var exercises: [ExerciseSnapshot] = []
+    // CloudKit requires to-many relationships to be optional at the CoreData layer.
+    // Public `exercises` computed wrapper preserves the non-optional API so no call sites change.
+    @Relationship(deleteRule: .cascade, inverse: \ExerciseSnapshot.workoutSession) var _exercises: [ExerciseSnapshot]?
+    var exercises: [ExerciseSnapshot] {
+        get { _exercises ?? [] }
+        set { _exercises = newValue }
+    }
 
     init(
         id: UUID = UUID(),
@@ -25,6 +31,6 @@ final class WorkoutSession {
         self.completedAt = completedAt
         self.routineTemplateId = routineTemplateId
         self.notes = notes
-        self.exercises = exercises
+        self._exercises = exercises
     }
 }

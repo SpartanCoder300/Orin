@@ -101,7 +101,8 @@ struct AppView: View {
         }
         .task {
             guard !isRunningInPreview else { return }
-            ExerciseSeeder.seedIfNeeded(in: modelContext)
+            ExerciseSeeder.seedIfNeeded(in: modelContext)  // includes exercise dedup
+            RoutineSeeder.deduplicateIfNeeded(in: modelContext)
             RoutineSeeder.seedStarterRoutinesIfNeeded(in: modelContext)
             appState.workout.onLaunch(modelContext: modelContext)
         }

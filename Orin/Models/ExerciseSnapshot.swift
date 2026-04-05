@@ -16,7 +16,13 @@ final class ExerciseSnapshot {
     var restSeconds: Int?
     var draftStateJSON: String?
     var order: Int = 0
-    @Relationship(deleteRule: .cascade, inverse: \SetRecord.exerciseSnapshot) var sets: [SetRecord] = []
+    // CloudKit requires to-many relationships to be optional at the CoreData layer.
+    // Public `sets` computed wrapper preserves the non-optional API so no call sites change.
+    @Relationship(deleteRule: .cascade, inverse: \SetRecord.exerciseSnapshot) var _sets: [SetRecord]?
+    var sets: [SetRecord] {
+        get { _sets ?? [] }
+        set { _sets = newValue }
+    }
     var workoutSession: WorkoutSession?
 
     var loadTrackingMode: LoadTrackingMode {
@@ -50,7 +56,7 @@ final class ExerciseSnapshot {
         self.restSeconds = restSeconds
         self.draftStateJSON = draftStateJSON
         self.order = order
-        self.sets = sets
+        self._sets = sets
         self.workoutSession = workoutSession
     }
 }

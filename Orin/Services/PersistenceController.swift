@@ -19,7 +19,7 @@ enum PersistenceController {
             schema: schema,
             isStoredInMemoryOnly: false,
             allowsSave: true,
-            groupContainer: .automatic,
+            groupContainer: .none,
             cloudKitDatabase: .automatic
         )
 
