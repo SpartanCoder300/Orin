@@ -22,6 +22,7 @@ struct ExercisePicker: View {
 
     @State private var vm = ExercisePickerViewModel()
     @State private var editorTarget: ExerciseEditorTarget? = nil
+    @FocusState private var searchFocused: Bool
 
     private let muscleFilters    = allMuscleGroups.map    { PickerFilter.muscleGroup($0) }
     private let equipmentFilters = allEquipmentTypes.map  { PickerFilter.equipment($0)  }
@@ -30,6 +31,34 @@ struct ExercisePicker: View {
     var body: some View {
         NavigationStack {
             VStack(spacing: 0) {
+
+                // ── Search bar ─────────────────────────────────────────────
+                HStack(spacing: Spacing.xs) {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundStyle(.secondary)
+                        .font(.system(size: 15))
+                    TextField("Search exercises", text: $vm.searchText)
+                        .focused($searchFocused)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                        .submitLabel(.search)
+                    if !vm.searchText.isEmpty {
+                        Button {
+                            vm.searchText = ""
+                        } label: {
+                            Image(systemName: "xmark.circle.fill")
+                                .foregroundStyle(.secondary)
+                                .font(.system(size: 15))
+                        }
+                        .buttonStyle(.plain)
+                    }
+                }
+                .padding(.horizontal, Spacing.sm)
+                .padding(.vertical, 10)
+                .glassEffect(.regular, in: RoundedRectangle(cornerRadius: 12))
+                .padding(.horizontal, Spacing.md)
+                .padding(.top, Spacing.sm)
+                .padding(.bottom, Spacing.xs)
 
                 // ── Filter chips ───────────────────────────────────────────
                 VStack(alignment: .leading, spacing: Spacing.xs) {
@@ -67,8 +96,7 @@ struct ExercisePicker: View {
                     }
                     .scrollClipDisabled()
                 }
-                .padding(.vertical, Spacing.xs)
-                Divider()
+                .padding(.bottom, Spacing.xs)
 
                 // ── Exercise List ──────────────────────────────────────────
                 List {
@@ -102,41 +130,39 @@ struct ExercisePicker: View {
                 .listStyle(.insetGrouped)
                 .scrollContentBackground(.hidden)
                 .scrollDismissesKeyboard(.interactively)
+                .contentMargins(.bottom, 72, for: .scrollContent)
             }
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
-            .searchable(text: $vm.searchText,
-                        placement: .navigationBarDrawer(displayMode: .always),
-                        prompt: "Search exercises")
             .toolbar {
-                ToolbarItem(placement: .topBarTrailing) {
-                    Button(dismissButtonTitle) { dismiss() }
-                        .fontWeight(.semibold)
+                ToolbarItem(placement: .topBarLeading) {
+                    Button("Cancel") { dismiss() }
                 }
-                // When the search bar is active it takes over .topBarTrailing with its own
-                // Cancel button, hiding Done. Mirror it in .topBarLeading while searching.
-                if !dismissesOnSelection {
-                    SearchingDoneButton(action: { dismiss() })
+                ToolbarItem(placement: .topBarTrailing) {
+                    if !dismissesOnSelection {
+                        Button("Done") { dismiss() }
+                            .fontWeight(.semibold)
+                    }
+                }
+                ToolbarItem(placement: .bottomBar) {
+                    Button { editorTarget = .new } label: {
+                        HStack(spacing: 5) {
+                            Image(systemName: "plus.circle.fill")
+                            Text("New Exercise")
+                        }
+                        .font(.system(size: 16, weight: .semibold))
+                    }
+                    .tint(theme.accentColor)
                 }
                 ToolbarItem(placement: .keyboard) {
                     HStack {
                         Spacer()
                         Button {
-                            UIApplication.shared.sendAction(
-                                #selector(UIResponder.resignFirstResponder),
-                                to: nil, from: nil, for: nil
-                            )
+                            searchFocused = false
                         } label: {
                             Image(systemName: "keyboard.chevron.compact.down")
                         }
                     }
-                }
-                ToolbarItem(placement: .bottomBar) {
-                    Button { editorTarget = .new } label: {
-                        Label("New Exercise", systemImage: "plus.circle.fill")
-                            .font(.system(size: 16, weight: .semibold))
-                    }
-                    .tint(theme.accentColor)
                 }
             }
             .sheet(item: $editorTarget) { target in
@@ -158,10 +184,6 @@ struct ExercisePicker: View {
         } else {
             vm.selectedFilters.insert(filter)
         }
-    }
-
-    private var dismissButtonTitle: String {
-        dismissesOnSelection ? "Cancel" : "Done"
     }
 
     private func select(_ exercise: ExerciseDefinition) {
@@ -229,25 +251,6 @@ struct ExercisePicker: View {
     }
 
 
-}
-
-// MARK: - Search-aware Done button
-
-/// Reads `isSearching` (must be a descendant of `.searchable`) and shows a
-/// leading Done button only while the search bar is active — filling the gap
-/// left by the search Cancel button which takes over `.topBarTrailing`.
-private struct SearchingDoneButton: ToolbarContent {
-    @Environment(\.isSearching) private var isSearching
-    let action: () -> Void
-
-    var body: some ToolbarContent {
-        if isSearching {
-            ToolbarItem(placement: .topBarLeading) {
-                Button("Done", action: action)
-                    .fontWeight(.semibold)
-            }
-        }
-    }
 }
 
 // MARK: - Editor Target
