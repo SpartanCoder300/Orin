@@ -1,5 +1,6 @@
 // iOS 26+ only. No #available guards.
 
+import Foundation
 import SwiftData
 
 enum PersistenceController {
@@ -38,12 +39,31 @@ enum PersistenceController {
             cloudKitDatabase: .none
         )
 
+        if let container = try? ModelContainer(for: schema, configurations: [localConfig]) {
+            return container
+        }
+
+        // Last resort: the store is corrupt or the schema migration failed.
+        // Delete the local store so the app can restart cleanly.
+        // All data synced via CloudKit will be re-delivered on the next launch.
+        // Any unsynced local data (e.g. created while offline) is lost — but
+        // a permanent crash loop is far worse.
+        deleteStore(at: localConfig.url)
+
         do {
             return try ModelContainer(for: schema, configurations: [localConfig])
         } catch {
-            fatalError("Unable to create model container: \(error)")
+            fatalError("Unable to create model container even after store reset: \(error)")
         }
     }()
+
+    private static func deleteStore(at url: URL) {
+        let fm = FileManager.default
+        for ext in ["", "-shm", "-wal"] {
+            let file = url.deletingPathExtension().appendingPathExtension("sqlite\(ext)")
+            try? fm.removeItem(at: file)
+        }
+    }
 
     @MainActor
     static let previewContainer: ModelContainer = {
