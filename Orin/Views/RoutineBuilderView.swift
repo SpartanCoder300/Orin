@@ -6,8 +6,7 @@ import UIKit
 
 struct RoutineBuilderView: View {
     @State private var vm: RoutineBuilderViewModel
-    @State private var isShowingExercisePicker = false
-    @State private var pickerSessionCounts: [String: Int] = [:]
+    @State private var route: RoutineBuilderRoute? = nil
     @State private var configEntryID: UUID? = nil
     @State private var isShowingDeleteConfirm = false
     @State private var isShowingDiscardConfirm = false
@@ -83,12 +82,26 @@ struct RoutineBuilderView: View {
                 // ── Add Exercise ──────────────────────────────────────
                 Section {
                     Button {
-                        isShowingExercisePicker = true
+                        route = .exercisePicker
                     } label: {
                         Label("Add Exercise", systemImage: "plus.circle.fill")
                     }
                     .tint(.accentColor)
                     .listRowBackground(Rectangle().fill(cardMaterial))
+                }
+            }
+            .navigationDestination(item: $route) { route in
+                switch route {
+                case .exercisePicker:
+                    ExercisePicker(
+                        onSelect: { exercise in
+                            vm.addExercise(exercise)
+                        },
+                        dismissesOnSelection: false,
+                        embedsInNavigationStack: false,
+                        showsCancelButton: false,
+                        existingExerciseCounts: pickerExistingExerciseCounts
+                    )
                 }
             }
             .scrollContentBackground(.hidden)
@@ -138,23 +151,6 @@ struct RoutineBuilderView: View {
                     }
                 }
             }
-            .sheet(isPresented: $isShowingExercisePicker, onDismiss: {
-                pickerSessionCounts = [:]
-            }) {
-                ExercisePicker(
-                    onSelect: { exercise in
-                        pickerSessionCounts[exercise.name, default: 0] += 1
-                        vm.addExercise(exercise)
-                    },
-                    dismissesOnSelection: false,
-                    existingExerciseCounts: pickerExistingExerciseCounts,
-                    removableExerciseCounts: pickerSessionCounts,
-                    onRemoveExisting: { exercise in
-                        pickerSessionCounts[exercise.name, default: 0] = max(0, (pickerSessionCounts[exercise.name] ?? 0) - 1)
-                        _ = vm.removeMostRecentExercise(named: exercise.name)
-                    }
-                )
-            }
             .sheet(isPresented: configSheetIsPresented) {
                 if let id = configEntryID,
                    let idx = vm.entries.firstIndex(where: { $0.id == id }) {
@@ -190,6 +186,17 @@ struct RoutineBuilderView: View {
             } message: {
                 Text("Your workout history won't be affected.")
             }
+        }
+    }
+}
+
+private enum RoutineBuilderRoute: Hashable, Identifiable {
+    case exercisePicker
+
+    var id: String {
+        switch self {
+        case .exercisePicker:
+            return "exercisePicker"
         }
     }
 }

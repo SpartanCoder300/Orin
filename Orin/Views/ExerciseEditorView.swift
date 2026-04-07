@@ -10,6 +10,8 @@ struct ExerciseEditorView: View {
     /// Pass an existing exercise to edit, or nil to create a new custom one.
     let exercise: ExerciseDefinition?
     var allowsLifecycleActions: Bool = true
+    var embedsInNavigationStack: Bool = true
+    var showsCancelButton: Bool = true
     var onSave: ((ExerciseDefinition) -> Void)? = nil
 
     @Environment(\.dismiss) private var dismiss
@@ -75,7 +77,7 @@ struct ExerciseEditorView: View {
     private var canManageLifecycle: Bool { allowsLifecycleActions && (exercise?.isCustom ?? false) }
 
     var body: some View {
-        NavigationStack {
+        navigationContainer {
             Form {
 
                 // ── Name ──────────────────────────────────────────────
@@ -198,11 +200,15 @@ struct ExerciseEditorView: View {
                     }
                 }
             }
+            .scrollContentBackground(.hidden)
+            .background(Color.OrinWorkflowBackground)
             .navigationTitle(isNew ? "New Exercise" : "Edit Exercise")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") { dismiss() }
+                if showsCancelButton {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("Cancel") { dismiss() }
+                    }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     Button("Save") { save() }
@@ -211,6 +217,7 @@ struct ExerciseEditorView: View {
                 }
             }
         }
+        .modifier(ExerciseEditorPresentationBackground(enabled: embedsInNavigationStack))
         .onAppear { populateDraft() }
         .alert("Couldn’t Save Exercise", isPresented: saveErrorIsPresented) {
             Button("OK", role: .cancel) {
@@ -234,6 +241,17 @@ struct ExerciseEditorView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("This permanently deletes the exercise definition, its workout history, and any routine references.")
+        }
+    }
+
+    @ViewBuilder
+    private func navigationContainer<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        if embedsInNavigationStack {
+            NavigationStack {
+                content()
+            }
+        } else {
+            content()
         }
     }
 
@@ -483,4 +501,17 @@ struct ExerciseEditorView: View {
     ExerciseEditorView(exercise: nil)
         .environment(AppState())
         .modelContainer(PersistenceController.previewContainer)
+}
+
+private struct ExerciseEditorPresentationBackground: ViewModifier {
+    let enabled: Bool
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if enabled {
+            content.presentationBackground(Color.OrinWorkflowBackground)
+        } else {
+            content
+        }
+    }
 }

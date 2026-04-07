@@ -10,7 +10,6 @@ struct ActiveWorkoutView: View {
 
     @State private var completedSession: WorkoutSession?
     @State private var isShowingCancelPRWarning = false
-    @State private var pickerSessionCounts: [String: Int] = [:]
     @Environment(\.OrinTheme) private var theme
 
     private var shouldRunSetupTask: Bool {
@@ -179,14 +178,10 @@ struct ActiveWorkoutView: View {
                 }
                 .sheet(isPresented: $vm.isShowingExercisePicker, onDismiss: {
                     if vm.swappingExerciseIndex != nil { vm.cancelSwap() }
-                    pickerSessionCounts = [:]
                 }) {
                     let isSwapping = vm.swappingExerciseIndex != nil
                     ExercisePicker(
                         onSelect: { exercise in
-                            if !isSwapping {
-                                pickerSessionCounts[exercise.name, default: 0] += 1
-                            }
                             if let idx = vm.swappingExerciseIndex {
                                 vm.swapExercise(at: idx, named: exercise.name)
                             } else {
@@ -195,11 +190,6 @@ struct ActiveWorkoutView: View {
                         },
                         dismissesOnSelection: isSwapping,
                         existingExerciseCounts: pickerExistingExerciseCounts,
-                        removableExerciseCounts: isSwapping ? [:] : pickerSessionCounts,
-                        onRemoveExisting: isSwapping ? nil : { exercise in
-                            pickerSessionCounts[exercise.name, default: 0] = max(0, (pickerSessionCounts[exercise.name] ?? 0) - 1)
-                            _ = vm.removeMostRecentUnloggedExercise(named: exercise.name)
-                        },
                         title: isSwapping ? "Replace Exercise" : "Add Exercise"
                     )
                 }

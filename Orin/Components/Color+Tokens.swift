@@ -15,6 +15,7 @@ extension Color {
 
     // ── Shared surfaces ───────────────────────────────────────────────────────
     static var OrinSurface: Color         { Color("Surface") }
+    static var OrinWorkflowBackground: Color { Color(red: 0.08, green: 0.08, blue: 0.09) }
 
     // ── Semantic ──────────────────────────────────────────────────────────────
     static var OrinRed: Color             { Color("OrinRed") }

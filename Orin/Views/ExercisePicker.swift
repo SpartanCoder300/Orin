@@ -5,13 +5,14 @@ import SwiftData
 
 private let allMuscleGroups = ["Chest", "Back", "Shoulders", "Biceps", "Triceps", "Forearms", "Legs", "Core"]
 private let allEquipmentTypes = ["Barbell", "Dumbbell", "Cable", "Machine", "Kettlebell", "Bodyweight", "Band"]
+private let exercisePickerRaisedSurface = Color.white.opacity(0.055)
 
 struct ExercisePicker: View {
     let onSelect: (ExerciseDefinition) -> Void
     var dismissesOnSelection: Bool = true
+    var embedsInNavigationStack: Bool = true
+    var showsCancelButton: Bool = true
     var existingExerciseCounts: [String: Int] = [:]
-    var removableExerciseCounts: [String: Int] = [:]
-    var onRemoveExisting: ((ExerciseDefinition) -> Void)? = nil
     var title: String = "Add Exercise"
 
     @Environment(\.dismiss) private var dismiss
@@ -27,7 +28,7 @@ struct ExercisePicker: View {
     @FocusState private var isSearchFocused: Bool
 
     var body: some View {
-        NavigationStack {
+        navigationContainer {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
                     let selectedIDs = Set(selectedExercises.map(\.id))
@@ -53,7 +54,7 @@ struct ExercisePicker: View {
                     let recents = vm.recentExercises(from: allExercises, filters: vm.selectedFilters)
                         .filter { !selectedIDs.contains($0.id) }
                     if vm.searchText.isEmpty && !recents.isEmpty {
-                        sectionHeader("Recents")
+                        sectionHeader("Recents", prominence: .secondary)
                         ForEach(recents) { exercise in
                             exerciseRow(exercise, matchRanges: [], placement: .recent)
                             Divider().padding(.leading, Spacing.md)
@@ -65,6 +66,7 @@ struct ExercisePicker: View {
                     let hasActiveFilters = !vm.searchText.isEmpty || !vm.selectedFilters.isEmpty
                     sectionHeader(
                         hasActiveFilters ? "Results (\(library.count))" : "All Exercises",
+                        prominence: .tertiary,
                         clearAction: hasActiveFilters ? {
                             vm.searchText = ""
                             vm.selectedFilters = []
@@ -87,17 +89,20 @@ struct ExercisePicker: View {
                 }
                 .padding(.bottom, Spacing.lg)
             }
+            .background(Color.OrinWorkflowBackground)
             .scrollDismissesKeyboard(.immediately)
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
-                ToolbarItem(placement: .topBarLeading) {
-                    Button("Cancel") { dismiss() }
+                if showsCancelButton {
+                    ToolbarItem(placement: .topBarLeading) {
+                        Button("Cancel") { dismiss() }
+                    }
                 }
                 ToolbarItem(placement: .topBarTrailing) {
                     if !dismissesOnSelection {
                         let count = selectedExercises.count
-                        Button(count == 0 ? "Done" : "Done (\(count))") {
+                        Button(count == 0 ? "Add" : "Add (\(count))") {
                             selectedExercises.forEach { onSelect($0) }
                             dismiss()
                         }
@@ -139,12 +144,16 @@ struct ExercisePicker: View {
                 }
             }
             .navigationDestination(item: $editorTarget) { target in
-                ExerciseEditorView(exercise: target.exercise) { newExercise in
+                ExerciseEditorView(
+                    exercise: target.exercise,
+                    embedsInNavigationStack: false,
+                    showsCancelButton: embedsInNavigationStack
+                ) { newExercise in
                     if case .new = target { handleNewExercise(newExercise) }
                 }
             }
         }
-        .presentationBackground(.black)
+        .modifier(ExercisePickerPresentationBackground(enabled: embedsInNavigationStack))
         .onAppear {
             vm.load(container: modelContext.container)
         }
@@ -154,6 +163,17 @@ struct ExercisePicker: View {
             // the keyboard appears — prevents layout jump on open.
             try? await Task.sleep(for: .milliseconds(50))
             isSearchFocused = true
+        }
+    }
+
+    @ViewBuilder
+    private func navigationContainer<Content: View>(@ViewBuilder content: () -> Content) -> some View {
+        if embedsInNavigationStack {
+            NavigationStack {
+                content()
+            }
+        } else {
+            content()
         }
     }
 
@@ -206,7 +226,7 @@ struct ExercisePicker: View {
                 .padding(.horizontal, Spacing.sm)
                 .padding(.vertical, 5)
                 // Active: solid accent — high contrast. Inactive: very subtle, recedes.
-                .background(Capsule().fill(active ? theme.accentColor : Color.white.opacity(0.07)))
+                .background(Capsule().fill(active ? theme.accentColor : exercisePickerRaisedSurface))
         }
         .buttonStyle(.plain)
     }
@@ -220,8 +240,8 @@ struct ExercisePicker: View {
     ) -> some View {
         HStack {
             Text(label)
-                .font(.system(size: 13, weight: prominence == .primary ? .semibold : .medium))
-                .foregroundStyle(prominence == .primary ? Color.primary.opacity(0.94) : Color.textMuted.opacity(0.68))
+                .font(.system(size: prominence.fontSize, weight: prominence.fontWeight))
+                .foregroundStyle(prominence.foregroundColor)
             Spacer()
             if let clearAction {
                 Button("Clear", action: clearAction)
@@ -231,9 +251,9 @@ struct ExercisePicker: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, Spacing.md)
-        .padding(.top, prominence == .primary ? Spacing.xl : Spacing.lg)
+        .padding(.top, prominence.topPadding)
         .padding(.bottom, Spacing.xs)
-        .background(.black)
+        .background(Color.OrinWorkflowBackground)
     }
 
     // MARK: - Helpers
@@ -277,15 +297,6 @@ struct ExercisePicker: View {
                 vm.sessionAddedIDs.insert(exercise.id)
                 selectionFeedbackTrigger += 1
             }
-        }
-    }
-
-    private func deselect(_ exercise: ExerciseDefinition) {
-        UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        withAnimation(.smooth(duration: 0.32)) {
-            selectedExercises.removeAll { $0.id == exercise.id }
-            vm.sessionAddedIDs.remove(exercise.id)
-            selectionFeedbackTrigger += 1
         }
     }
 
@@ -364,15 +375,59 @@ private enum ExerciseRowPlacement {
 private enum SectionHeaderProminence {
     case primary
     case secondary
+    case tertiary
+
+    var fontSize: CGFloat {
+        switch self {
+        case .primary: return 14
+        case .secondary, .tertiary: return 13
+        }
+    }
+
+    var fontWeight: Font.Weight {
+        switch self {
+        case .primary: return .semibold
+        case .secondary: return .semibold
+        case .tertiary: return .medium
+        }
+    }
+
+    var foregroundColor: Color {
+        switch self {
+        case .primary: return Color.primary.opacity(0.96)
+        case .secondary: return Color.primary.opacity(0.82)
+        case .tertiary: return Color.textMuted.opacity(0.62)
+        }
+    }
+
+    var topPadding: CGFloat {
+        switch self {
+        case .primary: return Spacing.xl
+        case .secondary: return Spacing.lg + 2
+        case .tertiary: return Spacing.xl + 2
+        }
+    }
 }
 
 #Preview {
     ExercisePicker(
         onSelect: { _ in },
         dismissesOnSelection: false,
-        existingExerciseCounts: ["Bench Press": 1, "Squat": 2, "Deadlift": 1],
-        removableExerciseCounts: ["Bench Press": 1, "Squat": 2]
+        existingExerciseCounts: ["Bench Press": 1, "Squat": 2, "Deadlift": 1]
     )
         .environment(AppState())
         .modelContainer(PersistenceController.previewContainer)
+}
+
+private struct ExercisePickerPresentationBackground: ViewModifier {
+    let enabled: Bool
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if enabled {
+            content.presentationBackground(Color.OrinWorkflowBackground)
+        } else {
+            content
+        }
+    }
 }
