@@ -21,6 +21,8 @@ final class ExerciseDefinition {
     var currentPR: Double = 0
     var previousPR: Double = 0
     var prDate: Date?
+    var maxWeight: Double = 0
+    var maxRepsAtMaxWeight: Int = 0
     /// Explicitly overridden weight increment in lbs. Nil = use equipment-type default.
     /// Optional so lightweight migration succeeds for existing rows (nil → resolvedWeightIncrement
     /// returns the equipment default, preserving correct behaviour without data loss).

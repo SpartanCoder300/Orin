@@ -94,13 +94,26 @@ final class ActiveWorkoutViewModel {
         let exerciseName: String
         let weight: Double
         let reps: Int
-        let estimatedOneRepMax: Double
+        let previousWeight: Double
+        let previousReps: Int
 
         var formattedWeight: String {
             weight.truncatingRemainder(dividingBy: 1) == 0
                 ? "\(Int(weight))" : String(format: "%.1f", weight)
         }
-        var formattedE1RM: String { "\(Int(estimatedOneRepMax.rounded()))" }
+
+        /// e.g. "+10 lbs" or "+2 reps"
+        var deltaText: String {
+            if weight > previousWeight {
+                let diff = weight - previousWeight
+                let s = diff.truncatingRemainder(dividingBy: 1) == 0
+                    ? "\(Int(diff))" : String(format: "%.1f", diff)
+                return "+\(s) lbs"
+            } else {
+                let diff = reps - previousReps
+                return "+\(diff) rep\(diff == 1 ? "" : "s")"
+            }
+        }
     }
 
     // MARK: - State
@@ -125,10 +138,12 @@ final class ActiveWorkoutViewModel {
     private(set) var lastPRSetID: UUID? = nil
     /// Rest duration stored when a PR is detected so it starts after the PR overlay is dismissed.
     private var pendingRestDuration: TimeInterval? = nil
-    /// Best in-session e1RM per exercise lineage. Written to ExerciseDefinition only on endWorkout().
-    private var pendingPRByExercise: [UUID: Double] = [:]
+    /// Best in-session max weight per exercise lineage. Written to ExerciseDefinition only on endWorkout().
+    private var pendingMaxWeightByExercise: [UUID: Double] = [:]
+    /// Best in-session reps at max weight per exercise lineage.
+    private var pendingMaxRepsAtMaxWeightByExercise: [UUID: Int] = [:]
     /// True if at least one PR has been logged this session and would be lost on cancel.
-    var hasPendingPRs: Bool { !pendingPRByExercise.isEmpty }
+    var hasPendingPRs: Bool { !pendingMaxWeightByExercise.isEmpty }
 
     var isSessionStarted: Bool { session != nil }
 
@@ -778,14 +793,24 @@ final class ActiveWorkoutViewModel {
               draftExercises[eIdx].sets.indices.contains(sIdx),
               draftExercises[eIdx].sets[sIdx].isLogged else { return }
 
+        let record = draftExercises[eIdx].sets[sIdx].loggedRecord
+        let wasAPR = record?.isPersonalRecord ?? false
+
         // Remove the persisted SetRecord
-        if let record = draftExercises[eIdx].sets[sIdx].loggedRecord {
+        if let record {
             draftExercises[eIdx].snapshot?.sets.removeAll { $0.id == record.id }
             modelContext.delete(record)
         }
 
         draftExercises[eIdx].sets[sIdx].isLogged = false
         draftExercises[eIdx].sets[sIdx].loggedRecord = nil
+        draftExercises[eIdx].sets[sIdx].isPR = false
+
+        // If a PR was removed, recompute session max from remaining logged sets
+        if wasAPR, let lineageID = draftExercises[eIdx].exerciseLineageID {
+            recomputeSessionMax(exerciseIndex: eIdx, lineageID: lineageID)
+        }
+
         cancelDeferredPersistence()
         persistDraftState()
         try? modelContext.save()
@@ -815,6 +840,12 @@ final class ActiveWorkoutViewModel {
         if let snapshot = draftExercises[index].snapshot {
             modelContext.delete(snapshot)
             try? modelContext.save()
+        }
+
+        // Clear any pending PR state so applyPendingPRs doesn't update the definition
+        if let lineageID = draftExercises[index].exerciseLineageID {
+            pendingMaxWeightByExercise.removeValue(forKey: lineageID)
+            pendingMaxRepsAtMaxWeightByExercise.removeValue(forKey: lineageID)
         }
 
         draftExercises.remove(at: index)
@@ -900,9 +931,9 @@ final class ActiveWorkoutViewModel {
         snapshot.sets.append(record)
 
         // PR check skipped for timed exercises — duration-based PRs aren't tracked here
-        let isNewPR: Bool
+        let prMoment: PRMoment?
         if draft.setType != .warmup && !isTimed {
-            isNewPR = checkPR(
+            prMoment = checkPR(
                 exerciseLineageID: draftExercises[eIdx].exerciseLineageID,
                 exerciseName: draftExercises[eIdx].exerciseName,
                 weight: weight,
@@ -910,7 +941,7 @@ final class ActiveWorkoutViewModel {
                 record: record
             )
         } else {
-            isNewPR = false
+            prMoment = nil
         }
 
         draftExercises[eIdx].sets[sIdx].isLogged = true
@@ -919,16 +950,10 @@ final class ActiveWorkoutViewModel {
         lastLoggedExerciseIndex = eIdx
 
         // After loggedRecord is assigned, surface the PR so the view can animate
-        if isNewPR {
+        if let moment = prMoment {
             draftExercises[eIdx].sets[sIdx].isPR = true
             lastPRSetID = record.id
-            let e1rm = ExerciseDefinition.estimatedOneRepMax(weight: weight, reps: reps)
-            showingPRMoment = PRMoment(
-                exerciseName: draftExercises[eIdx].exerciseName,
-                weight: weight,
-                reps: reps,
-                estimatedOneRepMax: e1rm
-            )
+            showingPRMoment = moment
             firePRCelebration()
         }
 
@@ -964,7 +989,7 @@ final class ActiveWorkoutViewModel {
         activityManager.update(currentActivityState)
 
         if !isAllSetsLogged {
-            if !isNewPR {
+            if prMoment == nil {
                 // Haptic is handled in AppView (onChange loggedSetCount) so it can
                 // distinguish exercise-complete from single-set. Don't fire here.
                 startRestTimer(duration: TimeInterval(draftExercises[eIdx].restSeconds))
@@ -1199,13 +1224,19 @@ final class ActiveWorkoutViewModel {
     }
 
     private func applyPendingPRs() {
-        for (lineageID, newE1RM) in pendingPRByExercise {
+        for (lineageID, newMaxWeight) in pendingMaxWeightByExercise {
             guard let def = definition(lineageID: lineageID) else { continue }
-            def.previousPR = def.currentPR
-            def.currentPR = newE1RM
+            let newMaxReps = pendingMaxRepsAtMaxWeightByExercise[lineageID] ?? 0
+            if newMaxWeight > def.maxWeight {
+                def.maxWeight = newMaxWeight
+                def.maxRepsAtMaxWeight = newMaxReps
+            } else if newMaxWeight == def.maxWeight {
+                def.maxRepsAtMaxWeight = max(def.maxRepsAtMaxWeight, newMaxReps)
+            }
             def.prDate = .now
         }
-        pendingPRByExercise.removeAll()
+        pendingMaxWeightByExercise.removeAll()
+        pendingMaxRepsAtMaxWeightByExercise.removeAll()
     }
 
     /// Discards the in-progress session and all logged sets without saving.
@@ -1478,17 +1509,79 @@ final class ActiveWorkoutViewModel {
         )
     }
 
-    @discardableResult
-    private func checkPR(exerciseLineageID: UUID?, exerciseName: String, weight: Double, reps: Int, record: SetRecord) -> Bool {
-        guard let def = definition(lineageID: exerciseLineageID) ?? definition(named: exerciseName) else { return false }
+    private func checkPR(exerciseLineageID: UUID?, exerciseName: String, weight: Double, reps: Int, record: SetRecord) -> PRMoment? {
+        guard let def = definition(lineageID: exerciseLineageID) ?? definition(named: exerciseName) else { return nil }
         let lineageID = def.id
-        let e1rm = ExerciseDefinition.estimatedOneRepMax(weight: weight, reps: reps)
-        // Compare against both the persisted best and any better set already logged this session
-        let sessionBest = pendingPRByExercise[lineageID] ?? 0
-        guard e1rm > max(def.currentPR, sessionBest) else { return false }
-        pendingPRByExercise[lineageID] = e1rm
+
+        // Read prior session best before updating, so comparison excludes the current set
+        let sessionMaxWeight = pendingMaxWeightByExercise[lineageID] ?? 0
+        let sessionMaxReps = pendingMaxRepsAtMaxWeightByExercise[lineageID] ?? 0
+
+        // Always track session best so applyPendingPRs can seed def.maxWeight on workout end,
+        // even when no PR fires (e.g. first workout for this exercise)
+        if weight > sessionMaxWeight {
+            pendingMaxWeightByExercise[lineageID] = weight
+            pendingMaxRepsAtMaxWeightByExercise[lineageID] = reps
+        } else if weight == sessionMaxWeight, reps > sessionMaxReps {
+            pendingMaxRepsAtMaxWeightByExercise[lineageID] = reps
+        }
+
+        // No history → no PR
+        guard def.maxWeight > 0 else { return nil }
+
+        // Effective best: persisted + prior session sets (read before update above)
+        let allTimeMaxWeight: Double
+        let allTimeMaxReps: Int
+        if sessionMaxWeight > def.maxWeight {
+            allTimeMaxWeight = sessionMaxWeight
+            allTimeMaxReps = sessionMaxReps
+        } else if sessionMaxWeight == def.maxWeight {
+            allTimeMaxWeight = def.maxWeight
+            allTimeMaxReps = max(def.maxRepsAtMaxWeight, sessionMaxReps)
+        } else {
+            allTimeMaxWeight = def.maxWeight
+            allTimeMaxReps = def.maxRepsAtMaxWeight
+        }
+
+        var isPR = false
+        if weight > allTimeMaxWeight {
+            isPR = true
+        } else if weight == allTimeMaxWeight && reps > allTimeMaxReps {
+            isPR = true
+        }
+        guard isPR else { return nil }
+
         record.isPersonalRecord = true
-        return true
+        return PRMoment(
+            exerciseName: exerciseName,
+            weight: weight,
+            reps: reps,
+            previousWeight: allTimeMaxWeight,
+            previousReps: allTimeMaxReps
+        )
+    }
+
+    /// Recomputes session max weight/reps for an exercise from its currently logged sets.
+    /// Called after unlogging a PR set so future PR checks use the correct baseline.
+    private func recomputeSessionMax(exerciseIndex eIdx: Int, lineageID: UUID) {
+        var newMaxWeight: Double = 0
+        var newMaxReps: Int = 0
+        for set in draftExercises[eIdx].sets {
+            guard set.isLogged, set.setType != .warmup, let record = set.loggedRecord else { continue }
+            if record.weight > newMaxWeight {
+                newMaxWeight = record.weight
+                newMaxReps = record.reps
+            } else if record.weight == newMaxWeight, record.reps > newMaxReps {
+                newMaxReps = record.reps
+            }
+        }
+        if newMaxWeight > 0 {
+            pendingMaxWeightByExercise[lineageID] = newMaxWeight
+            pendingMaxRepsAtMaxWeightByExercise[lineageID] = newMaxReps
+        } else {
+            pendingMaxWeightByExercise.removeValue(forKey: lineageID)
+            pendingMaxRepsAtMaxWeightByExercise.removeValue(forKey: lineageID)
+        }
     }
 
     private func firePRCelebration() {

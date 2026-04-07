@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		202D9E862F85533800FC79C9 /* PRBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 202D9E852F85533800FC79C9 /* PRBadge.swift */; };
 		20A10DC82F7814980053B465 /* ProgressRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20A10DC72F7814980053B465 /* ProgressRootView.swift */; };
 		20A10DD12F78158F0053B465 /* LibraryRootView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20A10DD02F78158F0053B465 /* LibraryRootView.swift */; };
 		20A10DD72F781E0F0053B465 /* ProgressAnalyticsEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20A10DD52F781E0F0053B465 /* ProgressAnalyticsEngine.swift */; };
@@ -41,7 +42,6 @@
 		20C237082F746D2300D5763E /* ActiveWorkoutService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236C62F746D2300D5763E /* ActiveWorkoutService.swift */; };
 		20C237092F746D2300D5763E /* ExerciseFrecencyActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236C72F746D2300D5763E /* ExerciseFrecencyActor.swift */; };
 		20C2370A2F746D2300D5763E /* ExerciseSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236C82F746D2300D5763E /* ExerciseSeeder.swift */; };
-		3F09140969524567A3DCB51E /* RoutineSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAAC5CAD25E444D0BEB5B92F /* RoutineSeeder.swift */; };
 		20C2370B2F746D2300D5763E /* HomeStatsActor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236C92F746D2300D5763E /* HomeStatsActor.swift */; };
 		20C2370D2F746D2300D5763E /* PersistenceController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236CB2F746D2300D5763E /* PersistenceController.swift */; };
 		20C2370E2F746D2300D5763E /* RestTimerState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236CC2F746D2300D5763E /* RestTimerState.swift */; };
@@ -87,6 +87,7 @@
 		20C2374D2F74B34F00D5763E /* SummaryStatChip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C2374A2F74B34F00D5763E /* SummaryStatChip.swift */; };
 		20C2374E2F74B34F00D5763E /* SummaryPRBadge.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C2374B2F74B34F00D5763E /* SummaryPRBadge.swift */; };
 		20C2374F2F74B34F00D5763E /* SummaryExerciseCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C2374C2F74B34F00D5763E /* SummaryExerciseCard.swift */; };
+		3F09140969524567A3DCB51E /* RoutineSeeder.swift in Sources */ = {isa = PBXBuildFile; fileRef = FAAC5CAD25E444D0BEB5B92F /* RoutineSeeder.swift */; };
 		EC0000042F74B34F00D5763E /* ExerciseHistoryChart.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC0000012F74B34F00D5763E /* ExerciseHistoryChart.swift */; };
 		EC0000052F74B34F00D5763E /* ExerciseHistorySessionCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC0000022F74B34F00D5763E /* ExerciseHistorySessionCard.swift */; };
 		EC0000062F74B34F00D5763E /* ExerciseHistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = EC0000032F74B34F00D5763E /* ExerciseHistoryView.swift */; };
@@ -133,6 +134,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		202D9E852F85533800FC79C9 /* PRBadge.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PRBadge.swift; sourceTree = "<group>"; };
 		205CFF5F2F69D7E200FFF88C /* Orin.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Orin.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		205CFF702F69D7E400FFF88C /* OrinTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OrinTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
 		205CFF7A2F69D7E400FFF88C /* OrinUITests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = OrinUITests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -170,7 +172,6 @@
 		20C236C62F746D2300D5763E /* ActiveWorkoutService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveWorkoutService.swift; sourceTree = "<group>"; };
 		20C236C72F746D2300D5763E /* ExerciseFrecencyActor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseFrecencyActor.swift; sourceTree = "<group>"; };
 		20C236C82F746D2300D5763E /* ExerciseSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseSeeder.swift; sourceTree = "<group>"; };
-		FAAC5CAD25E444D0BEB5B92F /* RoutineSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutineSeeder.swift; sourceTree = "<group>"; };
 		20C236C92F746D2300D5763E /* HomeStatsActor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeStatsActor.swift; sourceTree = "<group>"; };
 		20C236CB2F746D2300D5763E /* PersistenceController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersistenceController.swift; sourceTree = "<group>"; };
 		20C236CC2F746D2300D5763E /* RestTimerState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RestTimerState.swift; sourceTree = "<group>"; };
@@ -220,6 +221,7 @@
 		EC0000012F74B34F00D5763E /* ExerciseHistoryChart.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseHistoryChart.swift; sourceTree = "<group>"; };
 		EC0000022F74B34F00D5763E /* ExerciseHistorySessionCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseHistorySessionCard.swift; sourceTree = "<group>"; };
 		EC0000032F74B34F00D5763E /* ExerciseHistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExerciseHistoryView.swift; sourceTree = "<group>"; };
+		FAAC5CAD25E444D0BEB5B92F /* RoutineSeeder.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutineSeeder.swift; sourceTree = "<group>"; };
 		HAWD000100002F74B34F00D5 /* HomeActiveWorkoutDashboard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomeActiveWorkoutDashboard.swift; sourceTree = "<group>"; };
 		HPBC000100002F74B34F00D5 /* HomePreviousBestsCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HomePreviousBestsCard.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -375,6 +377,7 @@
 				20C236B42F746D2300D5763E /* SetTypeChip.swift */,
 				20C236B52F746D2300D5763E /* ThemedBackground.swift */,
 				20C236B62F746D2300D5763E /* WheelPickerSheet.swift */,
+				202D9E852F85533800FC79C9 /* PRBadge.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -732,6 +735,7 @@
 				20C237022F746D2300D5763E /* SetRecord.swift in Sources */,
 				20C237032F746D2300D5763E /* SetType.swift in Sources */,
 				20C237042F746D2300D5763E /* WorkoutActivityAttributes.swift in Sources */,
+				202D9E862F85533800FC79C9 /* PRBadge.swift in Sources */,
 				20A10E212F79C4C80053B465 /* ActiveWorkoutPreviewData.swift in Sources */,
 				20C237052F746D2300D5763E /* WorkoutSession.swift in Sources */,
 				20C237062F746D2300D5763E /* HistoryRootPreviewData.swift in Sources */,

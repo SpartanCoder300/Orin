@@ -11,29 +11,34 @@ struct ExerciseHistoryChart: View {
     private struct DataPoint: Identifiable {
         let id: UUID
         let date: Date
-        let maxWeight: Double
+        let maxWeight: Double   // actual max weight (not e1RM)
         let hasPR: Bool
     }
 
     private var points: [DataPoint] {
-        Array(snapshots.prefix(12))
-            .reversed()
-            .compactMap { snap in
-                guard let date = snap.workoutSession?.completedAt else { return nil }
-                let working = snap.sets.filter { $0.setType != .warmup && $0.weight > 0 && $0.reps > 0 }
-                guard let best = working.max(by: {
-                    ExerciseDefinition.estimatedOneRepMax(weight: $0.weight, reps: $0.reps) <
-                    ExerciseDefinition.estimatedOneRepMax(weight: $1.weight, reps: $1.reps)
-                }) else { return nil }
-                let e1rm = ExerciseDefinition.estimatedOneRepMax(weight: best.weight, reps: best.reps)
-                guard e1rm > 0 else { return nil }
-                return DataPoint(
-                    id: snap.id,
-                    date: date,
-                    maxWeight: e1rm,
-                    hasPR: snap.sets.contains { $0.isPersonalRecord }
-                )
+        let cal = Calendar.current
+        // Build one point per calendar day — heaviest session wins, PR flag OR'd across sessions that day
+        var byDay: [DateComponents: DataPoint] = [:]
+        for snap in snapshots {
+            guard let date = snap.workoutSession?.completedAt else { continue }
+            let working = snap.sets.filter { $0.setType != .warmup && $0.weight > 0 && $0.reps > 0 }
+            guard let maxWeight = working.map(\.weight).max(), maxWeight > 0 else { continue }
+            let hasPR = snap.sets.contains { $0.isPersonalRecord }
+            let day = cal.dateComponents([.year, .month, .day], from: date)
+            if let existing = byDay[day] {
+                if maxWeight > existing.maxWeight {
+                    byDay[day] = DataPoint(id: snap.id, date: date, maxWeight: maxWeight, hasPR: existing.hasPR || hasPR)
+                } else if hasPR {
+                    byDay[day] = DataPoint(id: existing.id, date: existing.date, maxWeight: existing.maxWeight, hasPR: true)
+                }
+            } else {
+                byDay[day] = DataPoint(id: snap.id, date: date, maxWeight: maxWeight, hasPR: hasPR)
             }
+        }
+        return byDay.values
+            .sorted { $0.date < $1.date }
+            .suffix(12)
+            .map { $0 }
     }
 
     @State private var selectedDate: Date?
@@ -56,19 +61,19 @@ struct ExerciseHistoryChart: View {
             Chart(points) { point in
                 LineMark(
                     x: .value("Date", point.date, unit: .day),
-                    y: .value("e1RM", point.maxWeight)
+                    y: .value("Weight", point.maxWeight)
                 )
                 .foregroundStyle(Color.accentColor.opacity(0.5))
                 .interpolationMethod(.catmullRom)
 
                 PointMark(
                     x: .value("Date", point.date, unit: .day),
-                    y: .value("e1RM", point.maxWeight)
+                    y: .value("Weight", point.maxWeight)
                 )
                 .foregroundStyle(point.hasPR ? Color.accentColor : .secondary)
                 .symbolSize(point.hasPR ? 72 : 36)
                 .annotation(position: .top, spacing: 4) {
-                    if point.hasPR || point.id == points.last?.id {
+                    if (point.hasPR || point.id == points.last?.id) && selectedPoint?.id != point.id {
                         Text(formatWeight(point.maxWeight))
                             .font(.caption2.weight(.semibold))
                             .foregroundStyle(point.hasPR ? Color.accentColor : .secondary)
@@ -103,8 +108,7 @@ struct ExerciseHistoryChart: View {
                         .foregroundStyle(.quaternary)
                     AxisValueLabel {
                         if let w = value.as(Double.self) {
-                            Text(w.truncatingRemainder(dividingBy: 1) == 0
-                                 ? "\(Int(w))" : String(format: "%.1f", w))
+                            Text(formatWeight(w))
                                 .font(.caption2)
                                 .foregroundStyle(.secondary)
                         }
@@ -125,9 +129,7 @@ struct ExerciseHistoryChart: View {
                 .font(.caption.weight(.semibold))
                 .foregroundStyle(.primary)
             if point.hasPR {
-                Text("PR")
-                    .font(.caption2.weight(.bold))
-                    .foregroundStyle(Color.accentColor)
+                PRBadge()
             }
         }
         .padding(.horizontal, 8)

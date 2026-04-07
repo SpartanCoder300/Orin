@@ -7,6 +7,8 @@ import SwiftData
 struct SetDetailRow: View {
     let setNumber: Int
     let record: SetRecord
+    /// Overrides `record.isPersonalRecord` for badge display. Nil = use record flag.
+    var showPRBadge: Bool? = nil
 
     var body: some View {
         HStack(spacing: Spacing.sm) {
@@ -21,25 +23,11 @@ struct SetDetailRow: View {
                         SetTypeLabel(setType: record.setType)
                     }
 
-                    if record.isPersonalRecord {
-                        Text("PR")
-                            .font(.caption2.weight(.semibold))
-                            .foregroundStyle(Color.OrinAmber)
-                            .padding(.horizontal, 6)
-                            .padding(.vertical, 2)
-                            .background(Color.OrinAmber.opacity(0.14), in: Capsule())
+                    if showPRBadge ?? record.isPersonalRecord {
+                        PRBadge()
                     }
                 }
 
-                if record.isPersonalRecord {
-                    let e1rm = ExerciseDefinition.estimatedOneRepMax(weight: record.weight, reps: record.reps)
-                    if e1rm > 0 {
-                        Text("e1RM \(formattedE1RM(e1rm))")
-                            .font(.caption2.monospacedDigit())
-                            .foregroundStyle(.tertiary)
-                            .padding(.leading, 30)
-                    }
-                }
             }
 
             Spacer()
@@ -79,9 +67,6 @@ struct SetDetailRow: View {
             ? "\(Int(w))" : String(format: "%.1f", w)
     }
 
-    private func formattedE1RM(_ v: Double) -> String {
-        "\(Int(v.rounded()))"
-    }
 }
 
 // MARK: - Previews

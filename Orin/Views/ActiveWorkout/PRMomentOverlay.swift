@@ -48,9 +48,9 @@ struct PRMomentOverlay: View {
                     .monospacedDigit()
                     .foregroundStyle(.primary)
 
-                Text("~\(moment.formattedE1RM) lbs estimated 1RM")
-                    .font(.subheadline)
-                    .foregroundStyle(.secondary)
+                Text(moment.deltaText)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Color.OrinGold)
             }
 
             // ── Dismiss ─────────────────────────────────────────────────────────
@@ -118,7 +118,8 @@ struct PRMomentOverlay: View {
                 exerciseName: "Bench Press",
                 weight: 225,
                 reps: 5,
-                estimatedOneRepMax: 262.5
+                previousWeight: 215,
+                previousReps: 5
             ),
             onDismiss: {}
         )

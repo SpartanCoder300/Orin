@@ -12,6 +12,14 @@ struct ExerciseDetailCard: View {
         snapshot.sets.sorted { $0.loggedAt < $1.loggedAt }
     }
 
+    /// ID of the heaviest PR set in this session — only this one shows the badge.
+    private var topPRSetID: UUID? {
+        sortedSets
+            .filter { $0.isPersonalRecord }
+            .max { a, b in a.weight != b.weight ? a.weight < b.weight : a.reps < b.reps }?
+            .id
+    }
+
     /// "185 lbs × 5" — heaviest working set, excluding warmups.
     private var bestSetLabel: String? {
         let working = sortedSets.filter { $0.setType != .warmup && $0.weight > 0 }
@@ -57,8 +65,9 @@ struct ExerciseDetailCard: View {
             Divider().opacity(0.3)
 
             // ── Set rows ───────────────────────────────────────────────
+            let prID = topPRSetID
             ForEach(Array(sortedSets.enumerated()), id: \.element.id) { idx, record in
-                SetDetailRow(setNumber: idx + 1, record: record)
+                SetDetailRow(setNumber: idx + 1, record: record, showPRBadge: record.id == prID)
                 if idx < sortedSets.count - 1 {
                     Divider()
                         .opacity(0.15)

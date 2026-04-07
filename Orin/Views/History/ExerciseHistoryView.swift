@@ -10,8 +10,7 @@ struct ExerciseHistoryView: View {
     @Query private var snapshots: [ExerciseSnapshot]
     @Environment(\.dismiss) private var dismiss
 
-    /// Cached all-time best set — computed once on appear and when session count changes,
-    /// not on every render. Prevents faulting all SetRecord objects each frame.
+    /// Cached heaviest set — computed once on appear and when session count changes.
     @State private var cachedBest: SetRecord? = nil
     /// How many session cards to show. Expanded by the "Show more" button.
     @State private var displayLimit: Int = 50
@@ -31,16 +30,23 @@ struct ExerciseHistoryView: View {
     }
 
     // Sorted newest-first; only completed sessions.
-    // Sort runs in-memory — SwiftData can't sort by relationship keypath in @Query.
     private var sessions: [ExerciseSnapshot] {
         snapshots
             .filter { $0.workoutSession?.completedAt != nil }
             .sorted { $0.workoutSession!.completedAt! > $1.workoutSession!.completedAt! }
     }
 
-    private var allTimeBestE1RM: Double {
-        guard let best = cachedBest else { return 0 }
-        return ExerciseDefinition.estimatedOneRepMax(weight: best.weight, reps: best.reps)
+    /// Days (as "yyyy-MM-dd") that have more than one session — used to show time in date labels.
+    private var daysWithMultipleSessions: Set<String> {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "yyyy-MM-dd"
+        var counts: [String: Int] = [:]
+        for snap in sessions {
+            guard let date = snap.workoutSession?.completedAt else { continue }
+            let key = formatter.string(from: date)
+            counts[key, default: 0] += 1
+        }
+        return Set(counts.filter { $0.value > 1 }.keys)
     }
 
     private var bestDate: Date? {
@@ -48,23 +54,13 @@ struct ExerciseHistoryView: View {
     }
 
     private func recomputeBest() {
-        cachedBest = sessions
+        let sets = sessions
             .flatMap { $0.sets }
-            .filter { $0.setType != .warmup && $0.weight > 0 && $0.reps > 0 }
-            .max(by: {
-                ExerciseDefinition.estimatedOneRepMax(weight: $0.weight, reps: $0.reps) <
-                ExerciseDefinition.estimatedOneRepMax(weight: $1.weight, reps: $1.reps)
-            })
-    }
-
-    private func e1rmForSnapshot(_ snapshot: ExerciseSnapshot) -> Double? {
-        let working = snapshot.sets.filter { $0.setType != .warmup && $0.weight > 0 && $0.reps > 0 }
-        guard let top = working.max(by: {
-            ExerciseDefinition.estimatedOneRepMax(weight: $0.weight, reps: $0.reps) <
-            ExerciseDefinition.estimatedOneRepMax(weight: $1.weight, reps: $1.reps)
-        }) else { return nil }
-        let e1rm = ExerciseDefinition.estimatedOneRepMax(weight: top.weight, reps: top.reps)
-        return e1rm > 0 ? e1rm : nil
+            .filter { $0.setType != .warmup && $0.reps > 0 }
+        // Weight-primary, reps as tiebreaker — matches PR logic
+        cachedBest = sets.max { a, b in
+            a.weight != b.weight ? a.weight < b.weight : a.reps < b.reps
+        }
     }
 
     // MARK: - Body
@@ -79,7 +75,6 @@ struct ExerciseHistoryView: View {
                     if sessions.isEmpty {
                         emptyState
                     } else {
-                        // ── Stats + chart ───────────────────────────────
                         VStack(alignment: .leading, spacing: Spacing.md) {
                             if cachedBest != nil {
                                 bestBanner()
@@ -90,15 +85,20 @@ struct ExerciseHistoryView: View {
                         }
                         .padding(.horizontal, Spacing.md)
 
-                        // ── Session cards (capped for performance) ──────
                         let displayed = Array(sessions.prefix(displayLimit))
+                        let daySet = daysWithMultipleSessions
+                        let formatter: DateFormatter = {
+                            let f = DateFormatter()
+                            f.dateFormat = "yyyy-MM-dd"
+                            return f
+                        }()
                         LazyVStack(spacing: Spacing.sm) {
-                            ForEach(Array(displayed.enumerated()), id: \.element.id) { index, snapshot in
-                                ExerciseHistorySessionCard(
-                                    snapshot: snapshot,
-                                    previousE1RM: index + 1 < displayed.count
-                                        ? e1rmForSnapshot(displayed[index + 1]) : nil
-                                )
+                            ForEach(displayed) { snapshot in
+                                let showTime = {
+                                    guard let date = snapshot.workoutSession?.completedAt else { return false }
+                                    return daySet.contains(formatter.string(from: date))
+                                }()
+                                ExerciseHistorySessionCard(snapshot: snapshot, showTime: showTime)
                             }
                             if sessions.count > displayLimit {
                                 Button {
@@ -145,35 +145,30 @@ struct ExerciseHistoryView: View {
 
     @ViewBuilder
     private func bestBanner() -> some View {
-        HStack(alignment: .center) {
-            VStack(alignment: .leading, spacing: 2) {
-                Text("All-Time Best")
-                    .font(.caption.weight(.medium))
-                    .foregroundStyle(.tertiary)
-                    .textCase(.uppercase)
-                    .tracking(0.5)
-                HStack(alignment: .firstTextBaseline, spacing: 6) {
-                    Text(formattedE1RM(allTimeBestE1RM))
+        if let best = cachedBest {
+            HStack(alignment: .center) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Heaviest Set")
+                        .font(.caption.weight(.medium))
+                        .foregroundStyle(.tertiary)
+                        .textCase(.uppercase)
+                        .tracking(0.5)
+                    Text(formattedBestSet(best))
                         .font(.title2.weight(.bold).monospacedDigit())
-                    Text("BEST")
-                        .font(.caption2.weight(.bold))
-                        .foregroundStyle(Color.accentColor)
-                        .padding(.horizontal, 5)
-                        .padding(.vertical, 2)
-                        .background(Color.accentColor.opacity(0.15), in: Capsule())
+                        .foregroundStyle(.primary)
+                }
+                Spacer()
+                if let date = bestDate {
+                    Text(date.formatted(.dateTime.month(.abbreviated).day().year()))
+                        .font(.caption)
+                        .foregroundStyle(.secondary)
                 }
             }
-            Spacer()
-            if let date = bestDate {
-                Text(date.formatted(.dateTime.month(.abbreviated).day().year()))
-                    .font(.caption)
-                    .foregroundStyle(.secondary)
-            }
+            .padding(.horizontal, Spacing.md)
+            .padding(.vertical, Spacing.sm)
+            .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
+            .proGlass(specular: false)
         }
-        .padding(.horizontal, Spacing.md)
-        .padding(.vertical, Spacing.sm)
-        .background(.quaternary.opacity(0.5), in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
-        .proGlass(specular: false)
     }
 
     @ViewBuilder
@@ -197,10 +192,14 @@ struct ExerciseHistoryView: View {
 
     // MARK: - Helpers
 
-    private func formattedE1RM(_ value: Double) -> String {
-        let v = value.truncatingRemainder(dividingBy: 1) == 0
-            ? "\(Int(value))" : String(format: "%.1f", value)
-        return "\(v) lbs e1RM"
+    private func formattedBestSet(_ record: SetRecord) -> String {
+        if record.weight > 0 {
+            let w = record.weight.truncatingRemainder(dividingBy: 1) == 0
+                ? "\(Int(record.weight))" : String(format: "%.1f", record.weight)
+            return "\(w) lbs × \(record.reps)"
+        } else {
+            return "Bodyweight × \(record.reps)"
+        }
     }
 }
 
