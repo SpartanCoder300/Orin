@@ -23,34 +23,53 @@ struct ExercisePicker: View {
     @State private var vm = ExercisePickerViewModel()
     @State private var editorTarget: ExerciseEditorTarget? = nil
     @State private var selectedExercises: [ExerciseDefinition] = []
+    @State private var selectionFeedbackTrigger = 0
     @FocusState private var isSearchFocused: Bool
 
     var body: some View {
         NavigationStack {
             ScrollView {
                 VStack(alignment: .leading, spacing: 0) {
+                    let selectedIDs = Set(selectedExercises.map(\.id))
 
-                    // ── Selected strip ──────────────────────────────────────
+                    // ── Filter chips ────────────────────────────────────────
+                    filterChips
+                    Divider()
+
+                    // ── Selected section ────────────────────────────────────
                     if !dismissesOnSelection && !selectedExercises.isEmpty {
-                        selectedStrip
-                            .padding(.top, Spacing.xs)
-                        Divider()
+                        VStack(spacing: 4) {
+                            sectionHeader("Selected (\(selectedExercises.count))", prominence: .primary)
+                            ForEach(selectedExercises) { exercise in
+                                exerciseRow(exercise, matchRanges: [], placement: .selected)
+                                    .transition(.opacity.combined(with: .move(edge: .top)))
+                            }
+                        }
+                        .padding(.bottom, Spacing.xs)
+                        .transition(.move(edge: .top).combined(with: .opacity))
                     }
 
                     // ── Results ────────────────────────────────────────────
                     let recents = vm.recentExercises(from: allExercises, filters: vm.selectedFilters)
+                        .filter { !selectedIDs.contains($0.id) }
                     if vm.searchText.isEmpty && !recents.isEmpty {
                         sectionHeader("Recents")
                         ForEach(recents) { exercise in
-                            exerciseRow(exercise, matchRanges: [])
+                            exerciseRow(exercise, matchRanges: [], placement: .recent)
                             Divider().padding(.leading, Spacing.md)
                         }
                     }
 
                     let library = vm.libraryExercises(from: allExercises)
-                    sectionHeader(vm.searchText.isEmpty && vm.selectedFilters.isEmpty
-                                  ? "All Exercises"
-                                  : "Results (\(library.count))")
+                        .filter { !selectedIDs.contains($0.id) }
+                    let hasActiveFilters = !vm.searchText.isEmpty || !vm.selectedFilters.isEmpty
+                    sectionHeader(
+                        hasActiveFilters ? "Results (\(library.count))" : "All Exercises",
+                        clearAction: hasActiveFilters ? {
+                            vm.searchText = ""
+                            vm.selectedFilters = []
+                        } : nil
+                    )
                     if library.isEmpty {
                         Text("No exercises found")
                             .font(Typography.caption)
@@ -60,7 +79,8 @@ struct ExercisePicker: View {
                     } else {
                         ForEach(library) { exercise in
                             exerciseRow(exercise,
-                                        matchRanges: vm.matchRanges(query: vm.searchText, in: exercise.name))
+                                        matchRanges: vm.matchRanges(query: vm.searchText, in: exercise.name),
+                                        placement: .library)
                             Divider().padding(.leading, Spacing.md)
                         }
                     }
@@ -86,59 +106,7 @@ struct ExercisePicker: View {
                     }
                 }
 
-                // Spacer() between items causes iOS 26 to render each as a
-                // separate Liquid Glass pill: [filter] [··· search ···] [create]
                 ToolbarItemGroup(placement: .bottomBar) {
-                    Menu {
-                        Section("Muscle") {
-                            ForEach(allMuscleGroups, id: \.self) { name in
-                                let filter = PickerFilter.muscleGroup(name)
-                                Button { vm.toggleFilter(filter) } label: {
-                                    if vm.selectedFilters.contains(filter) {
-                                        Label(name, systemImage: "checkmark")
-                                    } else {
-                                        Text(name)
-                                    }
-                                }
-                            }
-                        }
-                        Section("Equipment") {
-                            ForEach(allEquipmentTypes, id: \.self) { name in
-                                let filter = PickerFilter.equipment(name)
-                                Button { vm.toggleFilter(filter) } label: {
-                                    if vm.selectedFilters.contains(filter) {
-                                        Label(name, systemImage: "checkmark")
-                                    } else {
-                                        Text(name)
-                                    }
-                                }
-                            }
-                            let custom = PickerFilter.custom
-                            Button { vm.toggleFilter(custom) } label: {
-                                if vm.selectedFilters.contains(custom) {
-                                    Label("Custom", systemImage: "checkmark")
-                                } else {
-                                    Text("Custom")
-                                }
-                            }
-                        }
-                        if !vm.selectedFilters.isEmpty {
-                            Button(role: .destructive) {
-                                vm.selectedFilters.removeAll()
-                            } label: {
-                                Label("Clear Filters", systemImage: "xmark")
-                            }
-                        }
-                    } label: {
-                        Image(systemName: vm.selectedFilters.isEmpty
-                              ? "line.3.horizontal.decrease"
-                              : "line.3.horizontal.decrease.circle.fill")
-                            .font(.system(size: 20))
-                    }
-                    .tint(vm.selectedFilters.isEmpty ? Color.primary : theme.accentColor)
-
-                    Spacer()
-
                     HStack(spacing: 6) {
                         Image(systemName: "magnifyingglass")
                             .font(.system(size: 15))
@@ -170,15 +138,17 @@ struct ExercisePicker: View {
                     .tint(theme.accentColor)
                 }
             }
-            .sheet(item: $editorTarget) { target in
+            .navigationDestination(item: $editorTarget) { target in
                 ExerciseEditorView(exercise: target.exercise) { newExercise in
                     if case .new = target { handleNewExercise(newExercise) }
                 }
             }
         }
+        .presentationBackground(.black)
         .onAppear {
             vm.load(container: modelContext.container)
         }
+        .sensoryFeedback(.selection, trigger: selectionFeedbackTrigger)
         .task {
             // Brief delay so the sheet presentation animation finishes before
             // the keyboard appears — prevents layout jump on open.
@@ -187,47 +157,83 @@ struct ExercisePicker: View {
         }
     }
 
-    // MARK: - Selected strip
+    // MARK: - Filter chips
 
-    private var selectedStrip: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: Spacing.xs) {
-                ForEach(selectedExercises) { exercise in
-                    Button {
-                        deselect(exercise)
-                    } label: {
-                        HStack(spacing: 4) {
-                            Text(exercise.name)
-                                .font(.system(size: 13, weight: .medium))
-                                .lineLimit(1)
-                            Image(systemName: "xmark")
-                                .font(.system(size: 10, weight: .bold))
-                        }
-                        .foregroundStyle(theme.accentColor)
-                        .padding(.horizontal, Spacing.sm)
-                        .padding(.vertical, 6)
-                        .background(theme.accentColor.opacity(0.15), in: Capsule())
-                    }
-                    .buttonStyle(.plain)
-                }
-            }
-            .padding(.horizontal, Spacing.md)
-            .padding(.vertical, Spacing.xs)
+    private var filterChips: some View {
+        let muscleFilters = allMuscleGroups.map { PickerFilter.muscleGroup($0) }
+        let equipmentFilters = allEquipmentTypes.map { PickerFilter.equipment($0) } + [PickerFilter.custom]
+        return VStack(alignment: .leading, spacing: 0) {
+            filterRow(label: "Muscle", filters: muscleFilters)
+            filterRow(label: "Equipment", filters: equipmentFilters)
         }
-        .scrollClipDisabled()
+    }
+
+    private func filterRow(label: String, filters: [PickerFilter]) -> some View {
+        let anyActive = filters.contains { vm.selectedFilters.contains($0) }
+        return HStack(spacing: 0) {
+            // Reduced label dominance: smaller, lower opacity
+            Text(label)
+                .font(.system(size: 11, weight: .medium))
+                .foregroundStyle(Color.secondary.opacity(0.6))
+                .frame(width: 76, alignment: .leading)
+                .padding(.leading, Spacing.md)
+            ScrollView(.horizontal, showsIndicators: false) {
+                HStack(spacing: Spacing.xs) {
+                    chip(label: "All", active: !anyActive) {
+                        filters.forEach { vm.selectedFilters.remove($0) }
+                    }
+                    ForEach(filters, id: \.self) { filter in
+                        chip(label: filter.label, active: vm.selectedFilters.contains(filter)) {
+                            vm.toggleFilter(filter)
+                        }
+                    }
+                }
+                .padding(.horizontal, Spacing.sm)
+                .padding(.vertical, Spacing.xs)  // tighter vertical
+            }
+            .scrollClipDisabled()
+        }
+    }
+
+    private func chip(label: String, active: Bool, action: @escaping () -> Void) -> some View {
+        Button {
+            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+            action()
+        } label: {
+            Text(label)
+                .font(.system(size: 13, weight: active ? .semibold : .regular))
+                .foregroundStyle(active ? Color.black : Color.secondary.opacity(0.7))
+                .padding(.horizontal, Spacing.sm)
+                .padding(.vertical, 5)
+                // Active: solid accent — high contrast. Inactive: very subtle, recedes.
+                .background(Capsule().fill(active ? theme.accentColor : Color.white.opacity(0.07)))
+        }
+        .buttonStyle(.plain)
     }
 
     // MARK: - Section header
 
-    private func sectionHeader(_ label: String) -> some View {
-        Text(label)
-            .font(.system(size: 13, weight: .semibold))
-            .foregroundStyle(Color.textMuted)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .padding(.horizontal, Spacing.md)
-            .padding(.top, Spacing.md)
-            .padding(.bottom, Spacing.xs)
-            .background(.background)
+    private func sectionHeader(
+        _ label: String,
+        prominence: SectionHeaderProminence = .secondary,
+        clearAction: (() -> Void)? = nil
+    ) -> some View {
+        HStack {
+            Text(label)
+                .font(.system(size: 13, weight: prominence == .primary ? .semibold : .medium))
+                .foregroundStyle(prominence == .primary ? Color.primary.opacity(0.94) : Color.textMuted.opacity(0.68))
+            Spacer()
+            if let clearAction {
+                Button("Clear", action: clearAction)
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color.textFaint)
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(.horizontal, Spacing.md)
+        .padding(.top, prominence == .primary ? Spacing.xl : Spacing.lg)
+        .padding(.bottom, Spacing.xs)
+        .background(.black)
     }
 
     // MARK: - Helpers
@@ -238,8 +244,10 @@ struct ExercisePicker: View {
             dismiss()
         } else {
             guard !selectedExercises.contains(where: { $0.id == exercise.id }) else { return }
-            selectedExercises.append(exercise)
-            vm.sessionAddedIDs.insert(exercise.id)
+            withAnimation(.smooth(duration: 0.32)) {
+                selectedExercises.append(exercise)
+                vm.sessionAddedIDs.insert(exercise.id)
+            }
         }
     }
 
@@ -257,32 +265,48 @@ struct ExercisePicker: View {
     private func toggleSelection(_ exercise: ExerciseDefinition) {
         if let idx = selectedExercises.firstIndex(where: { $0.id == exercise.id }) {
             UIImpactFeedbackGenerator(style: .light).impactOccurred()
-            selectedExercises.remove(at: idx)
-            vm.sessionAddedIDs.remove(exercise.id)
+            withAnimation(.smooth(duration: 0.32)) {
+                selectedExercises.remove(at: idx)
+                vm.sessionAddedIDs.remove(exercise.id)
+                selectionFeedbackTrigger += 1
+            }
         } else {
             UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-            selectedExercises.append(exercise)
-            vm.sessionAddedIDs.insert(exercise.id)
+            withAnimation(.smooth(duration: 0.32)) {
+                selectedExercises.append(exercise)
+                vm.sessionAddedIDs.insert(exercise.id)
+                selectionFeedbackTrigger += 1
+            }
         }
     }
 
     private func deselect(_ exercise: ExerciseDefinition) {
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        selectedExercises.removeAll { $0.id == exercise.id }
-        vm.sessionAddedIDs.remove(exercise.id)
+        withAnimation(.smooth(duration: 0.32)) {
+            selectedExercises.removeAll { $0.id == exercise.id }
+            vm.sessionAddedIDs.remove(exercise.id)
+            selectionFeedbackTrigger += 1
+        }
     }
 
     // MARK: - View builders
 
     @ViewBuilder
-    private func exerciseRow(_ exercise: ExerciseDefinition, matchRanges: [Range<String.Index>]) -> some View {
+    private func exerciseRow(
+        _ exercise: ExerciseDefinition,
+        matchRanges: [Range<String.Index>],
+        placement: ExerciseRowPlacement
+    ) -> some View {
         let isSelected = selectedExercises.contains(where: { $0.id == exercise.id })
         let inUseCount = existingExerciseCounts[exercise.name] ?? 0
+        let addedCount = vm.sessionAddedIDs.contains(exercise.id) ? 1 : 0
         LibraryRow(
             exercise: exercise,
             matchRanges: matchRanges,
             accentColor: theme.accentColor,
-            addedCount: isSelected ? 1 : 0,
+            isSelected: isSelected,
+            isPinnedSelection: placement == .selected,
+            addedCount: addedCount,
             inUseCount: inUseCount,
             onTap: { select(exercise) },
             onEdit: { editorTarget = .edit(exercise) }
@@ -292,7 +316,7 @@ struct ExercisePicker: View {
 
 // MARK: - Editor Target
 
-private enum ExerciseEditorTarget: Identifiable {
+private enum ExerciseEditorTarget: Identifiable, Hashable {
     case new
     case edit(ExerciseDefinition)
 
@@ -309,6 +333,37 @@ private enum ExerciseEditorTarget: Identifiable {
         case .edit(let ex): return ex
         }
     }
+
+    static func == (lhs: ExerciseEditorTarget, rhs: ExerciseEditorTarget) -> Bool {
+        switch (lhs, rhs) {
+        case (.new, .new):
+            return true
+        case (.edit(let left), .edit(let right)):
+            return left.id == right.id
+        default:
+            return false
+        }
+    }
+
+    func hash(into hasher: inout Hasher) {
+        switch self {
+        case .new:
+            hasher.combine("new")
+        case .edit(let exercise):
+            hasher.combine(exercise.id)
+        }
+    }
+}
+
+private enum ExerciseRowPlacement {
+    case selected
+    case recent
+    case library
+}
+
+private enum SectionHeaderProminence {
+    case primary
+    case secondary
 }
 
 #Preview {
