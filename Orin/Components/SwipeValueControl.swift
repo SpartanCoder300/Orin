@@ -3,6 +3,87 @@
 import SwiftUI
 import UIKit
 
+private struct SelectAllTextField: UIViewRepresentable {
+    @Binding var text: String
+    let isInteger: Bool
+    let isFocused: Bool
+    let onFocusChange: (Bool) -> Void
+
+    func makeCoordinator() -> Coordinator {
+        Coordinator(text: $text, onFocusChange: onFocusChange)
+    }
+
+    func makeUIView(context: Context) -> UITextField {
+        let field = UITextField(frame: .zero)
+        field.delegate = context.coordinator
+        field.addTarget(context.coordinator, action: #selector(Coordinator.editingChanged(_:)), for: .editingChanged)
+        field.keyboardType = isInteger ? .numberPad : .decimalPad
+        field.textAlignment = .center
+        field.adjustsFontSizeToFitWidth = true
+        field.minimumFontSize = 16
+        field.textColor = .white
+        field.tintColor = .white
+        field.borderStyle = .none
+        field.backgroundColor = .clear
+        field.font = UIFont.monospacedDigitSystemFont(ofSize: 22, weight: .semibold)
+        field.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
+        return field
+    }
+
+    func updateUIView(_ uiView: UITextField, context: Context) {
+        if uiView.text != text {
+            uiView.text = text
+        }
+        uiView.keyboardType = isInteger ? .numberPad : .decimalPad
+
+        context.coordinator.isFocusedRequestActive = isFocused
+
+        if isFocused {
+            if !uiView.isFirstResponder {
+                context.coordinator.shouldSelectAllOnBeginEditing = true
+                DispatchQueue.main.async {
+                    guard context.coordinator.isFocusedRequestActive else { return }
+                    uiView.becomeFirstResponder()
+                }
+            }
+        } else if uiView.isFirstResponder {
+            uiView.resignFirstResponder()
+        }
+    }
+
+    final class Coordinator: NSObject, UITextFieldDelegate {
+        @Binding var text: String
+        let onFocusChange: (Bool) -> Void
+        var shouldSelectAllOnBeginEditing = false
+        var isFocusedRequestActive = false
+
+        init(text: Binding<String>, onFocusChange: @escaping (Bool) -> Void) {
+            self._text = text
+            self.onFocusChange = onFocusChange
+        }
+
+        func textFieldDidBeginEditing(_ textField: UITextField) {
+            onFocusChange(true)
+            guard shouldSelectAllOnBeginEditing else { return }
+            shouldSelectAllOnBeginEditing = false
+            DispatchQueue.main.async {
+                guard textField.isFirstResponder else { return }
+                textField.selectAll(nil)
+            }
+        }
+
+        func textFieldDidEndEditing(_ textField: UITextField) {
+            text = textField.text ?? ""
+            onFocusChange(false)
+        }
+
+        @objc
+        func editingChanged(_ textField: UITextField) {
+            text = textField.text ?? ""
+        }
+    }
+}
+
 // MARK: - Swipe Value Engine
 
 /// Pure math: converts drag translation into a stepped, clamped value.
@@ -113,7 +194,6 @@ struct SwipeValueControl: View {
     @State private var isEditing: Bool = false
     @State private var editText: String = ""
     @State private var editCancelled: Bool = false
-    @FocusState private var isEditFocused: Bool
 
     // MARK: Derived
 
@@ -163,21 +243,13 @@ struct SwipeValueControl: View {
 
                 VStack(spacing: 2) {
                     if isEditing {
-                        TextField("", text: $editText)
-                            .font(.system(size: 22, weight: .semibold, design: .rounded))
-                            .monospacedDigit()
-                            .multilineTextAlignment(.center)
-                            .keyboardType(isInteger ? .numberPad : .decimalPad)
-                            .focused($isEditFocused)
-                            .onSubmit { commitEdit() }
-                            .onAppear {
-                                DispatchQueue.main.async {
-                                    UIApplication.shared.sendAction(
-                                        #selector(UITextField.selectAll(_:)),
-                                        to: nil, from: nil, for: nil
-                                    )
-                                }
-                            }
+                        SelectAllTextField(
+                            text: $editText,
+                            isInteger: isInteger,
+                            isFocused: isEditing,
+                            onFocusChange: handleEditFocusChange
+                        )
+                            .frame(maxWidth: .infinity)
                             .transition(.opacity)
                     } else {
                         Text((text.isEmpty && liveValue == nil) ? "—" : formatted(displayValue))
@@ -254,10 +326,6 @@ struct SwipeValueControl: View {
             onInteractionStart?()
             editText = text.isEmpty ? (firstTapDefault.map { formatted($0) } ?? "") : text
             isEditing = true
-            isEditFocused = true
-        }
-        .onChange(of: isEditFocused) { _, focused in
-            if !focused { commitEdit() }
         }
         .accessibilityLabel(unit)
         .accessibilityValue(text.isEmpty ? "not set" : "\(formatted(current)) \(unit)")
@@ -400,6 +468,12 @@ struct SwipeValueControl: View {
         text = cleanFormatted(sanitized)
         onCommit?()
         UISelectionFeedbackGenerator().selectionChanged()
+    }
+
+    private func handleEditFocusChange(_ focused: Bool) {
+        if !focused {
+            commitEdit()
+        }
     }
 }
 
