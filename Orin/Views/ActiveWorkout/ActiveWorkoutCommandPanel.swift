@@ -22,6 +22,7 @@ struct ActiveWorkoutCommandPanel: View {
     @State private var isShowingLogSuccess = false
     @State private var logSuccessTrigger = 0
     @State private var logSuccessResetTask: Task<Void, Never>? = nil
+    @State private var innerHighlightOpacity: Double = 0.04
 
     private let horizontalInset: CGFloat = Spacing.lg
 
@@ -229,12 +230,43 @@ struct ActiveWorkoutCommandPanel: View {
                     .foregroundStyle(isShowingLogSuccess ? Color.OrinGreen : theme.accentColor)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                     .background {
+                        let activeColor = isShowingLogSuccess ? Color.OrinGreen : theme.accentColor
                         buttonShape
-                            .fill((isShowingLogSuccess ? Color.OrinGreen : theme.accentColor).opacity(isShowingLogSuccess ? 0.05 : 0.03))
+                            // Base tint — barely perceptible surface fill
+                            .fill(activeColor.opacity(isShowingLogSuccess ? 0.05 : 0.03))
+                            .overlay {
+                                // Top-edge highlight — light catching glass from above
+                                buttonShape.fill(
+                                    LinearGradient(
+                                        colors: [
+                                            Color.white.opacity(innerHighlightOpacity),
+                                            Color.clear
+                                        ],
+                                        startPoint: .top,
+                                        endPoint: UnitPoint(x: 0.5, y: 0.22)
+                                    )
+                                )
+                                .blur(radius: 6)
+                            }
+                            .overlay {
+                                // Bottom compression — subtle physical depth
+                                buttonShape.fill(
+                                    LinearGradient(
+                                        colors: [Color.clear, Color.black.opacity(0.05)],
+                                        startPoint: UnitPoint(x: 0.5, y: 0.55),
+                                        endPoint: .bottom
+                                    )
+                                )
+                            }
                             .overlay {
                                 buttonShape
-                                    .strokeBorder((isShowingLogSuccess ? Color.OrinGreen : theme.accentColor).opacity(isShowingLogSuccess ? 0.14 : 0.10), lineWidth: 1)
+                                    .strokeBorder(activeColor.opacity(isShowingLogSuccess ? 0.14 : 0.10), lineWidth: 1)
                             }
+                    }
+                    .onAppear {
+                        withAnimation(.easeOut(duration: 0.15)) {
+                            innerHighlightOpacity = 0.08
+                        }
                     }
                     .contentShape(Rectangle())
                     .animation(Motion.standardSpring, value: isShowingLogSuccess)
