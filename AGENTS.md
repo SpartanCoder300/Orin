@@ -18,6 +18,15 @@
 - Avoid unnecessary opaque backgrounds
 - Use solid colors when appropriate
 
+## Surface Rules
+- Standard content surfaces above a screen background use shared card material, not custom fills
+- Default card/list surface style is `cardSurface()`
+- `cardSurface()` means: shared `OrinCardMaterial` plus the standard subtle border
+- Prefer `.regularMaterial` for standard cards and list-like surfaces
+- Do not hand-roll `Color.white.opacity(...)` card fills, ad hoc material choices, or one-off border overlays for normal cards
+- Use custom surfaces only when the UI is intentionally special: hero cards, banners, overlays, tooltips, pills, or active state treatments
+- If a surface intentionally breaks the default, do it explicitly and for a product reason
+
 ## Architecture
 - UI is lightweight
 - Logic in data layer (@ModelActor)

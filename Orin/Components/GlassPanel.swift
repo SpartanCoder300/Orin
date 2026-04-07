@@ -6,7 +6,6 @@ import SwiftUI
 /// Not for chrome/overlay controls; those use system-provided Liquid Glass automatically.
 struct GlassPanel<Content: View>: View {
     @ViewBuilder private let content: Content
-    @Environment(\.OrinCardMaterial) private var cardMaterial
 
     init(@ViewBuilder content: () -> Content) {
         self.content = content()
@@ -17,7 +16,6 @@ struct GlassPanel<Content: View>: View {
             .padding(Spacing.lg)
             .frame(maxWidth: .infinity)
             .frame(minHeight: DesignTokens.Layout.placeholderPanelHeight)
-            .background(cardMaterial, in: RoundedRectangle(cornerRadius: Radius.sheet, style: .continuous))
-            .proGlass(cornerRadius: Radius.sheet)
+            .cardSurface(cornerRadius: Radius.sheet)
     }
 }

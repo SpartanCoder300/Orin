@@ -28,11 +28,7 @@ struct HomePreviousBestsCard: View {
                         }
                     }
                 }
-                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
-                        .strokeBorder(.white.opacity(0.08), lineWidth: 1)
-                )
+                .cardSurface(border: true)
             }
         }
     }

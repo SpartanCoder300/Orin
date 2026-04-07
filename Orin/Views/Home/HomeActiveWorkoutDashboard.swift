@@ -7,7 +7,7 @@ struct HomeActiveWorkoutDashboard: View {
     let vm: ActiveWorkoutViewModel
     let sessionNumber: Int
     let onResume: () -> Void
-
+    
     @Environment(\.OrinTheme) private var theme
 
     // MARK: - Computed
@@ -46,11 +46,7 @@ struct HomeActiveWorkoutDashboard: View {
             Divider().opacity(0.2)
             footer
         }
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
-                .strokeBorder(.white.opacity(0.08), lineWidth: 1)
-        )
+        .cardSurface(border: true)
         .onTapGesture { onResume() }
     }
 

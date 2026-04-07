@@ -6,7 +6,6 @@ import SwiftData
 struct ExerciseHistorySessionCard: View {
     let snapshot: ExerciseSnapshot
     var showTime: Bool = false
-    @Environment(\.OrinCardMaterial) private var cardMaterial
 
     private var sortedSets: [SetRecord] {
         snapshot.sets.sorted { $0.loggedAt < $1.loggedAt }
@@ -72,8 +71,7 @@ struct ExerciseHistorySessionCard: View {
                 }
             }
         }
-        .background(cardMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
-        .proGlass(specular: false)
+        .cardSurface(border: true)
     }
 }
 

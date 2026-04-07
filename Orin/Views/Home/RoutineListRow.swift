@@ -9,7 +9,6 @@ struct RoutineListRow: View {
     let onTap: () -> Void
     let onEdit: () -> Void
 
-    @Environment(\.OrinCardMaterial) private var cardMaterial
     @State private var hapticTrigger = false
 
     var body: some View {
@@ -46,8 +45,7 @@ struct RoutineListRow: View {
             }
             .padding(Spacing.md)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(cardMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
-            .proGlass(specular: false)
+            .cardSurface(border: true)
         }
         .buttonStyle(.plain)
         .sensoryFeedback(.impact(weight: .light), trigger: hapticTrigger)

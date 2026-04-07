@@ -51,7 +51,6 @@ struct WorkoutSummaryView: View {
                             SummaryExerciseCard(
                                 row: row,
                                 formatWeight: vm.formatWeight,
-                                cardIndex: index,
                                 onNameTap: { historyTarget = (row.name, row.lineageID) }
                             )
                                 .offset(y: appeared ? 0 : 18)

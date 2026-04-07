@@ -111,8 +111,7 @@ struct ActiveExerciseCard: View {
             .padding(.horizontal, Spacing.md)
             .padding(.top, Spacing.sm)
 
-
-            Divider().overlay(Color.white.opacity(0.07))
+            Divider().opacity(0.3)
 
             // ── Set rows ──────────────────────────────────────────────
             ForEach(Array(exercise.sets.enumerated()), id: \.element.id) { sIdx, set in
@@ -149,7 +148,7 @@ struct ActiveExerciseCard: View {
 
                 if sIdx < exercise.sets.count - 1 {
                     Divider()
-                        .overlay(Color.white.opacity(0.05))
+                        .opacity(0.15)
                         .padding(.horizontal, Spacing.md)
                 }
             }
@@ -157,7 +156,7 @@ struct ActiveExerciseCard: View {
 
             // ── Add Set ───────────────────────────────────────────────
             Divider()
-                .overlay(Color.white.opacity(0.05))
+                .opacity(0.15)
                 .padding(.horizontal, Spacing.md)
 
             Button {
@@ -174,8 +173,7 @@ struct ActiveExerciseCard: View {
             .buttonStyle(.plain)
 
         }
-        .background(Color.white.opacity(0.10), in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
-        .proGlass(exerciseIndex: exerciseIndex)
+        .cardSurface(border: true)
         .alert("Remove \(exercise.exerciseName)?", isPresented: $showingRemoveConfirm) {
             Button("Remove", role: .destructive) {
                 vm.removeExercise(at: exerciseIndex)

@@ -27,7 +27,6 @@ private struct RecentWorkoutListRow: View {
     let session: WorkoutSession
     let onRepeat: () -> Void
 
-    @Environment(\.OrinCardMaterial) private var cardMaterial
     @Environment(\.OrinTheme) private var theme
     @State private var hapticTrigger = false
 
@@ -63,8 +62,7 @@ private struct RecentWorkoutListRow: View {
             }
             .padding(Spacing.md)
             .frame(maxWidth: .infinity, alignment: .leading)
-            .background(cardMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
-            .proGlass(specular: false)
+            .cardSurface(border: true)
         }
         .buttonStyle(.plain)
         .sensoryFeedback(.impact(weight: .light), trigger: hapticTrigger)

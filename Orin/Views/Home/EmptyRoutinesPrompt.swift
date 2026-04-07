@@ -34,8 +34,7 @@ struct EmptyRoutinesPrompt: View {
             }
             .padding(Spacing.lg)
             .frame(maxWidth: .infinity)
-            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
-            .proGlass(specular: false)
+            .cardSurface(border: true)
         }
         .buttonStyle(.plain)
     }

@@ -5,9 +5,7 @@ import SwiftUI
 struct SummaryExerciseCard: View {
     let row: WorkoutSummaryViewModel.ExerciseRow
     let formatWeight: (Double) -> String
-    var cardIndex: Int? = nil
     var onNameTap: (() -> Void)? = nil
-    @Environment(\.OrinCardMaterial) private var cardMaterial
 
     var body: some View {
         HStack(alignment: .center, spacing: Spacing.sm) {
@@ -44,8 +42,7 @@ struct SummaryExerciseCard: View {
         }
         .padding(.horizontal, Spacing.md)
         .padding(.vertical, 14)
-        .background(cardMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
-        .proGlass(cardIndex: cardIndex)
+        .cardSurface(border: true)
     }
 
     private var subtitle: String {

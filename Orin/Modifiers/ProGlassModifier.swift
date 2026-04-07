@@ -15,8 +15,30 @@ struct ProGlassModifier: ViewModifier {
     }
 }
 
+/// Standard elevated content surface: shared card material with the standard border.
+struct CardSurfaceModifier: ViewModifier {
+    @Environment(\.OrinCardMaterial) private var cardMaterial
+    var cornerRadius: CGFloat = Radius.medium
+    var border: Bool = true
+
+    func body(content: Content) -> some View {
+        let base = content
+            .background(cardMaterial, in: RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
+
+        if border {
+            base.proGlass(specular: false, cornerRadius: cornerRadius)
+        } else {
+            base
+        }
+    }
+}
+
 extension View {
     func proGlass(exerciseIndex: Int? = nil, cardIndex: Int? = nil, specular: Bool = true, cornerRadius: CGFloat = Radius.medium) -> some View {
         modifier(ProGlassModifier(cornerRadius: cornerRadius))
+    }
+
+    func cardSurface(cornerRadius: CGFloat = Radius.medium, border: Bool = true) -> some View {
+        modifier(CardSurfaceModifier(cornerRadius: cornerRadius, border: border))
     }
 }

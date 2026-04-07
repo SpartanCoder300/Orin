@@ -5,7 +5,6 @@ import SwiftUI
 struct DetailStatChip: View {
     let label: String
     let value: String
-    @Environment(\.OrinCardMaterial) private var cardMaterial
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
@@ -25,8 +24,7 @@ struct DetailStatChip: View {
         .padding(.horizontal, Spacing.md)
         .padding(.vertical, Spacing.sm)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(cardMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
-        .proGlass(specular: false)
+        .cardSurface(border: true)
     }
 }
 
