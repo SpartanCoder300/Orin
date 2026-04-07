@@ -1141,10 +1141,7 @@ final class ActiveWorkoutViewModel {
     func cycleSetType(exerciseIndex eIdx: Int, setIndex sIdx: Int) {
         guard draftExercises.indices.contains(eIdx),
               draftExercises[eIdx].sets.indices.contains(sIdx) else { return }
-        let all = SetType.allCases
-        let current = draftExercises[eIdx].sets[sIdx].setType
-        let next = all[((all.firstIndex(of: current) ?? 0) + 1) % all.count]
-        draftExercises[eIdx].sets[sIdx].setType = next
+        // Set type cycling not yet implemented — all sets stay normal
         scheduleDraftPersistence()
     }
 
