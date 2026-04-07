@@ -282,6 +282,10 @@ struct SwipeValueControl: View {
                 guard !isEditing else { return }
                 if !horizontalLocked {
                     guard abs(value.translation.width) > abs(value.translation.height) * 0.75 else { return }
+                    UIApplication.shared.sendAction(
+                        #selector(UIResponder.resignFirstResponder),
+                        to: nil, from: nil, for: nil
+                    )
                     horizontalLocked = true
                     dragStartValue = dragBase
                     previousTranslation = value.translation.width  // seed so first delta is zero

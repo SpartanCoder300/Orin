@@ -26,6 +26,13 @@ struct ActiveWorkoutView: View {
         }
     }
 
+    private func dismissKeyboard() {
+        UIApplication.shared.sendAction(
+            #selector(UIResponder.resignFirstResponder),
+            to: nil, from: nil, for: nil
+        )
+    }
+
 
     var body: some View {
         @Bindable var vm = vm
@@ -84,6 +91,11 @@ struct ActiveWorkoutView: View {
                     }
                 }
                 .themedBackground()
+                .simultaneousGesture(
+                    TapGesture().onEnded {
+                        dismissKeyboard()
+                    }
+                )
                 .overlay(alignment: .bottom) {
                     BottomCommandBackdrop(theme: theme)
                         .allowsHitTesting(false)
