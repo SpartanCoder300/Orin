@@ -133,7 +133,7 @@ struct ActiveWorkoutCommandPanel: View {
                             activeLiftAmount: tuner.config.activeLiftAmount,
                             milestones: weightMilestones(for: exercise.equipmentType),
                             onInteractionStart: { vm.requestRevealCurrentFocus(); hasUsedSwipeControl = true; cancelHint() },
-                            onCommit: { vm.queueDraftPersistence() },
+                            onCommit: { vm.queueDraftPersistence(); vm.refreshActivityState() },
                             hintToken: hintToken,
                             maxMomentumSteps: tuner.config.weightMaxMomentumSteps
                         )
@@ -168,7 +168,7 @@ struct ActiveWorkoutCommandPanel: View {
                             dragActivationThreshold: tuner.config.dragActivationThreshold,
                             activeLiftAmount: tuner.config.activeLiftAmount,
                             onInteractionStart: { vm.requestRevealCurrentFocus(); hasUsedSwipeControl = true; cancelHint() },
-                            onCommit: { vm.queueDraftPersistence() },
+                            onCommit: { vm.queueDraftPersistence(); vm.refreshActivityState() },
                             hintToken: hintToken,
                             maxMomentumSteps: tuner.config.repsMaxMomentumSteps
                         )
@@ -200,7 +200,7 @@ struct ActiveWorkoutCommandPanel: View {
                             dragActivationThreshold: tuner.config.dragActivationThreshold,
                             activeLiftAmount: tuner.config.activeLiftAmount,
                             onInteractionStart: { vm.requestRevealCurrentFocus(); hasUsedSwipeControl = true; cancelHint() },
-                            onCommit: { vm.queueDraftPersistence() },
+                            onCommit: { vm.queueDraftPersistence(); vm.refreshActivityState() },
                             hintToken: hintToken,
                             maxMomentumSteps: tuner.config.repsMaxMomentumSteps
                         )

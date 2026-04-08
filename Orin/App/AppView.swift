@@ -97,7 +97,7 @@ struct AppView: View {
             appState.workout.viewModel?.refreshActivityState()
         }
         .onOpenURL { url in
-            guard url.scheme == "Orin", url.host == "workout" else { return }
+            guard url.scheme == "orin", url.host == "workout" else { return }
             guard appState.workout.hasActiveWorkout else { return }
             appState.workout.isShowingFullWorkout = true
         }

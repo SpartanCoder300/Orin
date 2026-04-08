@@ -22,7 +22,7 @@
 		20C236EF2F746D2300D5763E /* AccentTheme.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236A82F746D2300D5763E /* AccentTheme.swift */; };
 		20C236F02F746D2300D5763E /* AppState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236A92F746D2300D5763E /* AppState.swift */; };
 		20C236F12F746D2300D5763E /* AppView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236AA2F746D2300D5763E /* AppView.swift */; };
-		20C236F22F746D2300D5763E /* HeftApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236AB2F746D2300D5763E /* HeftApp.swift */; };
+		20C236F22F746D2300D5763E /* OrinApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236AB2F746D2300D5763E /* OrinApp.swift */; };
 		20C236F42F746D2300D5763E /* Color+Tokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236AE2F746D2300D5763E /* Color+Tokens.swift */; };
 		20C236F52F746D2300D5763E /* CompactStepper.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236AF2F746D2300D5763E /* CompactStepper.swift */; };
 		20C236F62F746D2300D5763E /* GlassPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C236B02F746D2300D5763E /* GlassPanel.swift */; };
@@ -155,7 +155,7 @@
 		20C236A82F746D2300D5763E /* AccentTheme.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AccentTheme.swift; sourceTree = "<group>"; };
 		20C236A92F746D2300D5763E /* AppState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppState.swift; sourceTree = "<group>"; };
 		20C236AA2F746D2300D5763E /* AppView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppView.swift; sourceTree = "<group>"; };
-		20C236AB2F746D2300D5763E /* HeftApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HeftApp.swift; sourceTree = "<group>"; };
+		20C236AB2F746D2300D5763E /* OrinApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OrinApp.swift; sourceTree = "<group>"; };
 		20C236AE2F746D2300D5763E /* Color+Tokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+Tokens.swift"; sourceTree = "<group>"; };
 		20C236AF2F746D2300D5763E /* CompactStepper.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CompactStepper.swift; sourceTree = "<group>"; };
 		20C236B02F746D2300D5763E /* GlassPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GlassPanel.swift; sourceTree = "<group>"; };
@@ -377,7 +377,7 @@
 				20C236A82F746D2300D5763E /* AccentTheme.swift */,
 				20C236A92F746D2300D5763E /* AppState.swift */,
 				20C236AA2F746D2300D5763E /* AppView.swift */,
-				20C236AB2F746D2300D5763E /* HeftApp.swift */,
+				20C236AB2F746D2300D5763E /* OrinApp.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -755,7 +755,7 @@
 				20C236EF2F746D2300D5763E /* AccentTheme.swift in Sources */,
 				20C236F02F746D2300D5763E /* AppState.swift in Sources */,
 				20C236F12F746D2300D5763E /* AppView.swift in Sources */,
-				20C236F22F746D2300D5763E /* HeftApp.swift in Sources */,
+				20C236F22F746D2300D5763E /* OrinApp.swift in Sources */,
 				20C2372B2F7479AC00D5763E /* HomePreviewData.swift in Sources */,
 				20C236F42F746D2300D5763E /* Color+Tokens.swift in Sources */,
 				20C236F52F746D2300D5763E /* CompactStepper.swift in Sources */,

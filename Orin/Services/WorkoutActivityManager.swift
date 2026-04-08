@@ -101,11 +101,15 @@ final class WorkoutActivityManager {
         }
     }
 
-    func update(_ state: WorkoutActivityAttributes.ContentState) {
+    func update(_ state: WorkoutActivityAttributes.ContentState,
+                alertConfiguration: AlertConfiguration? = nil) {
         guard let activity else { return }
         // Cancel any in-flight update so only the latest state wins.
+        // A short debounce window collapses rapid-fire calls (e.g. stepper taps)
+        // into a single update, staying well within ActivityKit's rate limit.
         updateTask?.cancel()
         updateTask = Task {
+            try? await Task.sleep(for: .milliseconds(150))
             guard !Task.isCancelled else { return }
             // During rest, extend the stale window well past the timer end so the system
             // doesn't show a stale spinner if the app is suspended when the timer fires.
@@ -119,8 +123,20 @@ final class WorkoutActivityManager {
                 staleDate: staleDate,
                 relevanceScore: 100
             )
-            await activity.update(content)
+            await activity.update(content, alertConfiguration: alertConfiguration)
         }
+    }
+
+    /// Call when the rest timer expires to push a state update with an alert banner.
+    /// The alert only fires if the device is locked or the app is in the background —
+    /// the system suppresses it when the app is active (in-app UI handles that case).
+    func updateRestComplete(_ state: WorkoutActivityAttributes.ContentState) {
+        let alert = AlertConfiguration(
+            title: "Rest Complete",
+            body: LocalizedStringResource(stringLiteral: state.currentExercise),
+            sound: .default
+        )
+        update(state, alertConfiguration: alert)
     }
 
     func end(_ state: WorkoutActivityAttributes.ContentState) {

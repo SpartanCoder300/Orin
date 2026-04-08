@@ -5,7 +5,6 @@ import Foundation
 import SwiftData
 import UIKit
 import AudioToolbox
-import UserNotifications
 
 @Observable @MainActor
 final class ActiveWorkoutViewModel {
@@ -195,6 +194,7 @@ final class ActiveWorkoutViewModel {
               !draftExercises[exerciseIndex].sets[setIndex].isLogged else { return }
         manualFocus = SetFocus(exerciseIndex: exerciseIndex, setIndex: setIndex)
         UISelectionFeedbackGenerator().selectionChanged()
+        activityManager.update(currentActivityState)
     }
 
     func requestRevealCurrentFocus() {
@@ -246,7 +246,6 @@ final class ActiveWorkoutViewModel {
     private let resumeSessionID: UUID?
     private var zeroTask: Task<Void, Never>? = nil
     private var phaseUpdateTasks: [Task<Void, Never>] = []
-    private var notificationTask: Task<Void, Never>? = nil
     private var deferredPersistTask: Task<Void, Never>? = nil
     private var hasSetup = false
     private let activityManager: WorkoutActivityManager
@@ -318,7 +317,6 @@ final class ActiveWorkoutViewModel {
         }
         persistDraftState()
         activityManager.start(sessionID: ensureSession().id, routineName: routineName, state: currentActivityState)
-        requestNotificationPermissionIfNeeded()
     }
 
     /// Creates the WorkoutSession and an ExerciseSnapshot for every exercise immediately
@@ -745,6 +743,7 @@ final class ActiveWorkoutViewModel {
         draftExercises.append(draft)
         scheduleDraftPersistence()
         UISelectionFeedbackGenerator().selectionChanged()
+        activityManager.update(currentActivityState)
         requestRevealCurrentFocus()
     }
 
@@ -777,6 +776,7 @@ final class ActiveWorkoutViewModel {
         draftExercises[eIdx].sets[sIdx].isTouched = true
         scheduleDraftPersistence()
         UISelectionFeedbackGenerator().selectionChanged()
+        activityManager.update(currentActivityState)
         requestRevealCurrentFocus()
     }
 
@@ -793,6 +793,7 @@ final class ActiveWorkoutViewModel {
             return
         }
         scheduleDraftPersistence()
+        activityManager.update(currentActivityState)
     }
 
     func unlogSet(exerciseIndex eIdx: Int, setIndex sIdx: Int) {
@@ -822,6 +823,7 @@ final class ActiveWorkoutViewModel {
         persistDraftState()
         try? modelContext.save()
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        activityManager.update(currentActivityState)
         requestRevealCurrentFocus()
     }
 
@@ -837,6 +839,7 @@ final class ActiveWorkoutViewModel {
         draftExercises[index].sets.append(new)
         scheduleDraftPersistence()
         UISelectionFeedbackGenerator().selectionChanged()
+        activityManager.update(currentActivityState)
     }
 
     func removeExercise(at index: Int) {
@@ -908,6 +911,7 @@ final class ActiveWorkoutViewModel {
         }
         draftExercises[index].sets.append(dropset)
         scheduleDraftPersistence()
+        activityManager.update(currentActivityState)
         requestRevealCurrentFocus()
     }
 
@@ -1016,62 +1020,6 @@ final class ActiveWorkoutViewModel {
         return true
     }
 
-    private var restNotificationID: String { "restTimerComplete" }
-
-    /// Requests notification permission once at workout start, before any rest timer fires.
-    /// Keeps the permission prompt away from the moment the user logs a set.
-    private func requestNotificationPermissionIfNeeded() {
-        Task {
-            let center = UNUserNotificationCenter.current()
-            let settings = await center.notificationSettings()
-            guard settings.authorizationStatus == .notDetermined else { return }
-            _ = try? await center.requestAuthorization(options: [.alert, .sound])
-        }
-    }
-
-    private func scheduleRestNotification(endsAt: Date) {
-        // Capture main-actor state synchronously before spawning the task,
-        // avoiding access to isolated properties across an await boundary.
-        let capturedExerciseName: String? = {
-            guard let focus = currentFocus,
-                  draftExercises.indices.contains(focus.exerciseIndex) else { return nil }
-            return draftExercises[focus.exerciseIndex].exerciseName
-        }()
-
-        // Cancel any in-flight scheduling task so only one notification is ever pending.
-        notificationTask?.cancel()
-        notificationTask = Task {
-            let center = UNUserNotificationCenter.current()
-            let settings = await center.notificationSettings()
-            let isAuthorized: Bool
-            switch settings.authorizationStatus {
-            case .authorized, .provisional, .ephemeral: isAuthorized = true
-            default: isAuthorized = false
-            }
-            guard isAuthorized, !Task.isCancelled else { return }
-
-            // If the deadline already passed during the async permission check, bail.
-            let interval = endsAt.timeIntervalSinceNow
-            guard interval > 0 else { return }
-
-            let content = UNMutableNotificationContent()
-            content.title = "Rest complete"
-            content.body = capturedExerciseName.map { "\($0) — next set." } ?? "Time for your next set."
-            content.sound = .default
-
-            let trigger = UNTimeIntervalNotificationTrigger(timeInterval: interval, repeats: false)
-            let request = UNNotificationRequest(identifier: restNotificationID, content: content, trigger: trigger)
-            center.removePendingNotificationRequests(withIdentifiers: [restNotificationID])
-            try? await center.add(request)
-        }
-    }
-
-    private func cancelRestNotification() {
-        notificationTask?.cancel()
-        notificationTask = nil
-        UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [restNotificationID])
-    }
-
     private static let restBGTaskID = "MysticByte.Orin.rest-timer-end"
 
     /// Schedules a BGAppRefreshTask to fire at the rest timer's end date.
@@ -1111,7 +1059,7 @@ final class ActiveWorkoutViewModel {
             if delay > 0 { try? await Task.sleep(for: .seconds(delay)) }
             guard !Task.isCancelled else { return }
             self.restTimer.tick(at: .now)
-            self.activityManager.update(self.currentActivityState)
+            self.activityManager.updateRestComplete(self.currentActivityState)
         }
 
         // Push Live Activity updates at the 50% and 20% remaining-time thresholds so the
@@ -1136,7 +1084,6 @@ final class ActiveWorkoutViewModel {
         activityManager.update(currentActivityState)
         guard let deadline = restTimer.targetEndDate else { return }
         scheduleTimerTasks(deadline: deadline, duration: duration)
-        scheduleRestNotification(endsAt: deadline)
         scheduleRestBackgroundRefresh(endsAt: deadline)
     }
 
@@ -1144,7 +1091,6 @@ final class ActiveWorkoutViewModel {
         cancelTimerTasks()
         restTimer.skip()
         scheduleDraftPersistence()
-        cancelRestNotification()
         cancelRestBackgroundRefresh()
         activityManager.update(currentActivityState)
     }
@@ -1155,13 +1101,11 @@ final class ActiveWorkoutViewModel {
             // Adjustment clamped the timer to zero — treat as a skip.
             cancelTimerTasks()
             scheduleDraftPersistence()
-            cancelRestNotification()
             cancelRestBackgroundRefresh()
             activityManager.update(currentActivityState)
             return
         }
         scheduleTimerTasks(deadline: deadline, duration: restTimer.totalDuration)
-        scheduleRestNotification(endsAt: deadline)
         scheduleRestBackgroundRefresh(endsAt: deadline)
         scheduleDraftPersistence()
         activityManager.update(currentActivityState)
@@ -1184,11 +1128,13 @@ final class ActiveWorkoutViewModel {
             let start = draftExercises[eIdx].startingWeight
             draftExercises[eIdx].sets[sIdx].weightText = formatWeight(start)
             scheduleDraftPersistence()
+            activityManager.update(currentActivityState)
             return
         }
         let next = increment ? current + step : max(0, current - step)
         draftExercises[eIdx].sets[sIdx].weightText = formatWeight(next)
         scheduleDraftPersistence()
+        activityManager.update(currentActivityState)
     }
 
     func adjustReps(exerciseIndex eIdx: Int, setIndex sIdx: Int, increment: Bool) {
@@ -1198,6 +1144,7 @@ final class ActiveWorkoutViewModel {
         let next = increment ? current + 1 : max(0, current - 1)
         draftExercises[eIdx].sets[sIdx].repsText = "\(next)"
         scheduleDraftPersistence()
+        activityManager.update(currentActivityState)
     }
 
     var loggedSetCount: Int {
@@ -1244,7 +1191,6 @@ final class ActiveWorkoutViewModel {
             modelContext.delete(snapshot)
         }
         try? modelContext.save()
-        cancelRestNotification()
         cancelRestBackgroundRefresh()
         activityManager.end(currentActivityState)
         return s
@@ -1269,7 +1215,6 @@ final class ActiveWorkoutViewModel {
     /// Discards the in-progress session and all logged sets without saving.
     func cancelWorkout() {
         cancelDeferredPersistence()
-        cancelRestNotification()
         cancelRestBackgroundRefresh()
         activityManager.end(currentActivityState)
         if let s = session {
@@ -1372,7 +1317,6 @@ final class ActiveWorkoutViewModel {
         persistDraftState()
         guard restTimer.isActive, let end = restTimer.targetEndDate, end <= .now else { return }
         cancelTimerTasks()
-        cancelRestNotification()
         restTimer.tick(at: .now)
         persistDraftState()
         activityManager.update(currentActivityState)

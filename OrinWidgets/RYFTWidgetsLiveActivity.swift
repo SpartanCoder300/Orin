@@ -87,7 +87,7 @@ struct OrinWidgetsLiveActivity: Widget {
             .contentMargins(.leading, 6, for: .compactTrailing)
             // Keyline tracks rest phase — pill border goes green → amber → red
             .keylineTint(keylineTint(for: context.state))
-            .widgetURL(URL(string: "Orin://workout"))
+            .widgetURL(URL(string: "orin://workout"))
         }
     }
 }
@@ -127,6 +127,7 @@ private struct WorkingBanner: View {
                     .foregroundStyle(.white)
                     .lineLimit(1)
                     .minimumScaleFactor(0.85)
+                    .privacySensitive()
                 let setLabel = state.focusedSetLabel ?? "\(state.setsLogged) sets"
                 let setDetail = state.focusedSetDetail
                 Text(setDetail.map { "\(setLabel) · \($0)" } ?? setLabel)
@@ -134,6 +135,7 @@ private struct WorkingBanner: View {
                     .foregroundStyle(.white.opacity(0.6))
                     .contentTransition(.numericText(countsDown: false))
                     .widgetAccentable()
+                    .privacySensitive()
             }
             // Expands to fill all available space — pushes timer to far right edge
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -173,6 +175,7 @@ private struct RestingBanner: View {
                     .font(.system(size: 22, weight: .semibold, design: .monospaced))
                     .monospacedDigit()
                     .foregroundStyle(phaseColor)
+                    .privacySensitive()
             }
 
             ProgressView(timerInterval: startDate...clampedEndDate, countsDown: true,
@@ -190,6 +193,7 @@ private struct RestingBanner: View {
                     .foregroundStyle(.white.opacity(0.5))
                     .lineLimit(1)
                     .truncationMode(.tail)
+                    .privacySensitive()
             }
             .font(.system(size: 12))
         }
@@ -387,7 +391,7 @@ private struct CompactTrailing: View {
                 .font(.system(size: 12, weight: .semibold, design: .monospaced))
                 .monospacedDigit()
                 .foregroundStyle(.white.opacity(0.8))
-                .minimumScaleFactor(0.8)
+                .minimumScaleFactor(0.7)
                 .lineLimit(1)
                 .frame(width: CompactMetrics.trailingWidth, alignment: .trailing)
         }
