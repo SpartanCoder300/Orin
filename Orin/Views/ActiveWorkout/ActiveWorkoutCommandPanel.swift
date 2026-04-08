@@ -24,9 +24,8 @@ struct ActiveWorkoutCommandPanel: View {
     @State private var isShowingLogSuccess = false
     @State private var logSuccessTrigger = 0
     @State private var logSuccessResetTask: Task<Void, Never>? = nil
-    @State private var innerHighlightOpacity: Double = 0.04
 
-    private let horizontalInset: CGFloat = Spacing.lg
+    private let horizontalInset: CGFloat = ActiveWorkoutLayout.horizontalInset
 
     var body: some View {
         if vm.isAllSetsLogged {
@@ -45,7 +44,7 @@ struct ActiveWorkoutCommandPanel: View {
                     .padding(.horizontal, Spacing.xl)
             }
             .buttonStyle(.plain)
-            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: Radius.sheet, style: .continuous))
+            .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: Radius.sheet, style: .continuous))
             .modifier(CommandPanelElevation(cornerRadius: Radius.sheet))
             .padding(.horizontal, horizontalInset)
             .padding(.bottom, Spacing.md)
@@ -86,8 +85,8 @@ struct ActiveWorkoutCommandPanel: View {
                         .fill(theme.accentColor)
                         .frame(width: 3, height: 14)
                     Text("\(exercise.exerciseName)  ·  Set \(focus.setIndex + 1)")
-                        .font(.system(size: 13, weight: .semibold, design: .rounded))
-                        .foregroundStyle(Color.white.opacity(0.68))
+                        .font(.system(size: 13, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color.white.opacity(0.86))
                         .lineLimit(1)
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -95,7 +94,14 @@ struct ActiveWorkoutCommandPanel: View {
                 .padding(.top, Spacing.sm)
                 .padding(.bottom, 2)
                 .contentTransition(.opacity)
-                .animation(Motion.standardSpring, value: focus.setIndex)
+                .animation(
+                    .easeOut(duration: ActiveWorkoutLayout.focusSyncDuration),
+                    value: focus.exerciseIndex
+                )
+                .animation(
+                    .easeOut(duration: ActiveWorkoutLayout.focusSyncDuration),
+                    value: focus.setIndex
+                )
 
                 // Row 1: Weight | Reps (or Duration for timed exercises)
                 HStack(spacing: 0) {
@@ -212,6 +218,7 @@ struct ActiveWorkoutCommandPanel: View {
                 }
 
                 Divider()
+                    .overlay(Color.white.opacity(0.02))
 
                 Button {
                     cancelHint()
@@ -245,41 +252,11 @@ struct ActiveWorkoutCommandPanel: View {
                     .background {
                         let activeColor = isShowingLogSuccess ? Color.OrinGreen : theme.accentColor
                         buttonShape
-                            // Base tint — barely perceptible surface fill
-                            .fill(activeColor.opacity(isShowingLogSuccess ? 0.05 : 0.04))
-                            .overlay {
-                                // Top-edge highlight — light catching glass from above
-                                buttonShape.fill(
-                                    LinearGradient(
-                                        colors: [
-                                            Color.white.opacity(innerHighlightOpacity),
-                                            Color.clear
-                                        ],
-                                        startPoint: .top,
-                                        endPoint: UnitPoint(x: 0.5, y: 0.10)
-                                    )
-                                )
-                                .blur(radius: 6)
-                            }
-                            .overlay {
-                                // Bottom compression — subtle physical depth
-                                buttonShape.fill(
-                                    LinearGradient(
-                                        colors: [Color.clear, Color.black.opacity(0.05)],
-                                        startPoint: UnitPoint(x: 0.5, y: 0.55),
-                                        endPoint: .bottom
-                                    )
-                                )
-                            }
+                            .fill(activeColor.opacity(isShowingLogSuccess ? 0.042 : 0.03))
                             .overlay {
                                 buttonShape
-                                    .strokeBorder(activeColor.opacity(isShowingLogSuccess ? 0.14 : 0.10), lineWidth: 1)
+                                    .strokeBorder(activeColor.opacity(isShowingLogSuccess ? 0.09 : 0.06), lineWidth: 1)
                             }
-                    }
-                    .onAppear {
-                        withAnimation(.easeOut(duration: 0.15)) {
-                            innerHighlightOpacity = 0.07
-                        }
                     }
                     .contentShape(Rectangle())
                     .animation(Motion.standardSpring, value: isShowingLogSuccess)
@@ -287,7 +264,12 @@ struct ActiveWorkoutCommandPanel: View {
                 .buttonStyle(LogSetButtonStyle())
                 .frame(height: 60)
             }
-            .glassEffect(.regular, in: RoundedRectangle(cornerRadius: Radius.large, style: .continuous))
+            .background {
+                // Glass as a background layer so the swipe pill's lift offset
+                // isn't clipped — glassEffect clips its own subtree, not the parent.
+                Color.clear
+                    .glassEffect(.regular.interactive(), in: RoundedRectangle(cornerRadius: Radius.large, style: .continuous))
+            }
             .modifier(CommandPanelElevation(cornerRadius: Radius.large))
             .padding(.horizontal, horizontalInset)
             .padding(.bottom, Spacing.md)
@@ -362,20 +344,73 @@ private struct LogSetButtonStyle: ButtonStyle {
 private struct CommandPanelElevation: ViewModifier {
     let cornerRadius: CGFloat
 
+    private enum DepthStyle {
+        // White surface fill — makes the glass panel read as elevated on dark backgrounds
+        static let surfaceTintOpacity = 0.07
+        // Specular highlight — brighter on top edge, fades out toward bottom
+        static let borderTopOpacity = 0.18
+        static let borderBottomOpacity = 0.05
+        // Ambient shadow — large, soft, spreads depth far
+        static let primaryShadowOpacity = 0.30
+        static let primaryShadowRadius: CGFloat = 24
+        static let primaryShadowYOffset: CGFloat = 12
+        // Directional shadow — medium, main cast
+        static let secondaryShadowOpacity = 0.18
+        static let secondaryShadowRadius: CGFloat = 8
+        static let secondaryShadowYOffset: CGFloat = 4
+        // Contact shadow — tight, reads as "lifted off surface"
+        static let contactShadowOpacity = 0.22
+        static let contactShadowRadius: CGFloat = 1
+        static let contactShadowYOffset: CGFloat = 1
+        static let recessionOpacity = 0.08
+        static let recessionInset: CGFloat = 3
+        static let recessionBlur: CGFloat = 18
+    }
+
     func body(content: Content) -> some View {
         content
             .background {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(.regularMaterial.opacity(0.22))
+                    .fill(Color.white.opacity(DepthStyle.surfaceTintOpacity))
+                    .background {
+                        RoundedRectangle(cornerRadius: cornerRadius + DepthStyle.recessionInset, style: .continuous)
+                            .fill(Color.black.opacity(DepthStyle.recessionOpacity))
+                            .padding(.horizontal, -DepthStyle.recessionInset)
+                            .padding(.vertical, -DepthStyle.recessionInset)
+                            .blur(radius: DepthStyle.recessionBlur)
+                    }
             }
-            // Quiet single-weight border. No gradient, no glow — clean edges only.
+            // Specular highlight: bright top edge fades to subtle bottom — simulates light hitting a raised surface
             .overlay {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .strokeBorder(Color.white.opacity(0.09), lineWidth: 1)
+                    .strokeBorder(
+                        LinearGradient(
+                            colors: [
+                                Color.white.opacity(DepthStyle.borderTopOpacity),
+                                Color.white.opacity(DepthStyle.borderBottomOpacity)
+                            ],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        ),
+                        lineWidth: 1
+                    )
                     .allowsHitTesting(false)
             }
-            .shadow(color: Color.black.opacity(0.44), radius: 28, y: 18)
-            .shadow(color: Color.black.opacity(0.30), radius: 9, y: 4)
+            .shadow(
+                color: Color.black.opacity(DepthStyle.contactShadowOpacity),
+                radius: DepthStyle.contactShadowRadius,
+                y: DepthStyle.contactShadowYOffset
+            )
+            .shadow(
+                color: Color.black.opacity(DepthStyle.secondaryShadowOpacity),
+                radius: DepthStyle.secondaryShadowRadius,
+                y: DepthStyle.secondaryShadowYOffset
+            )
+            .shadow(
+                color: Color.black.opacity(DepthStyle.primaryShadowOpacity),
+                radius: DepthStyle.primaryShadowRadius,
+                y: DepthStyle.primaryShadowYOffset
+            )
     }
 }
 

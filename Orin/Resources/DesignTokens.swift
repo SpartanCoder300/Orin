@@ -66,3 +66,8 @@ enum Motion {
     )
     static let shimmerDuration: Double = 0.6
 }
+
+enum ActiveWorkoutLayout {
+    static let horizontalInset: CGFloat = Spacing.md
+    static let focusSyncDuration: Double = 0.12
+}

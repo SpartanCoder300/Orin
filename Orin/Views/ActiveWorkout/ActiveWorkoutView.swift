@@ -88,6 +88,7 @@ struct ActiveWorkoutView: View {
                     .listStyle(.insetGrouped)
                     .scrollContentBackground(.hidden)
                     .scrollDismissesKeyboard(.interactively)
+                    .scrollEdgeEffectStyle(.soft, for: .bottom)
                     .onAppear {
                         settlePresentationWindow()
                         Task { @MainActor in
@@ -115,10 +116,6 @@ struct ActiveWorkoutView: View {
                 .themedBackground()
                 .onTapGesture {
                     dismissKeyboard()
-                }
-                .overlay(alignment: .bottom) {
-                    BottomCommandBackdrop(theme: theme)
-                        .allowsHitTesting(false)
                 }
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
@@ -152,7 +149,7 @@ struct ActiveWorkoutView: View {
                             onAdjust: { vm.adjustRest(by: $0) },
                             onSkip: { vm.skipRest() }
                         )
-                        .padding(.horizontal, Spacing.md)
+                        .padding(.horizontal, ActiveWorkoutLayout.horizontalInset)
                         .padding(.vertical, Spacing.sm)
                         .transition(.move(edge: .top).combined(with: .opacity).combined(with: .scale(scale: 0.94, anchor: .top)))
                     }
@@ -168,7 +165,7 @@ struct ActiveWorkoutView: View {
                         onDismiss: onDismiss
                     )
                     .frame(maxWidth: .infinity)
-                    .padding(.top, Spacing.md)
+                    .padding(.top, Spacing.sm)
                 }
                 .animation(.spring(response: 0.4, dampingFraction: 0.8), value: vm.restTimer.isActive)
                 .alert("End Workout?", isPresented: $vm.isShowingEndConfirm) {
@@ -374,37 +371,6 @@ private struct PRCelebrationBackdrop: View {
                 haloOpacity = 0.54
             }
         }
-    }
-}
-
-// MARK: - Rest Timer Bar
-
-private struct BottomCommandBackdrop: View {
-    let theme: AccentTheme
-
-    private let fadeHeight: CGFloat = 116
-
-    var body: some View {
-        VStack(spacing: 0) {
-            Spacer(minLength: 0)
-
-            LinearGradient(
-                stops: [
-                    .init(color: .clear, location: 0),
-                    .init(color: Color.black.opacity(0.10), location: 0.18),
-                    .init(color: Color.black.opacity(0.28), location: 0.46),
-                    .init(color: Color.black.opacity(0.50), location: 1)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(height: fadeHeight)
-
-            theme.backgroundColor
-                .frame(height: 44)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
-        .ignoresSafeArea(edges: .bottom)
     }
 }
 
