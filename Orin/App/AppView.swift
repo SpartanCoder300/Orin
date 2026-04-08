@@ -7,8 +7,10 @@ import UIKit
 struct AppView: View {
     @Environment(AppState.self) private var appState
     @Environment(\.modelContext) private var modelContext
-
     @Environment(\.scenePhase) private var scenePhase
+
+    // Observed so deduplication re-runs when CloudKit delivers data after a reinstall.
+    @Query private var allRoutines: [RoutineTemplate]
 
     private var isRunningInPreview: Bool {
         let environment = ProcessInfo.processInfo.environment
@@ -105,6 +107,13 @@ struct AppView: View {
             RoutineSeeder.deduplicateIfNeeded(in: modelContext)
             RoutineSeeder.seedStarterRoutinesIfNeeded(in: modelContext)
             appState.workout.onLaunch(modelContext: modelContext)
+        }
+        // Re-run dedup whenever the routine count changes. This catches the case where
+        // CloudKit delivers previously-synced routines after a reinstall, which arrives
+        // asynchronously and would be missed by the one-time .task above.
+        .onChange(of: allRoutines.count) { _, _ in
+            guard !isRunningInPreview else { return }
+            RoutineSeeder.deduplicateIfNeeded(in: modelContext)
         }
         .onChange(of: scenePhase) { _, newPhase in
             guard !isRunningInPreview else { return }
