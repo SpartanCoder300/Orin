@@ -1,7 +1,6 @@
 // iOS 26+ only. No #available guards.
 
 import SwiftUI
-import UIKit
 
 // MARK: - Helpers
 
@@ -34,42 +33,6 @@ private struct DeltaResult {
     let label: String
     var displayText: String { "\(direction.symbol) \(label)" }
     var color: Color { direction.color }
-}
-
-private enum SetRowSwipeAction: Equatable {
-    case copyFromAbove
-    case delete
-    case undo
-
-    var title: String {
-        switch self {
-        case .copyFromAbove: "Copy"
-        case .delete: "Delete"
-        case .undo: "Undo"
-        }
-    }
-
-    var icon: String {
-        switch self {
-        case .copyFromAbove: "arrow.up.doc.on.clipboard"
-        case .delete: "trash"
-        case .undo: "arrow.uturn.backward"
-        }
-    }
-
-    var tint: Color {
-        switch self {
-        case .copyFromAbove: Color.OrinBlue
-        case .delete: Color.OrinRed
-        case .undo: .orange
-        }
-    }
-}
-
-private enum SetRowDragIntent {
-    case undetermined
-    case horizontal
-    case vertical
 }
 
 // MARK: - Set Row
@@ -113,18 +76,19 @@ struct SetRow: View {
     @State private var deltaFadeTask: Task<Void, Never>? = nil
     @State private var logHighlightOpacity: Double = 0
     @State private var checkScale: CGFloat = 1.0
-    @State private var swipeOffset: CGFloat = 0
-    @State private var dragIntent: SetRowDragIntent = .undetermined
-    @State private var didTriggerSwipeHaptic = false
-    @State private var swipeResetTask: Task<Void, Never>? = nil
-    private let triggerThreshold: CGFloat = 60
-    private let revealWidth: CGFloat = 72
-    private let swipeElasticity: CGFloat = 0.2
-    private let horizontalLockThreshold: CGFloat = 10
-    private let verticalIntentThreshold: CGFloat = 10
 
-    private var canSwipeRight: Bool { !isLogged && onCopyFromAbove != nil }
-    private var trailingSwipeAction: SetRowSwipeAction { isLogged ? .undo : .delete }
+    private enum ActiveRowStyle {
+        static let accentOpacity = 0.92
+        static let fillOpacity = 0.045
+        static let strokeOpacity = 0.045
+        static let strokeWidth: CGFloat = 1
+    }
+
+    private enum CompletedCheckmarkStyle {
+        static let foreground = Color.OrinGreen.opacity(0.66)
+        static let background = Color.OrinGreen.opacity(0.085)
+        static let incompleteForeground = Color.white.opacity(0.40)
+    }
 
     private var isShowingPlaceholder: Bool {
         guard let _ = placeholderDisplayText else { return false }
@@ -132,88 +96,82 @@ struct SetRow: View {
     }
 
     var body: some View {
-        ZStack {
-            if canSwipeRight { leadingActionView }
-            trailingActionView
-            rowContentView
-        }
-        .clipped()
-        .contentShape(Rectangle())
-        .onAppear {
-            if isPR { badgeScale = 1.0 }
-        }
-        .onDisappear {
-            deltaFadeTask?.cancel()
-            swipeResetTask?.cancel()
-            resetSwipeState(animated: false)
-        }
-        .onChange(of: justLogged) { _, isJust in
-            deltaFadeTask?.cancel()
-            if isJust {
-                showDelta = true
-                deltaFadeTask = Task { @MainActor in
-                    try? await Task.sleep(for: .milliseconds(2500))
-                    guard !Task.isCancelled else { return }
-                    withAnimation(Motion.standardSpring) { showDelta = false }
-                }
-                // Immediate ack: accent-tinted highlight with a restrained settle.
-                withAnimation(.easeOut(duration: 0.08)) {
-                    logHighlightOpacity = 1.0
-                    rowScale = 0.992
-                    checkScale = 1.08
-                }
-                Task { @MainActor in
-                    try? await Task.sleep(for: .milliseconds(110))
-                    withAnimation(.easeOut(duration: 0.16)) {
-                        logHighlightOpacity = 0.0
-                    }
-                    withAnimation(Motion.standardSpring) {
-                        rowScale = 1.0
-                        checkScale = 1.0
-                    }
-                }
-            } else {
+        rowContentView
+            .onAppear(perform: handleAppear)
+            .onDisappear(perform: handleDisappear)
+            .onChange(of: justLogged) { oldValue, newValue in
+                handleJustLoggedChange(oldValue, newValue)
+            }
+            .onChange(of: justGotPR) { oldValue, newValue in
+                handleJustGotPRChange(oldValue, newValue)
+            }
+    }
+
+    private func handleAppear() {
+        if isPR { badgeScale = 1.0 }
+    }
+
+    private func handleDisappear() {
+        deltaFadeTask?.cancel()
+    }
+
+    private func handleJustLoggedChange(_ oldValue: Bool, _ isJust: Bool) {
+        deltaFadeTask?.cancel()
+        if isJust {
+            showDelta = true
+            deltaFadeTask = Task { @MainActor in
+                try? await Task.sleep(for: .milliseconds(2500))
+                guard !Task.isCancelled else { return }
                 withAnimation(Motion.standardSpring) { showDelta = false }
-                logHighlightOpacity = 0
-                checkScale = 1.0
             }
-        }
-        .onChange(of: justGotPR) { _, newVal in
-            guard newVal else { return }
-            // Badge: scale from zero with bouncy spring
-            badgeScale = 0
-            withAnimation(.spring(response: 0.4, dampingFraction: 0.5)) {
-                badgeScale = 1.0
-            }
-            // Row: pulse scale 1.0 → 1.05 → 1.0
-            withAnimation(.spring(response: 0.18, dampingFraction: 0.4)) {
-                rowScale = 1.05
+            withAnimation(.easeOut(duration: 0.08)) {
+                logHighlightOpacity = 1.0
+                rowScale = 0.992
+                checkScale = 1.08
             }
             Task { @MainActor in
-                try? await Task.sleep(for: .milliseconds(180))
+                try? await Task.sleep(for: .milliseconds(110))
+                withAnimation(.easeOut(duration: 0.16)) {
+                    logHighlightOpacity = 0.0
+                }
                 withAnimation(Motion.standardSpring) {
                     rowScale = 1.0
+                    checkScale = 1.0
                 }
             }
+        } else {
+            withAnimation(Motion.standardSpring) { showDelta = false }
+            logHighlightOpacity = 0
+            checkScale = 1.0
         }
-        .simultaneousGesture(swipeGesture)
+    }
+
+    private func handleJustGotPRChange(_ oldValue: Bool, _ newValue: Bool) {
+        guard newValue else { return }
+        badgeScale = 0
+        withAnimation(.spring(response: 0.4, dampingFraction: 0.5)) {
+            badgeScale = 1.0
+        }
+        withAnimation(.spring(response: 0.18, dampingFraction: 0.4)) {
+            rowScale = 1.05
+        }
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(180))
+            withAnimation(Motion.standardSpring) {
+                rowScale = 1.0
+            }
+        }
     }
 
     private var rowContentView: some View {
         HStack(spacing: 6) {
             RoundedRectangle(cornerRadius: 1.5)
-                .fill(isFocused ? accentColor.opacity(1.0) : .clear)
-                .frame(width: 4, height: isFocused ? 34 : 26)
+                .fill(isFocused ? accentColor.opacity(ActiveRowStyle.accentOpacity) : .clear)
+                .frame(width: 3, height: isFocused ? 30 : 22)
 
             Text("\(setNumber)")
                 .font(.system(size: 13, weight: .semibold, design: .rounded))
-                .foregroundStyle(
-                    isLogged
-                        ? Color.white.opacity(0.16)
-                        : isFocused
-                            ? accentColor.opacity(0.70)
-                            : Color.textFaint
-                )
+                .foregroundStyle(setNumberColor)
                 .frame(width: 20, alignment: .center)
 
             if setType != .normal {
@@ -228,19 +186,20 @@ struct SetRow: View {
                 if isFocused, let prev = previousDisplayText {
                     Text(prev)
                         .font(.system(size: 11, weight: .medium, design: .rounded))
-                        .foregroundStyle(Color.white.opacity(0.48))
+                        .foregroundStyle(Color.white.opacity(0.54))
                         .transition(.opacity)
                 }
 
                 Text(isShowingPlaceholder ? placeholderDisplayText ?? displayText : displayText)
                     .font(.system(
-                        size: isLogged ? 15 : isFocused ? 17 : 16,
-                        weight: isLogged ? .regular : isFocused ? .semibold : .medium,
+                        size: isFocused ? 17 : 16,
+                        weight: isFocused ? .semibold : .medium,
                         design: .rounded
                     ))
                     .monospacedDigit()
                     .foregroundStyle(valueForegroundStyle)
                     .contentTransition(.numericText())
+                    .animation(Motion.standardSpring, value: displayText)
                     .animation(
                         .spring(response: 0.35, dampingFraction: 0.85)
                             .delay(isShowingPlaceholder ? placeholderDelay : 0),
@@ -267,16 +226,14 @@ struct SetRow: View {
                     .font(.system(size: 20))
                     .foregroundStyle(
                         isLogged
-                            ? Color.OrinGreen.opacity(0.82)
-                            : isFocused
-                                ? accentColor.opacity(0.90)
-                                : Color.white.opacity(0.34)
+                            ? CompletedCheckmarkStyle.foreground
+                            : CompletedCheckmarkStyle.incompleteForeground
                     )
                     .background {
                         if isLogged {
                             Circle()
-                                .fill(Color.OrinGreen.opacity(0.08))
-                                .frame(width: 28, height: 28)
+                                .fill(CompletedCheckmarkStyle.background)
+                                .frame(width: 30, height: 30)
                         }
                     }
                     .frame(width: 44, height: 44)
@@ -287,30 +244,36 @@ struct SetRow: View {
             .buttonStyle(.plain)
         }
         .scaleEffect(rowScale)
-        .padding(.vertical, isLogged ? 3 : isFocused ? 7 : 4)
+        .padding(.vertical, isFocused ? 6 : 3)
         .padding(.leading, Spacing.xs)
         .padding(.trailing, Spacing.sm)
-        .background(rowBackground)
         .overlay {
-            rowShape
-                .fill(accentColor.opacity(0.16))
-                .opacity(logHighlightOpacity)
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(accentColor.opacity(ActiveRowStyle.fillOpacity))
+                .opacity(isFocused ? 1 : 0)
+                .padding(.vertical, 1)
                 .allowsHitTesting(false)
         }
         .overlay {
-            if isLogged || isFocused {
-                rowShape
-                    .strokeBorder(
-                        isLogged
-                            ? Color.white.opacity(0.025)
-                            : accentColor.opacity(0.50),
-                        lineWidth: 1
-                    )
-            }
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .strokeBorder(
+                    accentColor.opacity(ActiveRowStyle.strokeOpacity),
+                    lineWidth: ActiveRowStyle.strokeWidth
+                )
+                .opacity(isFocused ? 1 : 0)
+                .padding(.vertical, 1)
+                .allowsHitTesting(false)
         }
-        .offset(x: swipeOffset)
+        .overlay {
+            RoundedRectangle(cornerRadius: 10, style: .continuous)
+                .fill(accentColor.opacity(0.14))
+                .opacity(logHighlightOpacity)
+                .padding(.vertical, 1)
+                .allowsHitTesting(false)
+        }
+        .contentShape(Rectangle())
         .onTapGesture {
-            guard abs(swipeOffset) < 4, !isLogged else { return }
+            guard !isLogged else { return }
             if isShowingPlaceholder {
                 onAdoptPlaceholder?()
             } else {
@@ -326,89 +289,27 @@ struct SetRow: View {
         }
     }
 
-    private var leadingActionView: some View {
-        swipeActionContainer(
-            alignment: .leading,
-            action: .copyFromAbove,
-            progress: leadingRevealProgress
-        )
-    }
-
-    private var trailingActionView: some View {
-        swipeActionContainer(
-            alignment: .trailing,
-            action: trailingSwipeAction,
-            progress: trailingRevealProgress
-        )
-    }
-
-    private func swipeActionContainer(
-        alignment: Alignment,
-        action: SetRowSwipeAction,
-        progress: CGFloat
-    ) -> some View {
-        rowShape
-            .fill(actionBackground(for: action, progress: progress))
-            .overlay(alignment: alignment) {
-                swipeActionLabel(for: action, progress: progress)
-                    .padding(.horizontal, Spacing.md)
-            }
-            .opacity(progress > 0.01 ? 1 : 0)
-            .allowsHitTesting(false)
-    }
-
-    private func swipeActionLabel(for action: SetRowSwipeAction, progress: CGFloat) -> some View {
-        VStack(spacing: 3) {
-            Image(systemName: action.icon)
-                .font(.system(size: 17, weight: .semibold))
-            Text(action.title)
-                .font(.system(size: 11, weight: .semibold, design: .rounded))
+    private var setNumberColor: some ShapeStyle {
+        if isLogged {
+            return AnyShapeStyle(Color.white.opacity(0.50))
         }
-        .foregroundStyle(.white.opacity(0.96))
-        .scaleEffect(0.86 + (0.14 * progress))
-        .opacity(0.45 + (0.55 * progress))
-        .offset(x: swipeLabelOffset(for: action, progress: progress))
-    }
-
-    private func actionBackground(for action: SetRowSwipeAction, progress: CGFloat) -> some ShapeStyle {
-        LinearGradient(
-            colors: [
-                action.tint.opacity(0.55 + (0.18 * progress)),
-                action.tint.opacity(0.82 + (0.10 * progress))
-            ],
-            startPoint: action == .copyFromAbove ? .leading : .trailing,
-            endPoint: action == .copyFromAbove ? .trailing : .leading
-        )
+        if isFocused {
+            return AnyShapeStyle(accentColor.opacity(0.95))
+        }
+        return AnyShapeStyle(Color.white.opacity(0.34))
     }
 
     private var valueForegroundStyle: AnyShapeStyle {
         if isLogged {
-            return AnyShapeStyle(Color.white.opacity(0.16))
+            return AnyShapeStyle(Color.white.opacity(0.68))
         }
         if isShowingPlaceholder {
-            return AnyShapeStyle(Color.white.opacity(0.36))
+            return AnyShapeStyle(Color.white.opacity(0.42))
         }
         if isFocused {
-            return AnyShapeStyle(Color.white.opacity(0.98))
+            return AnyShapeStyle(Color.white.opacity(0.96))
         }
-        return AnyShapeStyle(Color.white.opacity(0.54))
-    }
-
-    private var leadingRevealProgress: CGFloat {
-        normalizedProgress(for: max(0, swipeOffset))
-    }
-
-    private var trailingRevealProgress: CGFloat {
-        normalizedProgress(for: max(0, -swipeOffset))
-    }
-
-    private func normalizedProgress(for distance: CGFloat) -> CGFloat {
-        max(0, min(1, distance / revealWidth))
-    }
-
-    private func swipeLabelOffset(for action: SetRowSwipeAction, progress: CGFloat) -> CGFloat {
-        let base = (1 - progress) * 12
-        return action == .copyFromAbove ? -base : base
+        return AnyShapeStyle(Color.white.opacity(0.80))
     }
 
     private var displayText: String {
@@ -492,112 +393,6 @@ struct SetRow: View {
         return DeltaResult(direction: dir, label: "\(prefix)\(abs) \(abs == 1 ? "rep" : "reps")")
     }
 
-    private var rowShape: some InsettableShape {
-        Rectangle()
-    }
-
-    private var rowBackground: some View {
-        rowShape
-            .fill(
-                isLogged
-                ? Color.white.opacity(0.04)
-                : isFocused
-                    ? accentColor.opacity(0.40)
-                    : .clear
-            )
-    }
-
-    private var swipeGesture: some Gesture {
-        DragGesture(minimumDistance: 6, coordinateSpace: .local)
-            .onChanged { value in
-                swipeResetTask?.cancel()
-
-                switch dragIntent {
-                case .vertical:
-                    return
-                case .undetermined:
-                    let horizontalTravel = abs(value.translation.width)
-                    let verticalTravel = abs(value.translation.height)
-
-                    if verticalTravel > verticalIntentThreshold && verticalTravel > horizontalTravel * 1.05 {
-                        dragIntent = .vertical
-                        resetSwipeState(animated: false)
-                        return
-                    }
-
-                    guard horizontalTravel > horizontalLockThreshold,
-                          horizontalTravel > verticalTravel * 1.1 else { return }
-
-                    dragIntent = .horizontal
-                case .horizontal:
-                    break
-                }
-
-                let raw = value.translation.width
-                if raw > 0 {
-                    guard canSwipeRight else { return }
-                    let excess = max(0, raw - revealWidth)
-                    swipeOffset = min(raw, revealWidth) + excess * swipeElasticity
-                } else if raw < 0 {
-                    let excess = min(0, raw + revealWidth)
-                    swipeOffset = max(raw, -revealWidth) + excess * swipeElasticity
-                } else {
-                    swipeOffset = 0
-                }
-                let absOffset = abs(swipeOffset)
-                if absOffset >= triggerThreshold && !didTriggerSwipeHaptic {
-                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
-                    didTriggerSwipeHaptic = true
-                } else if absOffset < triggerThreshold {
-                    didTriggerSwipeHaptic = false
-                }
-            }
-            .onEnded { value in
-                let intent = dragIntent
-                dragIntent = .undetermined
-
-                guard intent == .horizontal else {
-                    resetSwipeState(animated: false)
-                    return
-                }
-
-                let velocityX = value.predictedEndTranslation.width - value.translation.width
-                let triggerRight = swipeOffset > triggerThreshold || (swipeOffset > 20 && velocityX > 400)
-                let triggerLeft  = swipeOffset < -triggerThreshold || (swipeOffset < -20 && velocityX < -400)
-                let triggeredAction = triggerRight ? SetRowSwipeAction.copyFromAbove : (triggerLeft ? trailingSwipeAction : nil)
-                if let triggeredAction {
-                    let commitOffset = triggeredAction == .copyFromAbove ? revealWidth + 8 : -(revealWidth + 8)
-                    withAnimation(.spring(response: 0.20, dampingFraction: 0.82)) {
-                        swipeOffset = commitOffset
-                    }
-                    swipeResetTask = Task { @MainActor in
-                        try? await Task.sleep(for: .milliseconds(70))
-                        guard !Task.isCancelled else { return }
-                        withAnimation(.spring(response: 0.30, dampingFraction: 0.82)) {
-                            swipeOffset = 0
-                        }
-                        didTriggerSwipeHaptic = false
-                    }
-                } else {
-                    resetSwipeState(animated: true)
-                }
-                if triggerRight { onCopyFromAbove?() }
-                else if triggerLeft { isLogged ? onUndo() : onDelete() }
-            }
-    }
-
-    private func resetSwipeState(animated: Bool) {
-        swipeResetTask?.cancel()
-        didTriggerSwipeHaptic = false
-
-        if animated {
-            withAnimation(.spring(response: 0.35, dampingFraction: 0.78)) {
-                swipeOffset = 0
-            }
-        } else {
-            swipeOffset = 0
-        }
-    }
 }
 
 // MARK: - Previews

@@ -69,24 +69,24 @@ struct ActiveWorkoutView: View {
         ZStack {
             NavigationStack {
                 ScrollViewReader { proxy in
-                    ScrollView {
-                        VStack(spacing: Spacing.md) {
-                            if vm.draftExercises.isEmpty {
-                                EmptyWorkoutPrompt(accentColor: theme.accentColor)
-                            } else {
-                                ForEach(Array(vm.draftExercises.enumerated()), id: \.element.id) { idx, exercise in
-                                    ActiveExerciseCard(
-                                        vm: vm,
-                                        exerciseIndex: idx,
-                                        theme: theme
-                                    )
-                                    .id(exercise.id)
-                                }
+                    List {
+                        if vm.draftExercises.isEmpty {
+                            EmptyWorkoutPrompt(accentColor: theme.accentColor)
+                                .listRowBackground(Color.clear)
+                                .listRowSeparator(.hidden)
+                        } else {
+                            ForEach(Array(vm.draftExercises.enumerated()), id: \.element.id) { idx, exercise in
+                                ActiveExerciseCard(
+                                    vm: vm,
+                                    exerciseIndex: idx,
+                                    theme: theme
+                                )
+                                .id(exercise.id)
                             }
                         }
-                        .padding(.horizontal, Spacing.md)
-                        .padding(.top, Spacing.lg)
                     }
+                    .listStyle(.insetGrouped)
+                    .scrollContentBackground(.hidden)
                     .scrollDismissesKeyboard(.interactively)
                     .onAppear {
                         settlePresentationWindow()

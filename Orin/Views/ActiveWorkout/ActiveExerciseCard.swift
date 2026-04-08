@@ -22,25 +22,44 @@ struct ActiveExerciseCard: View {
 
     @ViewBuilder
     var body: some View {
-        if let exercise { cardBody(exercise: exercise) }
+        if let exercise {
+            cardBody(exercise: exercise)
+                .contextMenu {
+                    Button { isShowingHistory = true } label: {
+                        Label("View History", systemImage: "chart.line.uptrend.xyaxis")
+                    }
+                    Button { editingDefinition = resolveDefinition(for: exercise) } label: {
+                        Label("Edit Exercise", systemImage: "pencil")
+                    }
+                    Button { vm.beginSwap(exerciseIndex: exerciseIndex) } label: {
+                        Label("Swap Exercise", systemImage: "arrow.left.arrow.right")
+                    }
+                    Button { vm.isShowingExercisePicker = true } label: {
+                        Label("Add Superset", systemImage: "arrow.2.squarepath")
+                    }
+                    Divider()
+                    Button { vm.addDropset(toExerciseAt: exerciseIndex) } label: {
+                        Label("Add Dropset", systemImage: "arrow.turn.down.right")
+                    }
+                    Button { vm.moveExercise(at: exerciseIndex, direction: .up) } label: {
+                        Label("Move Up", systemImage: "arrow.up")
+                    }
+                    .disabled(exerciseIndex == 0)
+                    Button { vm.moveExercise(at: exerciseIndex, direction: .down) } label: {
+                        Label("Move Down", systemImage: "arrow.down")
+                    }
+                    .disabled(exerciseIndex == vm.draftExercises.count - 1)
+                    Divider()
+                    Button(role: .destructive) { showingRemoveConfirm = true } label: {
+                        Label("Remove from Workout", systemImage: "trash")
+                    }
+                }
+        }
     }
 
     @ViewBuilder
     private func cardBody(exercise: ActiveWorkoutViewModel.DraftExercise) -> some View {
-        VStack(alignment: .leading, spacing: 0) {
-
-            // ── Header ────────────────────────────────────────────────
-            Text(exercise.exerciseName)
-                .font(.title3.weight(.bold))
-                .foregroundStyle(Color.textPrimary)
-                .lineLimit(1)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, Spacing.md)
-                .padding(.top, Spacing.sm)
-
-            Divider().opacity(0.3)
-
-            // ── Set rows ──────────────────────────────────────────────
+        Section {
             ForEach(Array(exercise.sets.enumerated()), id: \.element.id) { sIdx, set in
                 SetRow(
                     setNumber: sIdx + 1,
@@ -71,20 +90,35 @@ struct ActiveExerciseCard: View {
                     onCopyFromAbove: sIdx > 0 ? { vm.copySetFromAbove(exerciseIndex: exerciseIndex, setIndex: sIdx) } : nil,
                     onAdoptPlaceholder: sIdx > 0 ? { vm.adoptPlaceholderValues(exerciseIndex: exerciseIndex, setIndex: sIdx) } : nil
                 )
-                .transition(.opacity.combined(with: .move(edge: .bottom)))
-
-                if sIdx < exercise.sets.count - 1 {
-                    Divider()
-                        .opacity(0.15)
-                        .padding(.horizontal, Spacing.md)
+                .swipeActions(edge: .trailing, allowsFullSwipe: true) {
+                    if set.isLogged {
+                        Button {
+                            vm.unlogSet(exerciseIndex: exerciseIndex, setIndex: sIdx)
+                        } label: {
+                            Label("Undo", systemImage: "arrow.uturn.backward")
+                        }
+                        .tint(.orange)
+                    } else {
+                        Button(role: .destructive) {
+                            vm.removeSet(exerciseIndex: exerciseIndex, setIndex: sIdx)
+                        } label: {
+                            Label("Delete", systemImage: "trash")
+                        }
+                    }
                 }
+                .swipeActions(edge: .leading, allowsFullSwipe: false) {
+                    if sIdx > 0 && !set.isLogged {
+                        Button {
+                            vm.copySetFromAbove(exerciseIndex: exerciseIndex, setIndex: sIdx)
+                        } label: {
+                            Label("Copy", systemImage: "arrow.up.doc.on.clipboard")
+                        }
+                        .tint(Color.OrinBlue)
+                    }
+                }
+                .listRowSeparatorTint(Color.white.opacity(0.08))
             }
             .animation(Motion.standardSpring, value: exercise.sets.count)
-
-            // ── Add Set ───────────────────────────────────────────────
-            Divider()
-                .opacity(0.15)
-                .padding(.horizontal, Spacing.md)
 
             Button {
                 vm.addSet(toExerciseAt: exerciseIndex)
@@ -98,38 +132,14 @@ struct ActiveExerciseCard: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
-
-        }
-        .cardSurface(border: true)
-        .contextMenu {
-            Button { isShowingHistory = true } label: {
-                Label("View History", systemImage: "chart.line.uptrend.xyaxis")
-            }
-            Button { editingDefinition = resolveDefinition(for: exercise) } label: {
-                Label("Edit Exercise", systemImage: "pencil")
-            }
-            Button { vm.beginSwap(exerciseIndex: exerciseIndex) } label: {
-                Label("Swap Exercise", systemImage: "arrow.left.arrow.right")
-            }
-            Button { vm.isShowingExercisePicker = true } label: {
-                Label("Add Superset", systemImage: "arrow.2.squarepath")
-            }
-            Divider()
-            Button { vm.addDropset(toExerciseAt: exerciseIndex) } label: {
-                Label("Add Dropset", systemImage: "arrow.turn.down.right")
-            }
-            Button { vm.moveExercise(at: exerciseIndex, direction: .up) } label: {
-                Label("Move Up", systemImage: "arrow.up")
-            }
-            .disabled(exerciseIndex == 0)
-            Button { vm.moveExercise(at: exerciseIndex, direction: .down) } label: {
-                Label("Move Down", systemImage: "arrow.down")
-            }
-            .disabled(exerciseIndex == vm.draftExercises.count - 1)
-            Divider()
-            Button(role: .destructive) { showingRemoveConfirm = true } label: {
-                Label("Remove from Workout", systemImage: "trash")
-            }
+            .listRowSeparatorTint(Color.white.opacity(0.08))
+        } header: {
+            Text(exercise.exerciseName)
+                .font(.title3.weight(.bold))
+                .foregroundStyle(Color.textPrimary)
+                .lineLimit(1)
+                .textCase(nil)
+                .padding(.top, Spacing.xs)
         }
         .alert("Remove \(exercise.exerciseName)?", isPresented: $showingRemoveConfirm) {
             Button("Remove", role: .destructive) {
@@ -214,9 +224,16 @@ struct ActiveExerciseCard: View {
         vm.draftExercises[0].sets[0].repsText = "8"
         vm.draftExercises[0].sets[1].weightText = "135"
         vm.draftExercises[0].sets[1].repsText = "8"
-        return ActiveExerciseCard(vm: vm, exerciseIndex: 0, theme: AccentTheme.midnight)
-            .padding()
+        return NavigationStack {
+            List {
+                ActiveExerciseCard(vm: vm, exerciseIndex: 0, theme: AccentTheme.midnight)
+            }
+            .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
+            .themedBackground()
+        }
     }()
+    .activeWorkoutPreviewEnvironments()
 }
 
 #Preview("With previous performance") {
@@ -233,7 +250,14 @@ struct ActiveExerciseCard: View {
             .init(weight: 225, reps: 5),
             .init(weight: 215, reps: 6),
         ]
-        return ActiveExerciseCard(vm: vm, exerciseIndex: 0, theme: AccentTheme.midnight)
-            .padding()
+        return NavigationStack {
+            List {
+                ActiveExerciseCard(vm: vm, exerciseIndex: 0, theme: AccentTheme.midnight)
+            }
+            .listStyle(.insetGrouped)
+            .scrollContentBackground(.hidden)
+            .themedBackground()
+        }
     }()
+    .activeWorkoutPreviewEnvironments()
 }

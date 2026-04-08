@@ -251,6 +251,12 @@ final class ActiveWorkoutViewModel {
     private var hasSetup = false
     private let activityManager: WorkoutActivityManager
 
+    private static var isRunningInPreview: Bool {
+        let environment = ProcessInfo.processInfo.environment
+        return environment["XCODE_RUNNING_FOR_PREVIEWS"] == "1"
+            || environment["XCODE_RUNNING_FOR_PLAYGROUNDS"] == "1"
+    }
+
     /// Called once when the SwiftData session is first created (on first set logged).
     /// Set by ActiveWorkoutService to persist the session ID to UserDefaults directly —
     /// bypassing SwiftUI observation chains which are unreliable for cross-object chains.
@@ -1073,12 +1079,14 @@ final class ActiveWorkoutViewModel {
     /// so the task handler can push a "rest cleared" Live Activity update.
     /// Submitting with the same identifier replaces any previously scheduled request.
     private func scheduleRestBackgroundRefresh(endsAt: Date) {
+        guard !Self.isRunningInPreview else { return }
         let request = BGAppRefreshTaskRequest(identifier: Self.restBGTaskID)
         request.earliestBeginDate = endsAt
         try? BGTaskScheduler.shared.submit(request)
     }
 
     private func cancelRestBackgroundRefresh() {
+        guard !Self.isRunningInPreview else { return }
         BGTaskScheduler.shared.cancel(taskRequestWithIdentifier: Self.restBGTaskID)
     }
 
