@@ -1,5 +1,6 @@
 // iOS 26+ only. No #available guards.
 
+import BackgroundTasks
 import Foundation
 import SwiftData
 import UIKit
@@ -1065,6 +1066,22 @@ final class ActiveWorkoutViewModel {
         UNUserNotificationCenter.current().removePendingNotificationRequests(withIdentifiers: [restNotificationID])
     }
 
+    private static let restBGTaskID = "MysticByte.Orin.rest-timer-end"
+
+    /// Schedules a BGAppRefreshTask to fire at the rest timer's end date.
+    /// If the app is suspended when the timer fires, the system wakes it briefly
+    /// so the task handler can push a "rest cleared" Live Activity update.
+    /// Submitting with the same identifier replaces any previously scheduled request.
+    private func scheduleRestBackgroundRefresh(endsAt: Date) {
+        let request = BGAppRefreshTaskRequest(identifier: Self.restBGTaskID)
+        request.earliestBeginDate = endsAt
+        try? BGTaskScheduler.shared.submit(request)
+    }
+
+    private func cancelRestBackgroundRefresh() {
+        BGTaskScheduler.shared.cancel(taskRequestWithIdentifier: Self.restBGTaskID)
+    }
+
     /// Cancels the zero-task and all phase-update tasks without rescheduling.
     /// Use when stopping the rest timer (skip, clamp-to-zero, workout end).
     private func cancelTimerTasks() {
@@ -1112,6 +1129,7 @@ final class ActiveWorkoutViewModel {
         guard let deadline = restTimer.targetEndDate else { return }
         scheduleTimerTasks(deadline: deadline, duration: duration)
         scheduleRestNotification(endsAt: deadline)
+        scheduleRestBackgroundRefresh(endsAt: deadline)
     }
 
     func skipRest() {
@@ -1119,6 +1137,7 @@ final class ActiveWorkoutViewModel {
         restTimer.skip()
         scheduleDraftPersistence()
         cancelRestNotification()
+        cancelRestBackgroundRefresh()
         activityManager.update(currentActivityState)
     }
 
@@ -1129,11 +1148,13 @@ final class ActiveWorkoutViewModel {
             cancelTimerTasks()
             scheduleDraftPersistence()
             cancelRestNotification()
+            cancelRestBackgroundRefresh()
             activityManager.update(currentActivityState)
             return
         }
         scheduleTimerTasks(deadline: deadline, duration: restTimer.totalDuration)
         scheduleRestNotification(endsAt: deadline)
+        scheduleRestBackgroundRefresh(endsAt: deadline)
         scheduleDraftPersistence()
         activityManager.update(currentActivityState)
     }
@@ -1216,6 +1237,7 @@ final class ActiveWorkoutViewModel {
         }
         try? modelContext.save()
         cancelRestNotification()
+        cancelRestBackgroundRefresh()
         activityManager.end(currentActivityState)
         return s
     }
@@ -1240,6 +1262,7 @@ final class ActiveWorkoutViewModel {
     func cancelWorkout() {
         cancelDeferredPersistence()
         cancelRestNotification()
+        cancelRestBackgroundRefresh()
         activityManager.end(currentActivityState)
         if let s = session {
             modelContext.delete(s)
