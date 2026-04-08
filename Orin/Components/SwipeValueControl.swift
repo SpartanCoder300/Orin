@@ -257,8 +257,11 @@ struct SwipeValueControl: View {
                 .blur(radius: 1.2)
                 .offset(x: dragFollowOffset)
                 .opacity(isDragging ? 1 : 0)
+                // Height stretches with each step and snaps back on release.
+                .animation(.spring(response: 0.14, dampingFraction: 0.68), value: committedStepCount)
+                // Horizontal follow has a slight lag behind the finger.
                 .animation(.spring(response: 0.25, dampingFraction: 0.82), value: dragFollowOffset)
-                // Longer fade lets the spring snap-back finish before the tether disappears.
+                // Longer fade lets the snap-back finish before the tether disappears.
                 .animation(.easeOut(duration: 0.28), value: isDragging)
 
             HStack(spacing: isDragging ? 6 : 0) {
@@ -289,7 +292,7 @@ struct SwipeValueControl: View {
                             .lineLimit(1)
                             .minimumScaleFactor(0.65)
                             .contentTransition(.numericText(countsDown: goingDown))
-                            .animation(.spring(response: 0.1, dampingFraction: 0.85), value: formatted(displayValue))
+                            .animation(.spring(response: 0.07, dampingFraction: 0.9), value: formatted(displayValue))
                             .transition(.opacity)
                     }
 
@@ -320,8 +323,8 @@ struct SwipeValueControl: View {
             .background {
                 RoundedRectangle(cornerRadius: Radius.large, style: .continuous)
                     .glassEffect(in: RoundedRectangle(cornerRadius: Radius.large, style: .continuous))
-                    .shadow(color: .black.opacity(0.14), radius: 10, y: 3)
-                    .opacity(isDragging ? 0.85 : 0)
+                    .shadow(color: .black.opacity(0.10), radius: 8, y: 2)
+                    .opacity(isDragging ? 0.78 : 0)
             }
             // Lift + horizontal follow. Follow is spring-animated in the gesture handler,
             // so the pill lags slightly behind the finger — feels tethered, not glued.
@@ -433,7 +436,8 @@ struct SwipeValueControl: View {
                 // 18% of travel, ±22pt cap. At boundary the follow is compressed
                 // further to convey physical resistance (see boundary block below).
                 let targetFollow = min(22, max(-22, value.translation.width * 0.18))
-                withAnimation(.spring(response: 0.2, dampingFraction: 0.88)) {
+                // response 0.30 gives a perceptible trail — pill chases finger, not glued to it.
+                withAnimation(.spring(response: 0.30, dampingFraction: 0.86)) {
                     dragFollowOffset = targetFollow
                 }
 

@@ -5,23 +5,29 @@ import CoreGraphics
 
 struct SwipeTuningConfig {
     /// Points of horizontal drag to advance weight by one step.
-    var weightPointsPerStep: CGFloat = 16
+    var weightPointsPerStep: CGFloat = 18
+
     /// Points of horizontal drag to advance reps by one step.
-    var repsPointsPerStep: CGFloat = 18
+    var repsPointsPerStep: CGFloat = 20
+
     /// Minimum horizontal drag distance before the gesture locks in.
-    var dragActivationThreshold: CGFloat = 6
+    var dragActivationThreshold: CGFloat = 7
+
     /// Whether fast flings apply extra momentum steps.
     var momentumEnabled: Bool = true
+
     /// Velocity (pt/s) required to trigger a momentum burst.
-    var momentumVelocityThreshold: CGFloat = 900
+    var momentumVelocityThreshold: CGFloat = 1050
+
     /// Max extra steps applied by momentum on the weight control.
-    var weightMaxMomentumSteps: Int = 4
+    var weightMaxMomentumSteps: Int = 3
+
     /// Max extra steps applied by momentum on the reps control.
-    var repsMaxMomentumSteps: Int = 2
+    var repsMaxMomentumSteps: Int = 1
+
     /// Duration (s) of the momentum animation burst.
-    var momentumDuration: Double = 0.15
+    var momentumDuration: Double = 0.16
+
     /// How many points the control lifts above the touch point while dragging.
-    /// Needs to clear a typical thumb pad (~40–60pt), so values below ~40 leave
-    /// the number hidden under the finger. 48pt is a good starting point.
-    var activeLiftAmount: CGFloat = 48
+    var activeLiftAmount: CGFloat = 50
 }
