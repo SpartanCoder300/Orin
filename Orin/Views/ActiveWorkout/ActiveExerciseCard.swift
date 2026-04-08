@@ -14,7 +14,6 @@ struct ActiveExerciseCard: View {
     @State private var showingRemoveConfirm = false
     @State private var editingDefinition: ExerciseDefinition? = nil
     @State private var isShowingHistory = false
-    @State private var prefetchedDefinition: ExerciseDefinition? = nil
 
     private var exercise: ActiveWorkoutViewModel.DraftExercise? {
         guard vm.draftExercises.indices.contains(exerciseIndex) else { return nil }
@@ -31,76 +30,13 @@ struct ActiveExerciseCard: View {
         VStack(alignment: .leading, spacing: 0) {
 
             // ── Header ────────────────────────────────────────────────
-            HStack(alignment: .center) {
-                Text(exercise.exerciseName)
-                    .font(.title3.weight(.bold))
-                    .foregroundStyle(Color.textPrimary)
-                Spacer()
-                Menu {
-                    Button {
-                        isShowingHistory = true
-                    } label: {
-                        Label("View History", systemImage: "chart.line.uptrend.xyaxis")
-                    }
-
-                    Button {
-                        editingDefinition = prefetchedDefinition
-                    } label: {
-                        Label("Edit Exercise", systemImage: "pencil")
-                    }
-
-                    Button {
-                        vm.beginSwap(exerciseIndex: exerciseIndex)
-                    } label: {
-                        Label("Swap Exercise", systemImage: "arrow.left.arrow.right")
-                    }
-
-                    Button {
-                        vm.isShowingExercisePicker = true
-                    } label: {
-                        Label("Add Superset", systemImage: "arrow.2.squarepath")
-                    }
-
-                    Divider()
-
-                    Button {
-                        vm.addDropset(toExerciseAt: exerciseIndex)
-                    } label: {
-                        Label("Add Dropset", systemImage: "arrow.turn.down.right")
-                    }
-
-                    Button {
-                        vm.moveExercise(at: exerciseIndex, direction: .up)
-                    } label: {
-                        Label("Move Up", systemImage: "arrow.up")
-                    }
-                    .disabled(exerciseIndex == 0)
-
-                    Button {
-                        vm.moveExercise(at: exerciseIndex, direction: .down)
-                    } label: {
-                        Label("Move Down", systemImage: "arrow.down")
-                    }
-                    .disabled(exerciseIndex == vm.draftExercises.count - 1)
-
-                    Divider()
-
-                    Button(role: .destructive) {
-                        showingRemoveConfirm = true
-                    } label: {
-                        Label("Remove from Workout", systemImage: "trash")
-                    }
-                } label: {
-                    Image(systemName: "ellipsis")
-                        .font(.system(size: 16, weight: .medium))
-                        .foregroundStyle(Color.textMuted)
-                        .frame(width: 44, height: 44)
-                        .contentShape(Rectangle())
-                        .accessibilityLabel("Exercise options")
-                }
-            }
-            .padding(.horizontal, Spacing.md)
-            .padding(.top, Spacing.sm)
+            Text(exercise.exerciseName)
+                .font(.title3.weight(.bold))
+                .foregroundStyle(Color.textPrimary)
+                .lineLimit(1)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, Spacing.md)
+                .padding(.top, Spacing.sm)
 
             Divider().opacity(0.3)
 
@@ -165,6 +101,36 @@ struct ActiveExerciseCard: View {
 
         }
         .cardSurface(border: true)
+        .contextMenu {
+            Button { isShowingHistory = true } label: {
+                Label("View History", systemImage: "chart.line.uptrend.xyaxis")
+            }
+            Button { editingDefinition = resolveDefinition(for: exercise) } label: {
+                Label("Edit Exercise", systemImage: "pencil")
+            }
+            Button { vm.beginSwap(exerciseIndex: exerciseIndex) } label: {
+                Label("Swap Exercise", systemImage: "arrow.left.arrow.right")
+            }
+            Button { vm.isShowingExercisePicker = true } label: {
+                Label("Add Superset", systemImage: "arrow.2.squarepath")
+            }
+            Divider()
+            Button { vm.addDropset(toExerciseAt: exerciseIndex) } label: {
+                Label("Add Dropset", systemImage: "arrow.turn.down.right")
+            }
+            Button { vm.moveExercise(at: exerciseIndex, direction: .up) } label: {
+                Label("Move Up", systemImage: "arrow.up")
+            }
+            .disabled(exerciseIndex == 0)
+            Button { vm.moveExercise(at: exerciseIndex, direction: .down) } label: {
+                Label("Move Down", systemImage: "arrow.down")
+            }
+            .disabled(exerciseIndex == vm.draftExercises.count - 1)
+            Divider()
+            Button(role: .destructive) { showingRemoveConfirm = true } label: {
+                Label("Remove from Workout", systemImage: "trash")
+            }
+        }
         .alert("Remove \(exercise.exerciseName)?", isPresented: $showingRemoveConfirm) {
             Button("Remove", role: .destructive) {
                 vm.removeExercise(at: exerciseIndex)
@@ -182,19 +148,26 @@ struct ActiveExerciseCard: View {
             ExerciseHistoryView(exerciseName: exercise.exerciseName, exerciseLineageID: exercise.exerciseLineageID)
                 .environment(\.OrinCardMaterial, .regularMaterial)
         }
-        .task(id: exerciseIndex) {
-            if let definitionID = exercise.exerciseDefinitionID {
-                let descriptor = FetchDescriptor<ExerciseDefinition>(predicate: #Predicate { $0.id == definitionID })
-                prefetchedDefinition = (try? modelContext.fetch(descriptor))?.first
-            } else if let lineageID = exercise.exerciseLineageID {
-                let descriptor = FetchDescriptor<ExerciseDefinition>(predicate: #Predicate { $0.id == lineageID })
-                prefetchedDefinition = (try? modelContext.fetch(descriptor))?.first
-            } else {
-                let name = exercise.exerciseName
-                let descriptor = FetchDescriptor<ExerciseDefinition>(predicate: #Predicate { $0.name == name })
-                prefetchedDefinition = (try? modelContext.fetch(descriptor))?.first
+    }
+
+    private func resolveDefinition(for exercise: ActiveWorkoutViewModel.DraftExercise) -> ExerciseDefinition? {
+        if let definitionID = exercise.exerciseDefinitionID {
+            let descriptor = FetchDescriptor<ExerciseDefinition>(predicate: #Predicate { $0.id == definitionID })
+            if let match = (try? modelContext.fetch(descriptor))?.first {
+                return match
             }
         }
+
+        if let lineageID = exercise.exerciseLineageID {
+            let descriptor = FetchDescriptor<ExerciseDefinition>(predicate: #Predicate { $0.id == lineageID })
+            if let match = (try? modelContext.fetch(descriptor))?.first {
+                return match
+            }
+        }
+
+        let name = exercise.exerciseName
+        let descriptor = FetchDescriptor<ExerciseDefinition>(predicate: #Predicate { $0.name == name })
+        return (try? modelContext.fetch(descriptor))?.first
     }
 
     /// Returns the placeholder display string for a set that has no user-entered values,

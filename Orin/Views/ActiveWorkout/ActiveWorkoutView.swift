@@ -10,6 +10,9 @@ struct ActiveWorkoutView: View {
 
     @State private var completedSession: WorkoutSession?
     @State private var isShowingCancelPRWarning = false
+    @State private var isSettlingAfterPresentation = true
+    @State private var isUserScrolling = false
+    @State private var presentationSettleTask: Task<Void, Never>? = nil
     @Environment(\.OrinTheme) private var theme
 
     private var shouldRunSetupTask: Bool {
@@ -31,6 +34,32 @@ struct ActiveWorkoutView: View {
             #selector(UIResponder.resignFirstResponder),
             to: nil, from: nil, for: nil
         )
+    }
+
+    private func settlePresentationWindow() {
+        presentationSettleTask?.cancel()
+        isSettlingAfterPresentation = true
+        presentationSettleTask = Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(450))
+            guard !Task.isCancelled else { return }
+            isSettlingAfterPresentation = false
+        }
+    }
+
+    private func scrollToCurrentFocus(
+        with proxy: ScrollViewProxy,
+        animated: Bool
+    ) {
+        guard let focus = vm.currentFocus,
+              vm.draftExercises.indices.contains(focus.exerciseIndex) else { return }
+
+        let id = vm.draftExercises[focus.exerciseIndex].id
+        var transaction = Transaction()
+        transaction.animation = animated ? Motion.standardSpring : nil
+
+        withTransaction(transaction) {
+            proxy.scrollTo(id, anchor: .center)
+        }
     }
 
 
@@ -60,42 +89,33 @@ struct ActiveWorkoutView: View {
                     }
                     .scrollDismissesKeyboard(.interactively)
                     .onAppear {
-                        guard let focus = vm.currentFocus,
-                              vm.draftExercises.indices.contains(focus.exerciseIndex) else { return }
-                        let id = vm.draftExercises[focus.exerciseIndex].id
-                        // Defer one runloop cycle — layout must complete before
-                        // proxy.scrollTo has a valid scroll geometry to target.
+                        settlePresentationWindow()
                         Task { @MainActor in
-                            proxy.scrollTo(id, anchor: .center)
+                            scrollToCurrentFocus(with: proxy, animated: false)
                         }
                     }
                     .onChange(of: vm.currentFocus) { _, newFocus in
-                        guard let focus = newFocus,
-                              vm.draftExercises.indices.contains(focus.exerciseIndex) else { return }
-                        withAnimation(Motion.standardSpring) {
-                            proxy.scrollTo(
-                                vm.draftExercises[focus.exerciseIndex].id,
-                                anchor: .center
-                            )
-                        }
+                        guard newFocus != nil else { return }
+                        scrollToCurrentFocus(
+                            with: proxy,
+                            animated: !isSettlingAfterPresentation && !isUserScrolling
+                        )
                     }
                     .onChange(of: vm.focusRevealRequestID) { _, _ in
-                        guard let focus = vm.currentFocus,
-                              vm.draftExercises.indices.contains(focus.exerciseIndex) else { return }
-                        withAnimation(Motion.standardSpring) {
-                            proxy.scrollTo(
-                                vm.draftExercises[focus.exerciseIndex].id,
-                                anchor: .center
-                            )
-                        }
+                        guard !isUserScrolling else { return }
+                        scrollToCurrentFocus(
+                            with: proxy,
+                            animated: !isSettlingAfterPresentation
+                        )
+                    }
+                    .onScrollPhaseChange { _, newPhase in
+                        isUserScrolling = newPhase.isScrolling
                     }
                 }
                 .themedBackground()
-                .simultaneousGesture(
-                    TapGesture().onEnded {
-                        dismissKeyboard()
-                    }
-                )
+                .onTapGesture {
+                    dismissKeyboard()
+                }
                 .overlay(alignment: .bottom) {
                     BottomCommandBackdrop(theme: theme)
                         .allowsHitTesting(false)
@@ -209,6 +229,9 @@ struct ActiveWorkoutView: View {
             .task {
                 guard shouldRunSetupTask else { return }
                 vm.setup()
+            }
+            .onDisappear {
+                presentationSettleTask?.cancel()
             }
 
             // ── PR moment overlay ──────────────────────────────────────────────
@@ -362,61 +385,25 @@ private struct BottomCommandBackdrop: View {
     private let fadeHeight: CGFloat = 116
 
     var body: some View {
-        GeometryReader { proxy in
-            VStack(spacing: 0) {
-                Spacer(minLength: 0)
+        VStack(spacing: 0) {
+            Spacer(minLength: 0)
 
-                ZStack(alignment: .bottom) {
-                    Rectangle()
-                        .fill(.thinMaterial)
-                        .opacity(0.70)
-                        .mask {
-                            LinearGradient(
-                                stops: [
-                                    .init(color: .clear, location: 0),
-                                    .init(color: .white.opacity(0.14), location: 0.16),
-                                    .init(color: .white.opacity(0.42), location: 0.50),
-                                    .init(color: .white, location: 1)
-                                ],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        }
+            LinearGradient(
+                stops: [
+                    .init(color: .clear, location: 0),
+                    .init(color: Color.black.opacity(0.10), location: 0.18),
+                    .init(color: Color.black.opacity(0.28), location: 0.46),
+                    .init(color: Color.black.opacity(0.50), location: 1)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: fadeHeight)
 
-                    Rectangle()
-                        .fill(.regularMaterial)
-                        .opacity(0.38)
-                        .mask {
-                            LinearGradient(
-                                stops: [
-                                    .init(color: .clear, location: 0),
-                                    .init(color: .white.opacity(0.04), location: 0.30),
-                                    .init(color: .white.opacity(0.18), location: 0.62),
-                                    .init(color: .white, location: 1)
-                                ],
-                                startPoint: .top,
-                                endPoint: .bottom
-                            )
-                        }
-
-                    LinearGradient(
-                        stops: [
-                            .init(color: .clear, location: 0),
-                            .init(color: Color.black.opacity(0.14), location: 0.16),
-                            .init(color: Color.black.opacity(0.34), location: 0.42),
-                            .init(color: Color.black.opacity(0.62), location: 1)
-                        ],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                }
-                .frame(height: fadeHeight)
-
-                theme.backgroundColor
-                    .frame(height: proxy.safeAreaInsets.bottom)
-            }
-            .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
+            theme.backgroundColor
+                .frame(height: 44)
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
         .ignoresSafeArea(edges: .bottom)
     }
 }
@@ -436,7 +423,7 @@ private struct RestTimerBar: View {
     private let cardHeight: CGFloat = 54
 
     var body: some View {
-        TimelineView(.periodic(from: .now, by: 0.25)) { context in
+        TimelineView(.periodic(from: .now, by: 0.5)) { context in
             let now = context.date
             let progress = timer.progress(at: now) ?? 1.0
             let textColor = timerTextColor(progress: progress)

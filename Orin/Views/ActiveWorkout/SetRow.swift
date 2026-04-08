@@ -1,6 +1,7 @@
 // iOS 26+ only. No #available guards.
 
 import SwiftUI
+import UIKit
 
 // MARK: - Helpers
 
@@ -33,6 +34,42 @@ private struct DeltaResult {
     let label: String
     var displayText: String { "\(direction.symbol) \(label)" }
     var color: Color { direction.color }
+}
+
+private enum SetRowSwipeAction: Equatable {
+    case copyFromAbove
+    case delete
+    case undo
+
+    var title: String {
+        switch self {
+        case .copyFromAbove: "Copy"
+        case .delete: "Delete"
+        case .undo: "Undo"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .copyFromAbove: "arrow.up.doc.on.clipboard"
+        case .delete: "trash"
+        case .undo: "arrow.uturn.backward"
+        }
+    }
+
+    var tint: Color {
+        switch self {
+        case .copyFromAbove: Color.OrinBlue
+        case .delete: Color.OrinRed
+        case .undo: .orange
+        }
+    }
+}
+
+private enum SetRowDragIntent {
+    case undetermined
+    case horizontal
+    case vertical
 }
 
 // MARK: - Set Row
@@ -76,6 +113,18 @@ struct SetRow: View {
     @State private var deltaFadeTask: Task<Void, Never>? = nil
     @State private var logHighlightOpacity: Double = 0
     @State private var checkScale: CGFloat = 1.0
+    @State private var swipeOffset: CGFloat = 0
+    @State private var dragIntent: SetRowDragIntent = .undetermined
+    @State private var didTriggerSwipeHaptic = false
+    @State private var swipeResetTask: Task<Void, Never>? = nil
+    private let triggerThreshold: CGFloat = 60
+    private let revealWidth: CGFloat = 72
+    private let swipeElasticity: CGFloat = 0.2
+    private let horizontalLockThreshold: CGFloat = 10
+    private let verticalIntentThreshold: CGFloat = 10
+
+    private var canSwipeRight: Bool { !isLogged && onCopyFromAbove != nil }
+    private var trailingSwipeAction: SetRowSwipeAction { isLogged ? .undo : .delete }
 
     private var isShowingPlaceholder: Bool {
         guard let _ = placeholderDisplayText else { return false }
@@ -83,161 +132,20 @@ struct SetRow: View {
     }
 
     var body: some View {
-        HStack(spacing: 6) {
-            // Focused accent bar
-            RoundedRectangle(cornerRadius: 1.5)
-                .fill(isFocused ? accentColor.opacity(1.0) : .clear)
-                .frame(width: 4, height: isFocused ? 34 : 26)
-
-            Text("\(setNumber)")
-                .font(.system(size: 13, weight: .semibold, design: .rounded))
-                .foregroundStyle(
-                    isLogged
-                        ? Color.white.opacity(0.16)
-                        : isFocused
-                            ? accentColor.opacity(0.70)
-                            : Color.textFaint
-                )
-                .frame(width: 20, alignment: .center)
-
-            VStack(alignment: .leading, spacing: 1) {
-                // "Last: X" — sits above the value on the focused row as context
-                if isFocused, let prev = previousDisplayText {
-                    Text(prev)
-                        .font(.system(size: 11, weight: .medium, design: .rounded))
-                        .foregroundStyle(Color.white.opacity(0.48))
-                        .transition(.opacity)
-                }
-
-                Text(isShowingPlaceholder ? placeholderDisplayText! : displayText)
-                    .font(.system(
-                        size: isLogged ? 15 : isFocused ? 17 : 16,
-                        weight: isLogged ? .regular : isFocused ? .semibold : .medium,
-                        design: .rounded
-                    ))
-                    .monospacedDigit()
-                    .foregroundStyle(
-                        isLogged
-                            ? Color.white.opacity(0.16)
-                            : isShowingPlaceholder
-                                ? Color.white.opacity(0.36)
-                                : isFocused
-                                    ? Color.white.opacity(0.98)
-                                    : Color.white.opacity(0.54)
-                    )
-                    .contentTransition(.numericText())
-                    .animation(Motion.standardSpring, value: weightText)
-                    .animation(Motion.standardSpring, value: repsText)
-                    .animation(
-                        .spring(response: 0.35, dampingFraction: 0.85)
-                            .delay(isShowingPlaceholder ? placeholderDelay : 0),
-                        value: isShowingPlaceholder
-                    )
-            }
-            .animation(Motion.standardSpring, value: isPR)
-            .animation(Motion.standardSpring, value: isFocused)
-
-            // Delta — only on the most recently logged set, fades after 2.5s
-            if showDelta, let delta = deltaResult {
-                Text(delta.displayText)
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
-                    .foregroundStyle(delta.color)
-                    .transition(.opacity)
-            }
-
-            // PR badge — pops in with spring animation when PR is detected
-            if isPR {
-                PRBadge()
-                    .scaleEffect(badgeScale)
-            }
-
-            Spacer()
-
-            // Log / status button
-            // Unlogged: tap to log immediately (values pre-filled from last session).
-            // Logged: tap to undo — the checkmark is the natural undo target.
-            Button(action: isLogged ? onUndo : onLog) {
-                Image(systemName: isLogged ? "checkmark.circle.fill" : "circle")
-                    .font(.system(size: 20))
-                    .foregroundStyle(
-                        isLogged
-                            ? Color.OrinGreen.opacity(0.82)
-                            : isFocused
-                                ? accentColor.opacity(0.90)
-                                : Color.white.opacity(0.34)
-                    )
-                    .background {
-                        if isLogged {
-                            Circle()
-                                .fill(Color.OrinGreen.opacity(0.08))
-                                .frame(width: 28, height: 28)
-                        }
-                    }
-                    .frame(width: 44, height: 44)
-                    .contentShape(Rectangle())
-                    .contentTransition(.symbolEffect(.replace))
-                    .animation(.easeOut(duration: 0.10), value: isLogged)
-                    .scaleEffect(checkScale)
-                    .animation(.spring(response: 0.24, dampingFraction: 0.72), value: checkScale)
-            }
-            .buttonStyle(.plain)
+        ZStack {
+            if canSwipeRight { leadingActionView }
+            trailingActionView
+            rowContentView
         }
-        .scaleEffect(rowScale)
-        .padding(.vertical, isLogged ? 3 : isFocused ? 7 : 4)
-        .padding(.leading, Spacing.xs)
-        .padding(.trailing, Spacing.sm)
-        .background(rowBackground)
-        .overlay {
-            rowShape
-                .fill(accentColor.opacity(0.16))
-                .opacity(logHighlightOpacity)
-                .allowsHitTesting(false)
-        }
-        .overlay {
-            if isLogged || isFocused {
-                rowShape
-                    .strokeBorder(
-                        isLogged
-                            ? Color.white.opacity(0.025)
-                            : accentColor.opacity(0.50),
-                        lineWidth: 1
-                    )
-            }
-        }
+        .clipped()
         .contentShape(Rectangle())
-        .onTapGesture {
-            guard !isLogged else { return }
-            if isShowingPlaceholder {
-                onAdoptPlaceholder?()
-            } else {
-                onFocus()
-            }
-        }
-        .opacity(1.0)
-        .animation(Motion.standardSpring, value: isLogged)
-        .animation(Motion.standardSpring, value: isFocused)
-        .contextMenu {
-            if isLogged {
-                Button(action: onUndo) {
-                    Label("Undo", systemImage: "arrow.uturn.backward")
-                }
-            } else {
-                Button(action: onCycleType) {
-                    Label("Change Type", systemImage: "tag")
-                }
-                if let copyFromAbove = onCopyFromAbove {
-                    Button(action: copyFromAbove) {
-                        Label("Copy from Above", systemImage: "arrow.up.doc.on.clipboard")
-                    }
-                }
-                Divider()
-                Button(role: .destructive, action: onDelete) {
-                    Label("Delete Set", systemImage: "trash")
-                }
-            }
-        }
         .onAppear {
             if isPR { badgeScale = 1.0 }
+        }
+        .onDisappear {
+            deltaFadeTask?.cancel()
+            swipeResetTask?.cancel()
+            resetSwipeState(animated: false)
         }
         .onChange(of: justLogged) { _, isJust in
             deltaFadeTask?.cancel()
@@ -288,6 +196,219 @@ struct SetRow: View {
                 }
             }
         }
+        .simultaneousGesture(swipeGesture)
+    }
+
+    private var rowContentView: some View {
+        HStack(spacing: 6) {
+            RoundedRectangle(cornerRadius: 1.5)
+                .fill(isFocused ? accentColor.opacity(1.0) : .clear)
+                .frame(width: 4, height: isFocused ? 34 : 26)
+
+            Text("\(setNumber)")
+                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                .foregroundStyle(
+                    isLogged
+                        ? Color.white.opacity(0.16)
+                        : isFocused
+                            ? accentColor.opacity(0.70)
+                            : Color.textFaint
+                )
+                .frame(width: 20, alignment: .center)
+
+            if setType != .normal {
+                Button(action: onCycleType) {
+                    SetTypeLabel(setType: setType)
+                }
+                .buttonStyle(.plain)
+                .allowsHitTesting(!isLogged)
+            }
+
+            VStack(alignment: .leading, spacing: 1) {
+                if isFocused, let prev = previousDisplayText {
+                    Text(prev)
+                        .font(.system(size: 11, weight: .medium, design: .rounded))
+                        .foregroundStyle(Color.white.opacity(0.48))
+                        .transition(.opacity)
+                }
+
+                Text(isShowingPlaceholder ? placeholderDisplayText ?? displayText : displayText)
+                    .font(.system(
+                        size: isLogged ? 15 : isFocused ? 17 : 16,
+                        weight: isLogged ? .regular : isFocused ? .semibold : .medium,
+                        design: .rounded
+                    ))
+                    .monospacedDigit()
+                    .foregroundStyle(valueForegroundStyle)
+                    .contentTransition(.numericText())
+                    .animation(
+                        .spring(response: 0.35, dampingFraction: 0.85)
+                            .delay(isShowingPlaceholder ? placeholderDelay : 0),
+                        value: isShowingPlaceholder
+                    )
+            }
+
+            if showDelta, let delta = deltaResult {
+                Text(delta.displayText)
+                    .font(.system(size: 12, weight: .semibold, design: .rounded))
+                    .foregroundStyle(delta.color)
+                    .transition(.opacity)
+            }
+
+            if isPR {
+                PRBadge()
+                    .scaleEffect(badgeScale)
+            }
+
+            Spacer(minLength: Spacing.sm)
+
+            Button(action: isLogged ? onUndo : onLog) {
+                Image(systemName: isLogged ? "checkmark.circle.fill" : "circle")
+                    .font(.system(size: 20))
+                    .foregroundStyle(
+                        isLogged
+                            ? Color.OrinGreen.opacity(0.82)
+                            : isFocused
+                                ? accentColor.opacity(0.90)
+                                : Color.white.opacity(0.34)
+                    )
+                    .background {
+                        if isLogged {
+                            Circle()
+                                .fill(Color.OrinGreen.opacity(0.08))
+                                .frame(width: 28, height: 28)
+                        }
+                    }
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
+                    .contentTransition(.symbolEffect(.replace))
+                    .scaleEffect(checkScale)
+            }
+            .buttonStyle(.plain)
+        }
+        .scaleEffect(rowScale)
+        .padding(.vertical, isLogged ? 3 : isFocused ? 7 : 4)
+        .padding(.leading, Spacing.xs)
+        .padding(.trailing, Spacing.sm)
+        .background(rowBackground)
+        .overlay {
+            rowShape
+                .fill(accentColor.opacity(0.16))
+                .opacity(logHighlightOpacity)
+                .allowsHitTesting(false)
+        }
+        .overlay {
+            if isLogged || isFocused {
+                rowShape
+                    .strokeBorder(
+                        isLogged
+                            ? Color.white.opacity(0.025)
+                            : accentColor.opacity(0.50),
+                        lineWidth: 1
+                    )
+            }
+        }
+        .offset(x: swipeOffset)
+        .onTapGesture {
+            guard abs(swipeOffset) < 4, !isLogged else { return }
+            if isShowingPlaceholder {
+                onAdoptPlaceholder?()
+            } else {
+                onFocus()
+            }
+        }
+        .accessibilityAction(named: isLogged ? "Undo Set" : "Log Set") {
+            if isLogged {
+                onUndo()
+            } else {
+                onLog()
+            }
+        }
+    }
+
+    private var leadingActionView: some View {
+        swipeActionContainer(
+            alignment: .leading,
+            action: .copyFromAbove,
+            progress: leadingRevealProgress
+        )
+    }
+
+    private var trailingActionView: some View {
+        swipeActionContainer(
+            alignment: .trailing,
+            action: trailingSwipeAction,
+            progress: trailingRevealProgress
+        )
+    }
+
+    private func swipeActionContainer(
+        alignment: Alignment,
+        action: SetRowSwipeAction,
+        progress: CGFloat
+    ) -> some View {
+        rowShape
+            .fill(actionBackground(for: action, progress: progress))
+            .overlay(alignment: alignment) {
+                swipeActionLabel(for: action, progress: progress)
+                    .padding(.horizontal, Spacing.md)
+            }
+            .opacity(progress > 0.01 ? 1 : 0)
+            .allowsHitTesting(false)
+    }
+
+    private func swipeActionLabel(for action: SetRowSwipeAction, progress: CGFloat) -> some View {
+        VStack(spacing: 3) {
+            Image(systemName: action.icon)
+                .font(.system(size: 17, weight: .semibold))
+            Text(action.title)
+                .font(.system(size: 11, weight: .semibold, design: .rounded))
+        }
+        .foregroundStyle(.white.opacity(0.96))
+        .scaleEffect(0.86 + (0.14 * progress))
+        .opacity(0.45 + (0.55 * progress))
+        .offset(x: swipeLabelOffset(for: action, progress: progress))
+    }
+
+    private func actionBackground(for action: SetRowSwipeAction, progress: CGFloat) -> some ShapeStyle {
+        LinearGradient(
+            colors: [
+                action.tint.opacity(0.55 + (0.18 * progress)),
+                action.tint.opacity(0.82 + (0.10 * progress))
+            ],
+            startPoint: action == .copyFromAbove ? .leading : .trailing,
+            endPoint: action == .copyFromAbove ? .trailing : .leading
+        )
+    }
+
+    private var valueForegroundStyle: AnyShapeStyle {
+        if isLogged {
+            return AnyShapeStyle(Color.white.opacity(0.16))
+        }
+        if isShowingPlaceholder {
+            return AnyShapeStyle(Color.white.opacity(0.36))
+        }
+        if isFocused {
+            return AnyShapeStyle(Color.white.opacity(0.98))
+        }
+        return AnyShapeStyle(Color.white.opacity(0.54))
+    }
+
+    private var leadingRevealProgress: CGFloat {
+        normalizedProgress(for: max(0, swipeOffset))
+    }
+
+    private var trailingRevealProgress: CGFloat {
+        normalizedProgress(for: max(0, -swipeOffset))
+    }
+
+    private func normalizedProgress(for distance: CGFloat) -> CGFloat {
+        max(0, min(1, distance / revealWidth))
+    }
+
+    private func swipeLabelOffset(for action: SetRowSwipeAction, progress: CGFloat) -> CGFloat {
+        let base = (1 - progress) * 12
+        return action == .copyFromAbove ? -base : base
     }
 
     private var displayText: String {
@@ -384,6 +505,98 @@ struct SetRow: View {
                     ? accentColor.opacity(0.40)
                     : .clear
             )
+    }
+
+    private var swipeGesture: some Gesture {
+        DragGesture(minimumDistance: 6, coordinateSpace: .local)
+            .onChanged { value in
+                swipeResetTask?.cancel()
+
+                switch dragIntent {
+                case .vertical:
+                    return
+                case .undetermined:
+                    let horizontalTravel = abs(value.translation.width)
+                    let verticalTravel = abs(value.translation.height)
+
+                    if verticalTravel > verticalIntentThreshold && verticalTravel > horizontalTravel * 1.05 {
+                        dragIntent = .vertical
+                        resetSwipeState(animated: false)
+                        return
+                    }
+
+                    guard horizontalTravel > horizontalLockThreshold,
+                          horizontalTravel > verticalTravel * 1.1 else { return }
+
+                    dragIntent = .horizontal
+                case .horizontal:
+                    break
+                }
+
+                let raw = value.translation.width
+                if raw > 0 {
+                    guard canSwipeRight else { return }
+                    let excess = max(0, raw - revealWidth)
+                    swipeOffset = min(raw, revealWidth) + excess * swipeElasticity
+                } else if raw < 0 {
+                    let excess = min(0, raw + revealWidth)
+                    swipeOffset = max(raw, -revealWidth) + excess * swipeElasticity
+                } else {
+                    swipeOffset = 0
+                }
+                let absOffset = abs(swipeOffset)
+                if absOffset >= triggerThreshold && !didTriggerSwipeHaptic {
+                    UIImpactFeedbackGenerator(style: .medium).impactOccurred()
+                    didTriggerSwipeHaptic = true
+                } else if absOffset < triggerThreshold {
+                    didTriggerSwipeHaptic = false
+                }
+            }
+            .onEnded { value in
+                let intent = dragIntent
+                dragIntent = .undetermined
+
+                guard intent == .horizontal else {
+                    resetSwipeState(animated: false)
+                    return
+                }
+
+                let velocityX = value.predictedEndTranslation.width - value.translation.width
+                let triggerRight = swipeOffset > triggerThreshold || (swipeOffset > 20 && velocityX > 400)
+                let triggerLeft  = swipeOffset < -triggerThreshold || (swipeOffset < -20 && velocityX < -400)
+                let triggeredAction = triggerRight ? SetRowSwipeAction.copyFromAbove : (triggerLeft ? trailingSwipeAction : nil)
+                if let triggeredAction {
+                    let commitOffset = triggeredAction == .copyFromAbove ? revealWidth + 8 : -(revealWidth + 8)
+                    withAnimation(.spring(response: 0.20, dampingFraction: 0.82)) {
+                        swipeOffset = commitOffset
+                    }
+                    swipeResetTask = Task { @MainActor in
+                        try? await Task.sleep(for: .milliseconds(70))
+                        guard !Task.isCancelled else { return }
+                        withAnimation(.spring(response: 0.30, dampingFraction: 0.82)) {
+                            swipeOffset = 0
+                        }
+                        didTriggerSwipeHaptic = false
+                    }
+                } else {
+                    resetSwipeState(animated: true)
+                }
+                if triggerRight { onCopyFromAbove?() }
+                else if triggerLeft { isLogged ? onUndo() : onDelete() }
+            }
+    }
+
+    private func resetSwipeState(animated: Bool) {
+        swipeResetTask?.cancel()
+        didTriggerSwipeHaptic = false
+
+        if animated {
+            withAnimation(.spring(response: 0.35, dampingFraction: 0.78)) {
+                swipeOffset = 0
+            }
+        } else {
+            swipeOffset = 0
+        }
     }
 }
 
