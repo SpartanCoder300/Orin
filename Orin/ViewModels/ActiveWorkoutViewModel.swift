@@ -825,6 +825,7 @@ final class ActiveWorkoutViewModel {
         persistDraftState()
         try? modelContext.save()
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
+        manualFocus = SetFocus(exerciseIndex: eIdx, setIndex: sIdx)
         activityManager.update(currentActivityState)
         requestRevealCurrentFocus()
     }
