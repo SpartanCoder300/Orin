@@ -114,8 +114,16 @@ final class ActiveWorkoutViewModel {
     }
 
     struct SetFocus: Equatable {
+        let exerciseID: UUID
+        let setID: UUID
+    }
+
+    struct FocusContext {
+        let focus: SetFocus
         let exerciseIndex: Int
         let setIndex: Int
+        let exercise: DraftExercise
+        let set: DraftSet
     }
 
     /// Data surfaced to the PR moment overlay.
@@ -186,32 +194,36 @@ final class ActiveWorkoutViewModel {
     /// to the next unlogged set after the last one logged.
     var currentFocus: SetFocus? {
         if let mf = manualFocus,
-           draftExercises.indices.contains(mf.exerciseIndex),
-           draftExercises[mf.exerciseIndex].sets.indices.contains(mf.setIndex),
-           !draftExercises[mf.exerciseIndex].sets[mf.setIndex].isLogged {
+           let context = focusContext(for: mf),
+           !context.set.isLogged {
             return mf
         }
         return autoFocus
+    }
+
+    var currentFocusContext: FocusContext? {
+        focusContext(for: currentFocus)
     }
 
     /// Next unlogged set after `lastLoggedFocus`, preserving the order the user
     /// is working through. Falls back to the first globally unlogged set only when
     /// no set has been logged yet.
     private var autoFocus: SetFocus? {
-        let startEIdx = lastLoggedFocus?.exerciseIndex ?? 0
-        let startSIdx = (lastLoggedFocus?.setIndex ?? -1) + 1
+        let startLocation = lastLoggedFocus.flatMap { focusLocation(for: $0) }
+        let startEIdx = startLocation?.exerciseIndex ?? 0
+        let startSIdx = (startLocation?.setIndex ?? -1) + 1
 
         for eIdx in startEIdx ..< draftExercises.count {
             let sets = draftExercises[eIdx].sets
             let firstS = eIdx == startEIdx ? min(startSIdx, sets.count) : 0
             if let sIdx = sets[firstS...].firstIndex(where: { !$0.isLogged }) {
-                return SetFocus(exerciseIndex: eIdx, setIndex: sIdx)
+                return makeFocus(exerciseIndex: eIdx, setIndex: sIdx)
             }
         }
         // Fall back: first globally unlogged set (covers initial state and wrap-around).
         for eIdx in draftExercises.indices {
             if let sIdx = draftExercises[eIdx].sets.firstIndex(where: { !$0.isLogged }) {
-                return SetFocus(exerciseIndex: eIdx, setIndex: sIdx)
+                return makeFocus(exerciseIndex: eIdx, setIndex: sIdx)
             }
         }
         return nil
@@ -221,9 +233,42 @@ final class ActiveWorkoutViewModel {
         guard draftExercises.indices.contains(exerciseIndex),
               draftExercises[exerciseIndex].sets.indices.contains(setIndex),
               !draftExercises[exerciseIndex].sets[setIndex].isLogged else { return }
-        manualFocus = SetFocus(exerciseIndex: exerciseIndex, setIndex: setIndex)
+        manualFocus = makeFocus(exerciseIndex: exerciseIndex, setIndex: setIndex)
         UISelectionFeedbackGenerator().selectionChanged()
         activityManager.update(currentActivityState)
+    }
+
+    func focusLocation(for focus: SetFocus) -> (exerciseIndex: Int, setIndex: Int)? {
+        guard let exerciseIndex = draftExercises.firstIndex(where: { $0.id == focus.exerciseID }),
+              let setIndex = draftExercises[exerciseIndex].sets.firstIndex(where: { $0.id == focus.setID }) else {
+            return nil
+        }
+        return (exerciseIndex, setIndex)
+    }
+
+    func focusContext(for focus: SetFocus?) -> FocusContext? {
+        guard let focus,
+              let location = focusLocation(for: focus) else { return nil }
+        let exercise = draftExercises[location.exerciseIndex]
+        let set = exercise.sets[location.setIndex]
+        return FocusContext(
+            focus: focus,
+            exerciseIndex: location.exerciseIndex,
+            setIndex: location.setIndex,
+            exercise: exercise,
+            set: set
+        )
+    }
+
+    func focus(forExerciseID exerciseID: UUID, setID: UUID) -> SetFocus {
+        SetFocus(exerciseID: exerciseID, setID: setID)
+    }
+
+    private func makeFocus(exerciseIndex: Int, setIndex: Int) -> SetFocus {
+        SetFocus(
+            exerciseID: draftExercises[exerciseIndex].id,
+            setID: draftExercises[exerciseIndex].sets[setIndex].id
+        )
     }
 
     func requestRevealCurrentFocus() {
@@ -601,7 +646,7 @@ final class ActiveWorkoutViewModel {
             let sets = draftExercises[eIdx].sets
             for sIdx in stride(from: sets.count - 1, through: 0, by: -1) {
                 if sets[sIdx].isLogged {
-                    lastLoggedFocus = SetFocus(exerciseIndex: eIdx, setIndex: sIdx)
+                    lastLoggedFocus = makeFocus(exerciseIndex: eIdx, setIndex: sIdx)
                     lastLoggedExerciseIndex = eIdx
                     break outer
                 }
@@ -705,6 +750,7 @@ final class ActiveWorkoutViewModel {
     func swapExercise(at index: Int, named name: String) {
         swappingExerciseIndex = nil
         guard draftExercises.indices.contains(index) else { return }
+        let replacedExerciseID = draftExercises[index].id
 
         // If the outgoing exercise has an eagerly-created snapshot with no logged sets,
         // delete it — it's a placeholder that no longer represents any real data.
@@ -735,6 +781,8 @@ final class ActiveWorkoutViewModel {
         )
         applyPreviousPerformance(to: replacement)
         draftExercises[index] = replacement
+        if lastLoggedFocus?.exerciseID == replacedExerciseID { lastLoggedFocus = nil }
+        if manualFocus?.exerciseID == replacedExerciseID { manualFocus = nil }
         scheduleDraftPersistence()
         activityManager.update(currentActivityState)
         requestRevealCurrentFocus()
@@ -859,7 +907,7 @@ final class ActiveWorkoutViewModel {
         persistDraftState()
         try? modelContext.save()
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        manualFocus = SetFocus(exerciseIndex: eIdx, setIndex: sIdx)
+        manualFocus = makeFocus(exerciseIndex: eIdx, setIndex: sIdx)
         activityManager.update(currentActivityState)
         requestRevealCurrentFocus()
     }
@@ -881,6 +929,7 @@ final class ActiveWorkoutViewModel {
 
     func removeExercise(at index: Int) {
         guard draftExercises.indices.contains(index) else { return }
+        let removedExerciseID = draftExercises[index].id
 
         // Removing an exercise from an in-progress workout should remove its persisted draft
         // and any logged sets from this unfinished session so it cannot resurrect on resume.
@@ -897,15 +946,9 @@ final class ActiveWorkoutViewModel {
 
         draftExercises.remove(at: index)
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
-        // Invalidate focus state that pointed into the removed (or now-shifted) exercise.
-        if let lf = lastLoggedFocus {
-            if lf.exerciseIndex == index { lastLoggedFocus = nil }
-            else if lf.exerciseIndex > index { lastLoggedFocus = SetFocus(exerciseIndex: lf.exerciseIndex - 1, setIndex: lf.setIndex) }
-        }
-        if let mf = manualFocus {
-            if mf.exerciseIndex == index { manualFocus = nil }
-            else if mf.exerciseIndex > index { manualFocus = SetFocus(exerciseIndex: mf.exerciseIndex - 1, setIndex: mf.setIndex) }
-        }
+        // ID-based focus survives reordering, but a removed exercise invalidates any focus into it.
+        if lastLoggedFocus?.exerciseID == removedExerciseID { lastLoggedFocus = nil }
+        if manualFocus?.exerciseID == removedExerciseID { manualFocus = nil }
         cancelDeferredPersistence()
         persistDraftState()
         activityManager.update(currentActivityState)
@@ -994,7 +1037,7 @@ final class ActiveWorkoutViewModel {
 
         draftExercises[eIdx].sets[sIdx].isLogged = true
         draftExercises[eIdx].sets[sIdx].loggedRecord = record
-        lastLoggedFocus = SetFocus(exerciseIndex: eIdx, setIndex: sIdx)
+        lastLoggedFocus = makeFocus(exerciseIndex: eIdx, setIndex: sIdx)
         lastLoggedExerciseIndex = eIdx
 
         // After loggedRecord is assigned, surface the PR so the view can animate
@@ -1052,8 +1095,8 @@ final class ActiveWorkoutViewModel {
     /// Logs the currently focused set. Returns true if a set was logged.
     @discardableResult
     func logFocusedSet() -> Bool {
-        guard let focus = currentFocus else { return false }
-        logSet(exerciseIndex: focus.exerciseIndex, setIndex: focus.setIndex)
+        guard let context = currentFocusContext else { return false }
+        logSet(exerciseIndex: context.exerciseIndex, setIndex: context.setIndex)
         return true
     }
 
@@ -1169,7 +1212,7 @@ final class ActiveWorkoutViewModel {
         guard let deadline = restTimer.targetEndDate else { return }
         scheduleTimerTasks(deadline: deadline, duration: duration)
         scheduleRestBackgroundRefresh(endsAt: deadline)
-        let exerciseName = currentFocus.flatMap { draftExercises.indices.contains($0.exerciseIndex) ? draftExercises[$0.exerciseIndex].exerciseName : nil } ?? routineName
+        let exerciseName = currentFocusContext?.exercise.exerciseName ?? routineName
         scheduleRestNotification(endsAt: deadline, exerciseName: exerciseName)
     }
 
@@ -1195,7 +1238,7 @@ final class ActiveWorkoutViewModel {
         }
         scheduleTimerTasks(deadline: deadline, duration: restTimer.totalDuration)
         scheduleRestBackgroundRefresh(endsAt: deadline)
-        let exerciseName = currentFocus.flatMap { draftExercises.indices.contains($0.exerciseIndex) ? draftExercises[$0.exerciseIndex].exerciseName : nil } ?? routineName
+        let exerciseName = currentFocusContext?.exercise.exerciseName ?? routineName
         scheduleRestNotification(endsAt: deadline, exerciseName: exerciseName)
         scheduleDraftPersistence()
         activityManager.update(currentActivityState)
@@ -1244,15 +1287,12 @@ final class ActiveWorkoutViewModel {
     /// The next unlogged set for the rest timer card — same position as `autoFocus`
     /// so the command bar and rest timer always agree on what's coming next.
     var nextUnloggedFocus: (exerciseIndex: Int, setIndex: Int, weightText: String, repsText: String, durationText: String, isTimed: Bool, tracksWeight: Bool, exerciseName: String, totalSets: Int)? {
-        guard let f = autoFocus,
-              draftExercises.indices.contains(f.exerciseIndex),
-              draftExercises[f.exerciseIndex].sets.indices.contains(f.setIndex)
-        else { return nil }
-        let set = draftExercises[f.exerciseIndex].sets[f.setIndex]
-        let exercise = draftExercises[f.exerciseIndex]
+        guard let context = autoFocus.flatMap({ focusContext(for: $0) }) else { return nil }
+        let set = context.set
+        let exercise = context.exercise
         return (
-            exerciseIndex: f.exerciseIndex,
-            setIndex: f.setIndex,
+            exerciseIndex: context.exerciseIndex,
+            setIndex: context.setIndex,
             weightText: set.weightText,
             repsText: set.repsText,
             durationText: set.durationText,
@@ -1350,11 +1390,11 @@ final class ActiveWorkoutViewModel {
         let focusedSetDetail: String?
         let focusedSetNumber: Int?
         let exerciseSetCount: Int?
-        if let focus = currentFocus, draftExercises.indices.contains(focus.exerciseIndex) {
-            let draftExercise = draftExercises[focus.exerciseIndex]
-            let draftSet = draftExercise.sets[focus.setIndex]
+        if let context = currentFocusContext {
+            let draftExercise = context.exercise
+            let draftSet = context.set
             exercise = draftExercise.exerciseName
-            focusedSetNumber = focus.setIndex + 1
+            focusedSetNumber = context.setIndex + 1
             exerciseSetCount = draftExercise.sets.count
             focusedSetLabel = "Set \(focusedSetNumber!) of \(exerciseSetCount!)"
             if draftExercise.isTimed, !draftSet.durationText.isEmpty {

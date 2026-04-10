@@ -58,15 +58,12 @@ struct ActiveWorkoutView: View {
     }
 
     private func scrollToCurrentFocus(animated: Bool) {
-        guard let focus = vm.currentFocus,
-              vm.draftExercises.indices.contains(focus.exerciseIndex) else { return }
-
-        let id = vm.draftExercises[focus.exerciseIndex].id
+        guard let focus = vm.currentFocus else { return }
         var transaction = Transaction()
         transaction.animation = animated ? Motion.standardSpring : nil
 
         withTransaction(transaction) {
-            scrollPosition.scrollTo(id: id, anchor: .center)
+            scrollPosition.scrollTo(id: focus.exerciseID, anchor: .center)
         }
     }
 
@@ -86,6 +83,7 @@ struct ActiveWorkoutView: View {
                     .id(exercise.id)
                 }
             }
+            .scrollTargetLayout()
         }
     }
 

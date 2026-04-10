@@ -137,9 +137,7 @@ struct ActiveExerciseCard: View {
                 tracksWeight: exercise.tracksWeight,
                 setType: set.setType,
                 isLogged: set.isLogged,
-                isFocused: vm.currentFocus == ActiveWorkoutViewModel.SetFocus(
-                    exerciseIndex: eIdx, setIndex: setIndex
-                ),
+                isFocused: vm.currentFocus == vm.focus(forExerciseID: exercise.id, setID: set.id),
                 hasActiveSelection: vm.currentFocus != nil,
                 isSwiping: isSwiping,
                 isFirstInCard: setIndex == 0,
@@ -150,7 +148,7 @@ struct ActiveExerciseCard: View {
                 placeholderDisplayText: placeholderText(for: exercise, setIndex: setIndex),
                 placeholderDelay: Double(max(0, setIndex - 1)) * 0.05,
                 previousSet: setIndex < exercise.previousSets.count ? exercise.previousSets[setIndex] : exercise.previousSets.last,
-                justLogged: vm.lastLoggedFocus == ActiveWorkoutViewModel.SetFocus(exerciseIndex: eIdx, setIndex: setIndex),
+                justLogged: vm.lastLoggedFocus == vm.focus(forExerciseID: exercise.id, setID: set.id),
                 onCycleType: { vm.cycleSetType(exerciseIndex: eIdx, setIndex: setIndex) },
                 onFocus: {
                     openSwipeSetID = nil

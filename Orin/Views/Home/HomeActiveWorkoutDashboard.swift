@@ -121,7 +121,7 @@ struct HomeActiveWorkoutDashboard: View {
 
     @ViewBuilder
     private func exerciseRow(exercise: ActiveWorkoutViewModel.DraftExercise, index: Int) -> some View {
-        let isCurrent = vm.currentFocus?.exerciseIndex == index
+        let isCurrent = vm.currentFocusContext?.exercise.id == exercise.id
         let loggedCount = exercise.sets.filter { $0.isLogged }.count
         let isDone = loggedCount == exercise.sets.count && !exercise.sets.isEmpty
         HStack(spacing: Spacing.sm) {

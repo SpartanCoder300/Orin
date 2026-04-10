@@ -55,12 +55,8 @@ struct MiniWorkoutBar: View {
     }
 
     private func setLabel(vm: ActiveWorkoutViewModel) -> String {
-        guard let focus = vm.currentFocus,
-              vm.draftExercises.indices.contains(focus.exerciseIndex) else {
-            return "—"
-        }
-        let exercise = vm.draftExercises[focus.exerciseIndex]
-        return "Set \(focus.setIndex + 1) of \(exercise.sets.count)"
+        guard let focus = vm.currentFocusContext else { return "—" }
+        return "Set \(focus.setIndex + 1) of \(focus.exercise.sets.count)"
     }
 }
 

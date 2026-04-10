@@ -41,16 +41,12 @@ final class ActiveWorkoutService {
     var hasActiveWorkout: Bool { viewModel != nil }
 
     var focusedExerciseName: String? {
-        guard let vm = viewModel, let focus = vm.currentFocus,
-              vm.draftExercises.indices.contains(focus.exerciseIndex) else { return nil }
-        return vm.draftExercises[focus.exerciseIndex].exerciseName
+        viewModel?.currentFocusContext?.exercise.exerciseName
     }
 
     var focusedSetLabel: String? {
-        guard let vm = viewModel, let focus = vm.currentFocus,
-              vm.draftExercises.indices.contains(focus.exerciseIndex) else { return nil }
-        let exercise = vm.draftExercises[focus.exerciseIndex]
-        return "Set \(focus.setIndex + 1) of \(exercise.sets.count)"
+        guard let focus = viewModel?.currentFocusContext else { return nil }
+        return "Set \(focus.setIndex + 1) of \(focus.exercise.sets.count)"
     }
 
     // MARK: - Launch

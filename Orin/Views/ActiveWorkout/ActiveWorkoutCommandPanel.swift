@@ -49,11 +49,9 @@ struct ActiveWorkoutCommandPanel: View {
             .padding(.horizontal, horizontalInset)
             .padding(.bottom, Spacing.md)
 
-        } else if let focus = vm.currentFocus,
-                  vm.draftExercises.indices.contains(focus.exerciseIndex),
-                  vm.draftExercises[focus.exerciseIndex].sets.indices.contains(focus.setIndex) {
+        } else if let focus = vm.currentFocusContext {
             // ── Set editing card ───────────────────────────────────────────────
-            let exercise = vm.draftExercises[focus.exerciseIndex]
+            let exercise = focus.exercise
 
             VStack(spacing: 0) {
                 // Drag handle — visible only when keyboard is up, swipe down dismisses
@@ -108,16 +106,8 @@ struct ActiveWorkoutCommandPanel: View {
                     if exercise.tracksWeight {
                         SwipeValueControl(
                             text: Binding(
-                                get: {
-                                    guard vm.draftExercises.indices.contains(focus.exerciseIndex),
-                                          vm.draftExercises[focus.exerciseIndex].sets.indices.contains(focus.setIndex)
-                                    else { return "" }
-                                    return vm.draftExercises[focus.exerciseIndex].sets[focus.setIndex].weightText
-                                },
+                                get: { vm.currentFocusContext?.set.weightText ?? "" },
                                 set: {
-                                    guard vm.draftExercises.indices.contains(focus.exerciseIndex),
-                                          vm.draftExercises[focus.exerciseIndex].sets.indices.contains(focus.setIndex)
-                                    else { return }
                                     vm.draftExercises[focus.exerciseIndex].sets[focus.setIndex].weightText = $0
                                     vm.markSetTouched(exerciseIndex: focus.exerciseIndex, setIndex: focus.setIndex)
                                 }
@@ -145,16 +135,8 @@ struct ActiveWorkoutCommandPanel: View {
                     if exercise.isTimed {
                         SwipeValueControl(
                             text: Binding(
-                                get: {
-                                    guard vm.draftExercises.indices.contains(focus.exerciseIndex),
-                                          vm.draftExercises[focus.exerciseIndex].sets.indices.contains(focus.setIndex)
-                                    else { return "" }
-                                    return vm.draftExercises[focus.exerciseIndex].sets[focus.setIndex].durationText
-                                },
+                                get: { vm.currentFocusContext?.set.durationText ?? "" },
                                 set: {
-                                    guard vm.draftExercises.indices.contains(focus.exerciseIndex),
-                                          vm.draftExercises[focus.exerciseIndex].sets.indices.contains(focus.setIndex)
-                                    else { return }
                                     vm.draftExercises[focus.exerciseIndex].sets[focus.setIndex].durationText = $0
                                     vm.markSetTouched(exerciseIndex: focus.exerciseIndex, setIndex: focus.setIndex)
                                 }
@@ -176,16 +158,8 @@ struct ActiveWorkoutCommandPanel: View {
                     } else {
                         SwipeValueControl(
                             text: Binding(
-                                get: {
-                                    guard vm.draftExercises.indices.contains(focus.exerciseIndex),
-                                          vm.draftExercises[focus.exerciseIndex].sets.indices.contains(focus.setIndex)
-                                    else { return "" }
-                                    return vm.draftExercises[focus.exerciseIndex].sets[focus.setIndex].repsText
-                                },
+                                get: { vm.currentFocusContext?.set.repsText ?? "" },
                                 set: {
-                                    guard vm.draftExercises.indices.contains(focus.exerciseIndex),
-                                          vm.draftExercises[focus.exerciseIndex].sets.indices.contains(focus.setIndex)
-                                    else { return }
                                     vm.draftExercises[focus.exerciseIndex].sets[focus.setIndex].repsText = $0
                                     vm.markSetTouched(exerciseIndex: focus.exerciseIndex, setIndex: focus.setIndex)
                                 }
