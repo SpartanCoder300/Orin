@@ -18,48 +18,56 @@ struct ActiveExerciseCard: View {
 
     private let cardShape = RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
 
-    private var exerciseIndex: Int {
-        vm.draftExercises.firstIndex(where: { $0.id == exercise.id }) ?? 0
+    private var exerciseIndex: Int? {
+        vm.draftExercises.firstIndex(where: { $0.id == exercise.id })
     }
 
     var body: some View {
-        cardBody(exercise: exercise)
-            .contentShape(cardShape)
-            .contextMenu {
-                Button { isShowingHistory = true } label: {
-                    Label("View History", systemImage: "chart.line.uptrend.xyaxis")
-                }
-                Button { editingDefinition = resolveDefinition(for: exercise) } label: {
-                    Label("Edit Exercise", systemImage: "pencil")
-                }
-                Button { vm.beginSwap(exerciseIndex: exerciseIndex) } label: {
-                    Label("Swap Exercise", systemImage: "arrow.left.arrow.right")
-                }
-                Button { vm.isShowingExercisePicker = true } label: {
-                    Label("Add Superset", systemImage: "arrow.2.squarepath")
-                }
-                Divider()
-                Button { vm.addDropset(toExerciseAt: exerciseIndex) } label: {
-                    Label("Add Dropset", systemImage: "arrow.turn.down.right")
-                }
-                Button { vm.moveExercise(at: exerciseIndex, direction: .up) } label: {
-                    Label("Move Up", systemImage: "arrow.up")
-                }
-                .disabled(exerciseIndex == 0)
-                Button { vm.moveExercise(at: exerciseIndex, direction: .down) } label: {
-                    Label("Move Down", systemImage: "arrow.down")
-                }
-                .disabled(exerciseIndex == vm.draftExercises.count - 1)
-                Divider()
-                Button(role: .destructive) { showingRemoveConfirm = true } label: {
-                    Label("Remove from Workout", systemImage: "trash")
-                }
+        Group {
+            if let exerciseIndex {
+                cardBody(exercise: exercise, exerciseIndex: exerciseIndex)
+                    .contentShape(cardShape)
+                    .contextMenu {
+                        Button { isShowingHistory = true } label: {
+                            Label("View History", systemImage: "chart.line.uptrend.xyaxis")
+                        }
+                        Button { editingDefinition = resolveDefinition(for: exercise) } label: {
+                            Label("Edit Exercise", systemImage: "pencil")
+                        }
+                        Button { vm.beginSwap(exerciseIndex: exerciseIndex) } label: {
+                            Label("Swap Exercise", systemImage: "arrow.left.arrow.right")
+                        }
+                        Button { vm.isShowingExercisePicker = true } label: {
+                            Label("Add Superset", systemImage: "arrow.2.squarepath")
+                        }
+                        Divider()
+                        Button { vm.addDropset(toExerciseAt: exerciseIndex) } label: {
+                            Label("Add Dropset", systemImage: "arrow.turn.down.right")
+                        }
+                        Button { vm.moveExercise(at: exerciseIndex, direction: .up) } label: {
+                            Label("Move Up", systemImage: "arrow.up")
+                        }
+                        .disabled(exerciseIndex == 0)
+                        Button { vm.moveExercise(at: exerciseIndex, direction: .down) } label: {
+                            Label("Move Down", systemImage: "arrow.down")
+                        }
+                        .disabled(exerciseIndex == vm.draftExercises.count - 1)
+                        Divider()
+                        Button(role: .destructive) { showingRemoveConfirm = true } label: {
+                            Label("Remove from Workout", systemImage: "trash")
+                        }
+                    }
+            } else {
+                cardBody(exercise: exercise, exerciseIndex: nil)
             }
+        }
     }
 
     @ViewBuilder
-    private func cardBody(exercise: ActiveWorkoutViewModel.DraftExercise) -> some View {
-        let eIdx = exerciseIndex
+    private func cardBody(
+        exercise: ActiveWorkoutViewModel.DraftExercise,
+        exerciseIndex: Int?
+    ) -> some View {
         VStack(alignment: .leading, spacing: 0) {
             Text(exercise.exerciseName)
                 .font(.title3.weight(.bold))
@@ -69,9 +77,13 @@ struct ActiveExerciseCard: View {
                 .padding(.top, Spacing.md)
                 .padding(.bottom, Spacing.sm)
 
-            ForEach(exercise.sets) { set in
-                let sIdx = exercise.sets.firstIndex(where: { $0.id == set.id }) ?? 0
-                setRow(exercise: exercise, set: set, setIndex: sIdx, cachedExerciseIndex: eIdx)
+            ForEach(Array(exercise.sets.enumerated()), id: \.element.id) { sIdx, set in
+                setRow(
+                    exercise: exercise,
+                    set: set,
+                    setIndex: sIdx,
+                    cachedExerciseIndex: exerciseIndex
+                )
 
                 if sIdx < exercise.sets.count - 1 {
                     cardDivider
@@ -83,6 +95,7 @@ struct ActiveExerciseCard: View {
             cardDivider
 
             Button {
+                guard let exerciseIndex else { return }
                 vm.addSet(toExerciseAt: exerciseIndex)
             } label: {
                 Label("Add Set", systemImage: "plus")
@@ -94,11 +107,13 @@ struct ActiveExerciseCard: View {
                     .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .disabled(exerciseIndex == nil)
         }
         .cardSurface(border: true)
         .clipShape(cardShape)
         .alert("Remove \(exercise.exerciseName)?", isPresented: $showingRemoveConfirm) {
             Button("Remove", role: .destructive) {
+                guard let exerciseIndex else { return }
                 vm.removeExercise(at: exerciseIndex)
             }
             Button("Cancel", role: .cancel) {}
@@ -106,6 +121,7 @@ struct ActiveExerciseCard: View {
             Text("This will remove the exercise and all its logged sets from this session.")
         }
         .sheet(item: $editingDefinition, onDismiss: {
+            guard let exerciseIndex else { return }
             vm.syncDefinition(at: exerciseIndex)
         }) { definition in
             ExerciseEditorView(exercise: definition, allowsLifecycleActions: false)
@@ -121,11 +137,11 @@ struct ActiveExerciseCard: View {
         exercise: ActiveWorkoutViewModel.DraftExercise,
         set: ActiveWorkoutViewModel.DraftSet,
         setIndex: Int,
-        cachedExerciseIndex eIdx: Int
+        cachedExerciseIndex eIdx: Int?
     ) -> some View {
         SwipeableSetRow(
             rowID: set.id,
-            actions: swipeActions(for: set, setIndex: setIndex, exerciseIndex: eIdx),
+            actions: eIdx.map { swipeActions(for: set, setIndex: setIndex, exerciseIndex: $0) } ?? [],
             openRowID: $openSwipeSetID
         ) { isSwiping, swipeProgress in
             SetRow(
@@ -149,31 +165,42 @@ struct ActiveExerciseCard: View {
                 placeholderDelay: Double(max(0, setIndex - 1)) * 0.05,
                 previousSet: setIndex < exercise.previousSets.count ? exercise.previousSets[setIndex] : exercise.previousSets.last,
                 justLogged: vm.lastLoggedFocus == vm.focus(forExerciseID: exercise.id, setID: set.id),
-                onCycleType: { vm.cycleSetType(exerciseIndex: eIdx, setIndex: setIndex) },
+                onCycleType: {
+                    guard let eIdx else { return }
+                    vm.cycleSetType(exerciseIndex: eIdx, setIndex: setIndex)
+                },
                 onFocus: {
+                    guard let eIdx else { return }
                     openSwipeSetID = nil
                     vm.setManualFocus(exerciseIndex: eIdx, setIndex: setIndex)
                 },
                 onLog: {
+                    guard let eIdx else { return }
                     openSwipeSetID = nil
                     vm.logSet(exerciseIndex: eIdx, setIndex: setIndex)
                 },
                 onDelete: {
+                    guard let eIdx else { return }
                     openSwipeSetID = nil
                     vm.removeSet(exerciseIndex: eIdx, setIndex: setIndex)
                 },
                 onUndo: {
+                    guard let eIdx else { return }
                     openSwipeSetID = nil
                     vm.unlogSet(exerciseIndex: eIdx, setIndex: setIndex)
                 },
-                onCopyFromAbove: setIndex > 0 ? {
-                    openSwipeSetID = nil
-                    vm.copySetFromAbove(exerciseIndex: eIdx, setIndex: setIndex)
-                } : nil,
-                onAdoptPlaceholder: setIndex > 0 ? {
-                    openSwipeSetID = nil
-                    vm.adoptPlaceholderValues(exerciseIndex: eIdx, setIndex: setIndex)
-                } : nil,
+                onCopyFromAbove: (setIndex > 0 ? eIdx : nil).map { eIdx in
+                    {
+                        openSwipeSetID = nil
+                        vm.copySetFromAbove(exerciseIndex: eIdx, setIndex: setIndex)
+                    }
+                },
+                onAdoptPlaceholder: (setIndex > 0 ? eIdx : nil).map { eIdx in
+                    {
+                        openSwipeSetID = nil
+                        vm.adoptPlaceholderValues(exerciseIndex: eIdx, setIndex: setIndex)
+                    }
+                },
                 swipeProgress: swipeProgress
             )
             .padding(.horizontal, Spacing.md)

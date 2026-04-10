@@ -15,16 +15,10 @@ struct ActiveWorkoutView: View {
     @State private var openSwipeSetID: UUID? = nil
     @State private var presentationSettleTask: Task<Void, Never>? = nil
     @State private var scrollPosition = ScrollPosition()
+    @State private var lastAutoScrolledExerciseID: UUID? = nil
     @Environment(\.OrinTheme) private var theme
 
     private let contentBottomInset: CGFloat = 220
-
-    private enum BottomEditorDockStyle {
-        static let topScrimHeight: CGFloat = 26
-        static let topScrimOpacity = 0.18
-        static let separatorOpacity = 0.05
-        static let topPadding = Spacing.sm
-    }
 
     private var shouldRunSetupTask: Bool {
         let environment = ProcessInfo.processInfo.environment
@@ -63,7 +57,7 @@ struct ActiveWorkoutView: View {
         transaction.animation = animated ? Motion.standardSpring : nil
 
         withTransaction(transaction) {
-            scrollPosition.scrollTo(id: focus.exerciseID, anchor: .center)
+            scrollPosition.scrollTo(id: focus.exerciseID, anchor: .top)
         }
     }
 
@@ -100,12 +94,18 @@ struct ActiveWorkoutView: View {
         .onAppear {
             settlePresentationWindow()
             Task { @MainActor in
+                lastAutoScrolledExerciseID = vm.currentFocus?.exerciseID
                 scrollToCurrentFocus(animated: false)
             }
         }
         .onChange(of: vm.currentFocus) { _, newFocus in
             openSwipeSetID = nil
-            guard newFocus != nil else { return }
+            guard let newFocus else {
+                lastAutoScrolledExerciseID = nil
+                return
+            }
+            guard newFocus.exerciseID != lastAutoScrolledExerciseID else { return }
+            lastAutoScrolledExerciseID = newFocus.exerciseID
             scrollToCurrentFocus(
                 animated: !isSettlingAfterPresentation && !isUserScrolling
             )
@@ -113,6 +113,7 @@ struct ActiveWorkoutView: View {
         .onChange(of: vm.focusRevealRequestID) { _, _ in
             openSwipeSetID = nil
             guard !isUserScrolling else { return }
+            lastAutoScrolledExerciseID = vm.currentFocus?.exerciseID
             scrollToCurrentFocus(
                 animated: !isSettlingAfterPresentation
             )
@@ -126,35 +127,16 @@ struct ActiveWorkoutView: View {
     }
 
     private var bottomEditorDock: some View {
-        VStack(spacing: 0) {
-            LinearGradient(
-                colors: [
-                    Color.clear,
-                    Color.black.opacity(BottomEditorDockStyle.topScrimOpacity)
-                ],
-                startPoint: .top,
-                endPoint: .bottom
-            )
-            .frame(height: BottomEditorDockStyle.topScrimHeight)
-            .overlay(alignment: .bottom) {
-                Rectangle()
-                    .fill(Color.white.opacity(BottomEditorDockStyle.separatorOpacity))
-                    .frame(height: 1)
-            }
-            .allowsHitTesting(false)
-
-            ActiveWorkoutCommandPanel(
-                vm: vm,
-                theme: theme,
-                onComplete: { session in
-                    playWorkoutCompleteHaptic()
-                    completedSession = session
-                },
-                onDismiss: onDismiss
-            )
-            .frame(maxWidth: .infinity)
-            .padding(.top, BottomEditorDockStyle.topPadding)
-        }
+        ActiveWorkoutCommandPanel(
+            vm: vm,
+            theme: theme,
+            onComplete: { session in
+                playWorkoutCompleteHaptic()
+                completedSession = session
+            },
+            onDismiss: onDismiss
+        )
+        .frame(maxWidth: .infinity)
     }
 
 

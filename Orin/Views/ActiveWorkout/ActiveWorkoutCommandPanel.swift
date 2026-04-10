@@ -319,6 +319,8 @@ private struct CommandPanelElevation: ViewModifier {
     let cornerRadius: CGFloat
 
     private enum DepthStyle {
+        static let topScrimHeight: CGFloat = 20
+        static let topScrimOpacity = 0.12
         // White surface fill — makes the glass panel read as elevated on dark backgrounds
         static let surfaceTintOpacity = 0.07
         // Specular highlight — brighter on top edge, fades out toward bottom
@@ -343,16 +345,33 @@ private struct CommandPanelElevation: ViewModifier {
 
     func body(content: Content) -> some View {
         content
+            .padding(.top, Spacing.sm)
             .background {
-                RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(Color.white.opacity(DepthStyle.surfaceTintOpacity))
-                    .background {
-                        RoundedRectangle(cornerRadius: cornerRadius + DepthStyle.recessionInset, style: .continuous)
-                            .fill(Color.black.opacity(DepthStyle.recessionOpacity))
-                            .padding(.horizontal, -DepthStyle.recessionInset)
-                            .padding(.vertical, -DepthStyle.recessionInset)
-                            .blur(radius: DepthStyle.recessionBlur)
+                VStack(spacing: 0) {
+                    LinearGradient(
+                        colors: [
+                            Color.clear,
+                            Color.black.opacity(DepthStyle.topScrimOpacity)
+                        ],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    )
+                    .frame(height: DepthStyle.topScrimHeight)
+                    .mask {
+                        RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     }
+                    .allowsHitTesting(false)
+
+                    RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
+                        .fill(Color.white.opacity(DepthStyle.surfaceTintOpacity))
+                        .background {
+                            RoundedRectangle(cornerRadius: cornerRadius + DepthStyle.recessionInset, style: .continuous)
+                                .fill(Color.black.opacity(DepthStyle.recessionOpacity))
+                                .padding(.horizontal, -DepthStyle.recessionInset)
+                                .padding(.vertical, -DepthStyle.recessionInset)
+                                .blur(radius: DepthStyle.recessionBlur)
+                        }
+                }
             }
             // Specular highlight: bright top edge fades to subtle bottom — simulates light hitting a raised surface
             .overlay {
