@@ -49,6 +49,7 @@ struct SetRow: View {
     let setType: SetType
     let isLogged: Bool
     let isFocused: Bool
+    let hasActiveSelection: Bool
     let isSwiping: Bool
     let isFirstInCard: Bool
     let isLastInCard: Bool
@@ -81,12 +82,17 @@ struct SetRow: View {
 
     private enum ActiveRowStyle {
         static let accentOpacity = 0.92
-        static let fillOpacity = 0.045
-        static let strokeOpacity = 0.045
+        static let accentFocusedHeight: CGFloat = 32
+        static let accentUnfocusedHeight: CGFloat = 22
+        static let fillOpacity = 0.062
+        static let strokeOpacity = 0.07
         static let strokeWidth: CGFloat = 1
-        static let swipeFillBoost = 0.028
-        static let swipeStrokeBoost = 0.024
+        static let swipeFillBoost = 0.022
+        static let swipeStrokeBoost = 0.018
         static let swipeScale: CGFloat = 0.995
+        static let defocusedRowOpacity = 0.94
+        static let focusedShadowOpacity = 0.12
+        static let focusedShadowRadius: CGFloat = 12
     }
 
     private enum CompletedCheckmarkStyle {
@@ -108,6 +114,11 @@ struct SetRow: View {
     private var rowStrokeOpacity: Double {
         let base = isFocused ? ActiveRowStyle.strokeOpacity : 0
         return base + Double(min(1, max(0, swipeProgress))) * ActiveRowStyle.swipeStrokeBoost
+    }
+
+    private var contentOpacity: Double {
+        guard hasActiveSelection, !isFocused, !isSwiping else { return 1.0 }
+        return ActiveRowStyle.defocusedRowOpacity
     }
 
     var body: some View {
@@ -182,7 +193,12 @@ struct SetRow: View {
         HStack(spacing: 6) {
             RoundedRectangle(cornerRadius: 1.5)
                 .fill(isFocused ? accentColor.opacity(ActiveRowStyle.accentOpacity) : .clear)
-                .frame(width: 3, height: isFocused ? 30 : 22)
+                .frame(
+                    width: 3,
+                    height: isFocused
+                        ? ActiveRowStyle.accentFocusedHeight
+                        : ActiveRowStyle.accentUnfocusedHeight
+                )
 
             Text("\(setNumber)")
                 .font(.system(size: 13, weight: .semibold, design: .rounded))
@@ -243,7 +259,7 @@ struct SetRow: View {
                                 .frame(width: 30, height: 30)
                         }
                     }
-                    .frame(width: 44, height: 36)
+                    .frame(width: 44, height: 44)
                     .contentShape(Rectangle())
                     .contentTransition(.symbolEffect(.replace))
                     .scaleEffect(checkScale)
@@ -251,36 +267,46 @@ struct SetRow: View {
             }
             .buttonStyle(.plain)
         }
+        .opacity(contentOpacity)
         .scaleEffect(rowScale * (isSwiping ? ActiveRowStyle.swipeScale : 1.0))
         .padding(.top, isFirstInCard ? 8 : (isFocused ? 6 : 3))
         .padding(.bottom, isFocused ? 6 : 3)
         .padding(.trailing, Spacing.sm)
         .overlay {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(accentColor.opacity(rowFillOpacity))
-                .opacity((isFocused || isSwiping) ? 1 : 0)
-                .padding(.top, isFirstInCard ? 6 : 1)
-                .padding(.bottom, 1)
-                .allowsHitTesting(false)
+            if isFocused || isSwiping {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(accentColor.opacity(rowFillOpacity))
+                    .padding(.top, isFirstInCard ? 6 : 1)
+                    .padding(.bottom, 1)
+                    .allowsHitTesting(false)
+            }
         }
         .overlay {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .strokeBorder(
-                    accentColor.opacity(rowStrokeOpacity),
-                    lineWidth: ActiveRowStyle.strokeWidth
-                )
-                .opacity((isFocused || isSwiping) ? 1 : 0)
-                .padding(.top, isFirstInCard ? 6 : 1)
-                .padding(.bottom, 1)
-                .allowsHitTesting(false)
+            if isFocused || isSwiping {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .strokeBorder(
+                        accentColor.opacity(rowStrokeOpacity),
+                        lineWidth: ActiveRowStyle.strokeWidth
+                    )
+                    .padding(.top, isFirstInCard ? 6 : 1)
+                    .padding(.bottom, 1)
+                    .allowsHitTesting(false)
+            }
         }
+        .shadow(
+            color: accentColor.opacity(isFocused ? ActiveRowStyle.focusedShadowOpacity : 0),
+            radius: isFocused ? ActiveRowStyle.focusedShadowRadius : 0,
+            y: 1
+        )
         .overlay {
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .fill(accentColor.opacity(0.14))
-                .opacity(logHighlightOpacity)
-                .padding(.top, isFirstInCard ? 6 : 1)
-                .padding(.bottom, 1)
-                .allowsHitTesting(false)
+            if logHighlightOpacity > 0 {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(accentColor.opacity(0.14))
+                    .opacity(logHighlightOpacity)
+                    .padding(.top, isFirstInCard ? 6 : 1)
+                    .padding(.bottom, 1)
+                    .allowsHitTesting(false)
+            }
         }
         .contentShape(Rectangle())
         .onTapGesture {
@@ -419,6 +445,7 @@ struct SetRow: View {
         setType: .normal,
         isLogged: false,
         isFocused: true,
+        hasActiveSelection: true,
         isSwiping: false,
         isFirstInCard: true,
         isLastInCard: false,
@@ -446,6 +473,7 @@ struct SetRow: View {
         setType: .normal,
         isLogged: false,
         isFocused: false,
+        hasActiveSelection: true,
         isSwiping: false,
         isFirstInCard: false,
         isLastInCard: false,
@@ -473,6 +501,7 @@ struct SetRow: View {
         setType: .normal,
         isLogged: true,
         isFocused: false,
+        hasActiveSelection: true,
         isSwiping: false,
         isFirstInCard: false,
         isLastInCard: false,
@@ -500,6 +529,7 @@ struct SetRow: View {
         setType: .warmup,
         isLogged: false,
         isFocused: false,
+        hasActiveSelection: false,
         isSwiping: false,
         isFirstInCard: false,
         isLastInCard: true,

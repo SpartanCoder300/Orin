@@ -16,7 +16,7 @@ enum ActiveWorkoutPreviewData {
 
         let sets: (String, String) -> [ActiveWorkoutViewModel.DraftSet] = { weight, reps in
             (0..<3).map { _ in
-                var set = ActiveWorkoutViewModel.DraftSet()
+                let set = ActiveWorkoutViewModel.DraftSet()
                 set.weightText = weight
                 set.repsText = reps
                 set.isLogged = allLogged

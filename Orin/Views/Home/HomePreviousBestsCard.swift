@@ -4,6 +4,7 @@ import SwiftUI
 
 struct HomePreviousBestsCard: View {
     let vm: ActiveWorkoutViewModel
+    let onExerciseTap: (_ name: String, _ lineageID: UUID?) -> Void
 
     private var exercisesWithHistory: [(ActiveWorkoutViewModel.DraftExercise, [ActiveWorkoutViewModel.PreviousSet])] {
         vm.draftExercises.compactMap { ex in
@@ -19,9 +20,10 @@ struct HomePreviousBestsCard: View {
                 SectionHeader(title: "Last Time")
 
                 VStack(spacing: 0) {
-                    ForEach(Array(exercisesWithHistory.enumerated()), id: \.element.0.id) { idx, pair in
-                        exerciseRow(exercise: pair.0, sets: pair.1)
-                        if idx < exercisesWithHistory.count - 1 {
+                    let items = exercisesWithHistory
+                    ForEach(items.indices, id: \.self) { idx in
+                        exerciseRow(exercise: items[idx].0, sets: items[idx].1)
+                        if idx < items.count - 1 {
                             Divider()
                                 .opacity(0.1)
                                 .padding(.leading, Spacing.md)
@@ -35,25 +37,32 @@ struct HomePreviousBestsCard: View {
 
     @ViewBuilder
     private func exerciseRow(exercise: ActiveWorkoutViewModel.DraftExercise, sets: [ActiveWorkoutViewModel.PreviousSet]) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            Text(exercise.exerciseName)
-                .font(.subheadline.weight(.medium))
-                .foregroundStyle(.primary)
-                .lineLimit(1)
+        Button {
+            onExerciseTap(exercise.exerciseName, exercise.exerciseLineageID)
+        } label: {
+            VStack(alignment: .leading, spacing: 6) {
+                Text(exercise.exerciseName)
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
 
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: Spacing.xs) {
-                    ForEach(Array(sets.enumerated()), id: \.offset) { _, set in
-                        Text(setLabel(set))
-                            .font(.caption2.weight(.medium))
-                            .foregroundStyle(.secondary)
-                            .padding(.horizontal, 8)
-                            .padding(.vertical, 4)
-                            .background(.white.opacity(0.08), in: Capsule())
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: Spacing.xs) {
+                        ForEach(Array(sets.enumerated()), id: \.offset) { _, set in
+                            Text(setLabel(set))
+                                .font(.caption2.weight(.medium))
+                                .foregroundStyle(.secondary)
+                                .padding(.horizontal, 8)
+                                .padding(.vertical, 4)
+                                .background(.white.opacity(0.08), in: Capsule())
+                        }
                     }
                 }
             }
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .contentShape(Rectangle())
         }
+        .buttonStyle(.plain)
         .padding(.horizontal, Spacing.md)
         .padding(.vertical, Spacing.sm + 2)
     }

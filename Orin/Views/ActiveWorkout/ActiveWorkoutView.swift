@@ -14,9 +14,17 @@ struct ActiveWorkoutView: View {
     @State private var isUserScrolling = false
     @State private var openSwipeSetID: UUID? = nil
     @State private var presentationSettleTask: Task<Void, Never>? = nil
+    @State private var scrollPosition = ScrollPosition()
     @Environment(\.OrinTheme) private var theme
 
     private let contentBottomInset: CGFloat = 220
+
+    private enum BottomEditorDockStyle {
+        static let topScrimHeight: CGFloat = 26
+        static let topScrimOpacity = 0.18
+        static let separatorOpacity = 0.05
+        static let topPadding = Spacing.sm
+    }
 
     private var shouldRunSetupTask: Bool {
         let environment = ProcessInfo.processInfo.environment
@@ -24,7 +32,7 @@ struct ActiveWorkoutView: View {
             && environment["XCODE_RUNNING_FOR_PLAYGROUNDS"] != "1"
     }
 
-    private var pickerExistingExerciseCounts: [String: Int] {
+    private func pickerExistingExerciseCounts() -> [String: Int] {
         vm.draftExercises.enumerated().reduce(into: [:]) { counts, entry in
             let (index, exercise) = entry
             guard vm.swappingExerciseIndex != index else { return }
@@ -49,10 +57,7 @@ struct ActiveWorkoutView: View {
         }
     }
 
-    private func scrollToCurrentFocus(
-        with proxy: ScrollViewProxy,
-        animated: Bool
-    ) {
+    private func scrollToCurrentFocus(animated: Bool) {
         guard let focus = vm.currentFocus,
               vm.draftExercises.indices.contains(focus.exerciseIndex) else { return }
 
@@ -61,7 +66,7 @@ struct ActiveWorkoutView: View {
         transaction.animation = animated ? Motion.standardSpring : nil
 
         withTransaction(transaction) {
-            proxy.scrollTo(id, anchor: .center)
+            scrollPosition.scrollTo(id: id, anchor: .center)
         }
     }
 
@@ -71,10 +76,10 @@ struct ActiveWorkoutView: View {
             EmptyWorkoutPrompt(accentColor: theme.accentColor)
         } else {
             LazyVStack(spacing: Spacing.lg) {
-                ForEach(Array(vm.draftExercises.enumerated()), id: \.element.id) { idx, exercise in
+                ForEach(vm.draftExercises) { exercise in
                     ActiveExerciseCard(
                         vm: vm,
-                        exerciseIndex: idx,
+                        exercise: exercise,
                         theme: theme,
                         openSwipeSetID: $openSwipeSetID
                     )
@@ -84,26 +89,26 @@ struct ActiveWorkoutView: View {
         }
     }
 
-    private func workoutScrollView(proxy: ScrollViewProxy) -> some View {
+    private var workoutScrollView: some View {
         ScrollView {
             workoutScrollContent
                 .padding(.horizontal, ActiveWorkoutLayout.horizontalInset)
                 .padding(.top, Spacing.sm)
                 .padding(.bottom, contentBottomInset)
         }
+        .scrollPosition($scrollPosition)
         .scrollDismissesKeyboard(.interactively)
         .scrollEdgeEffectStyle(.soft, for: .bottom)
         .onAppear {
             settlePresentationWindow()
             Task { @MainActor in
-                scrollToCurrentFocus(with: proxy, animated: false)
+                scrollToCurrentFocus(animated: false)
             }
         }
         .onChange(of: vm.currentFocus) { _, newFocus in
             openSwipeSetID = nil
             guard newFocus != nil else { return }
             scrollToCurrentFocus(
-                with: proxy,
                 animated: !isSettlingAfterPresentation && !isUserScrolling
             )
         }
@@ -111,7 +116,6 @@ struct ActiveWorkoutView: View {
             openSwipeSetID = nil
             guard !isUserScrolling else { return }
             scrollToCurrentFocus(
-                with: proxy,
                 animated: !isSettlingAfterPresentation
             )
         }
@@ -123,15 +127,45 @@ struct ActiveWorkoutView: View {
         }
     }
 
+    private var bottomEditorDock: some View {
+        VStack(spacing: 0) {
+            LinearGradient(
+                colors: [
+                    Color.clear,
+                    Color.black.opacity(BottomEditorDockStyle.topScrimOpacity)
+                ],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .frame(height: BottomEditorDockStyle.topScrimHeight)
+            .overlay(alignment: .bottom) {
+                Rectangle()
+                    .fill(Color.white.opacity(BottomEditorDockStyle.separatorOpacity))
+                    .frame(height: 1)
+            }
+            .allowsHitTesting(false)
+
+            ActiveWorkoutCommandPanel(
+                vm: vm,
+                theme: theme,
+                onComplete: { session in
+                    playWorkoutCompleteHaptic()
+                    completedSession = session
+                },
+                onDismiss: onDismiss
+            )
+            .frame(maxWidth: .infinity)
+            .padding(.top, BottomEditorDockStyle.topPadding)
+        }
+    }
+
 
     var body: some View {
         @Bindable var vm = vm
 
         ZStack {
             NavigationStack {
-                ScrollViewReader { proxy in
-                    workoutScrollView(proxy: proxy)
-                }
+                workoutScrollView
                 .themedBackground()
                 .onTapGesture {
                     openSwipeSetID = nil
@@ -175,17 +209,7 @@ struct ActiveWorkoutView: View {
                     }
                 }
                 .safeAreaInset(edge: .bottom, spacing: 0) {
-                    ActiveWorkoutCommandPanel(
-                        vm: vm,
-                        theme: theme,
-                        onComplete: { session in
-                            playWorkoutCompleteHaptic()
-                            completedSession = session
-                        },
-                        onDismiss: onDismiss
-                    )
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, Spacing.sm)
+                    bottomEditorDock
                 }
                 .animation(.spring(response: 0.4, dampingFraction: 0.8), value: vm.restTimer.isActive)
                 .alert("End Workout?", isPresented: $vm.isShowingEndConfirm) {
@@ -238,7 +262,7 @@ struct ActiveWorkoutView: View {
                             }
                         },
                         dismissesOnSelection: isSwapping,
-                        existingExerciseCounts: pickerExistingExerciseCounts,
+                        existingExerciseCounts: pickerExistingExerciseCounts(),
                         title: isSwapping ? "Replace Exercise" : "Add Exercise"
                     )
                 }

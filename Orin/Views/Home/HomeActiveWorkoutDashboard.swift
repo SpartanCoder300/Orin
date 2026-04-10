@@ -107,7 +107,8 @@ struct HomeActiveWorkoutDashboard: View {
 
     private var exerciseList: some View {
         VStack(spacing: 0) {
-            ForEach(Array(vm.draftExercises.enumerated()), id: \.element.id) { idx, exercise in
+            ForEach(vm.draftExercises) { exercise in
+                let idx = vm.draftExercises.firstIndex(where: { $0.id == exercise.id }) ?? 0
                 exerciseRow(exercise: exercise, index: idx)
                 if idx < vm.draftExercises.count - 1 {
                     Divider()
@@ -138,7 +139,7 @@ struct HomeActiveWorkoutDashboard: View {
 
             // Set dots
             HStack(spacing: 4) {
-                ForEach(Array(exercise.sets.enumerated()), id: \.offset) { _, set in
+                ForEach(exercise.sets) { set in
                     Circle()
                         .fill(set.isLogged ? theme.accentColor : Color.white.opacity(0.15))
                         .frame(width: 7, height: 7)

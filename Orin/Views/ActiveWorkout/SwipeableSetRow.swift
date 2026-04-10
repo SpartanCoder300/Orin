@@ -50,7 +50,6 @@ struct SwipeableSetRow<Content: View>: View {
                 .offset(x: offsetX)
                 .allowsHitTesting(offsetX == 0)
         }
-        .clipped()
         .gesture(
             HorizontalSwipePanGesture(
                 isEnabled: !actions.isEmpty,
@@ -295,7 +294,7 @@ private struct HorizontalSwipePanGesture: UIGestureRecognizerRepresentable {
         let recognizer = UIPanGestureRecognizer()
         recognizer.maximumNumberOfTouches = 1
         recognizer.delegate = context.coordinator
-        recognizer.cancelsTouchesInView = true
+        recognizer.cancelsTouchesInView = false
         recognizer.delaysTouchesBegan = false
         recognizer.delaysTouchesEnded = false
         context.coordinator.isEnabled = isEnabled

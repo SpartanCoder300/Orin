@@ -7,7 +7,7 @@ import SwiftData
 
 struct ActiveExerciseCard: View {
     let vm: ActiveWorkoutViewModel
-    let exerciseIndex: Int
+    let exercise: ActiveWorkoutViewModel.DraftExercise
     let theme: AccentTheme
     @Binding var openSwipeSetID: UUID?
 
@@ -18,51 +18,48 @@ struct ActiveExerciseCard: View {
 
     private let cardShape = RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
 
-    private var exercise: ActiveWorkoutViewModel.DraftExercise? {
-        guard vm.draftExercises.indices.contains(exerciseIndex) else { return nil }
-        return vm.draftExercises[exerciseIndex]
+    private var exerciseIndex: Int {
+        vm.draftExercises.firstIndex(where: { $0.id == exercise.id }) ?? 0
     }
 
-    @ViewBuilder
     var body: some View {
-        if let exercise {
-            cardBody(exercise: exercise)
-                .contentShape(cardShape)
-                .contextMenu {
-                    Button { isShowingHistory = true } label: {
-                        Label("View History", systemImage: "chart.line.uptrend.xyaxis")
-                    }
-                    Button { editingDefinition = resolveDefinition(for: exercise) } label: {
-                        Label("Edit Exercise", systemImage: "pencil")
-                    }
-                    Button { vm.beginSwap(exerciseIndex: exerciseIndex) } label: {
-                        Label("Swap Exercise", systemImage: "arrow.left.arrow.right")
-                    }
-                    Button { vm.isShowingExercisePicker = true } label: {
-                        Label("Add Superset", systemImage: "arrow.2.squarepath")
-                    }
-                    Divider()
-                    Button { vm.addDropset(toExerciseAt: exerciseIndex) } label: {
-                        Label("Add Dropset", systemImage: "arrow.turn.down.right")
-                    }
-                    Button { vm.moveExercise(at: exerciseIndex, direction: .up) } label: {
-                        Label("Move Up", systemImage: "arrow.up")
-                    }
-                    .disabled(exerciseIndex == 0)
-                    Button { vm.moveExercise(at: exerciseIndex, direction: .down) } label: {
-                        Label("Move Down", systemImage: "arrow.down")
-                    }
-                    .disabled(exerciseIndex == vm.draftExercises.count - 1)
-                    Divider()
-                    Button(role: .destructive) { showingRemoveConfirm = true } label: {
-                        Label("Remove from Workout", systemImage: "trash")
-                    }
+        cardBody(exercise: exercise)
+            .contentShape(cardShape)
+            .contextMenu {
+                Button { isShowingHistory = true } label: {
+                    Label("View History", systemImage: "chart.line.uptrend.xyaxis")
                 }
-        }
+                Button { editingDefinition = resolveDefinition(for: exercise) } label: {
+                    Label("Edit Exercise", systemImage: "pencil")
+                }
+                Button { vm.beginSwap(exerciseIndex: exerciseIndex) } label: {
+                    Label("Swap Exercise", systemImage: "arrow.left.arrow.right")
+                }
+                Button { vm.isShowingExercisePicker = true } label: {
+                    Label("Add Superset", systemImage: "arrow.2.squarepath")
+                }
+                Divider()
+                Button { vm.addDropset(toExerciseAt: exerciseIndex) } label: {
+                    Label("Add Dropset", systemImage: "arrow.turn.down.right")
+                }
+                Button { vm.moveExercise(at: exerciseIndex, direction: .up) } label: {
+                    Label("Move Up", systemImage: "arrow.up")
+                }
+                .disabled(exerciseIndex == 0)
+                Button { vm.moveExercise(at: exerciseIndex, direction: .down) } label: {
+                    Label("Move Down", systemImage: "arrow.down")
+                }
+                .disabled(exerciseIndex == vm.draftExercises.count - 1)
+                Divider()
+                Button(role: .destructive) { showingRemoveConfirm = true } label: {
+                    Label("Remove from Workout", systemImage: "trash")
+                }
+            }
     }
 
     @ViewBuilder
     private func cardBody(exercise: ActiveWorkoutViewModel.DraftExercise) -> some View {
+        let eIdx = exerciseIndex
         VStack(alignment: .leading, spacing: 0) {
             Text(exercise.exerciseName)
                 .font(.title3.weight(.bold))
@@ -72,8 +69,9 @@ struct ActiveExerciseCard: View {
                 .padding(.top, Spacing.md)
                 .padding(.bottom, Spacing.sm)
 
-            ForEach(Array(exercise.sets.enumerated()), id: \.element.id) { sIdx, set in
-                setRow(exercise: exercise, set: set, setIndex: sIdx)
+            ForEach(exercise.sets) { set in
+                let sIdx = exercise.sets.firstIndex(where: { $0.id == set.id }) ?? 0
+                setRow(exercise: exercise, set: set, setIndex: sIdx, cachedExerciseIndex: eIdx)
 
                 if sIdx < exercise.sets.count - 1 {
                     cardDivider
@@ -122,11 +120,12 @@ struct ActiveExerciseCard: View {
     private func setRow(
         exercise: ActiveWorkoutViewModel.DraftExercise,
         set: ActiveWorkoutViewModel.DraftSet,
-        setIndex: Int
+        setIndex: Int,
+        cachedExerciseIndex eIdx: Int
     ) -> some View {
         SwipeableSetRow(
             rowID: set.id,
-            actions: swipeActions(for: set, setIndex: setIndex),
+            actions: swipeActions(for: set, setIndex: setIndex, exerciseIndex: eIdx),
             openRowID: $openSwipeSetID
         ) { isSwiping, swipeProgress in
             SetRow(
@@ -139,8 +138,9 @@ struct ActiveExerciseCard: View {
                 setType: set.setType,
                 isLogged: set.isLogged,
                 isFocused: vm.currentFocus == ActiveWorkoutViewModel.SetFocus(
-                    exerciseIndex: exerciseIndex, setIndex: setIndex
+                    exerciseIndex: eIdx, setIndex: setIndex
                 ),
+                hasActiveSelection: vm.currentFocus != nil,
                 isSwiping: isSwiping,
                 isFirstInCard: setIndex == 0,
                 isLastInCard: setIndex == exercise.sets.count - 1,
@@ -150,31 +150,31 @@ struct ActiveExerciseCard: View {
                 placeholderDisplayText: placeholderText(for: exercise, setIndex: setIndex),
                 placeholderDelay: Double(max(0, setIndex - 1)) * 0.05,
                 previousSet: setIndex < exercise.previousSets.count ? exercise.previousSets[setIndex] : exercise.previousSets.last,
-                justLogged: vm.lastLoggedFocus == ActiveWorkoutViewModel.SetFocus(exerciseIndex: exerciseIndex, setIndex: setIndex),
-                onCycleType: { vm.cycleSetType(exerciseIndex: exerciseIndex, setIndex: setIndex) },
+                justLogged: vm.lastLoggedFocus == ActiveWorkoutViewModel.SetFocus(exerciseIndex: eIdx, setIndex: setIndex),
+                onCycleType: { vm.cycleSetType(exerciseIndex: eIdx, setIndex: setIndex) },
                 onFocus: {
                     openSwipeSetID = nil
-                    vm.setManualFocus(exerciseIndex: exerciseIndex, setIndex: setIndex)
+                    vm.setManualFocus(exerciseIndex: eIdx, setIndex: setIndex)
                 },
                 onLog: {
                     openSwipeSetID = nil
-                    vm.logSet(exerciseIndex: exerciseIndex, setIndex: setIndex)
+                    vm.logSet(exerciseIndex: eIdx, setIndex: setIndex)
                 },
                 onDelete: {
                     openSwipeSetID = nil
-                    vm.removeSet(exerciseIndex: exerciseIndex, setIndex: setIndex)
+                    vm.removeSet(exerciseIndex: eIdx, setIndex: setIndex)
                 },
                 onUndo: {
                     openSwipeSetID = nil
-                    vm.unlogSet(exerciseIndex: exerciseIndex, setIndex: setIndex)
+                    vm.unlogSet(exerciseIndex: eIdx, setIndex: setIndex)
                 },
                 onCopyFromAbove: setIndex > 0 ? {
                     openSwipeSetID = nil
-                    vm.copySetFromAbove(exerciseIndex: exerciseIndex, setIndex: setIndex)
+                    vm.copySetFromAbove(exerciseIndex: eIdx, setIndex: setIndex)
                 } : nil,
                 onAdoptPlaceholder: setIndex > 0 ? {
                     openSwipeSetID = nil
-                    vm.adoptPlaceholderValues(exerciseIndex: exerciseIndex, setIndex: setIndex)
+                    vm.adoptPlaceholderValues(exerciseIndex: eIdx, setIndex: setIndex)
                 } : nil,
                 swipeProgress: swipeProgress
             )
@@ -189,7 +189,8 @@ struct ActiveExerciseCard: View {
 
     private func swipeActions(
         for set: ActiveWorkoutViewModel.DraftSet,
-        setIndex: Int
+        setIndex: Int,
+        exerciseIndex eIdx: Int
     ) -> [SwipeSetAction] {
         var actions: [SwipeSetAction] = []
 
@@ -200,7 +201,7 @@ struct ActiveExerciseCard: View {
                     tint: Color.white.opacity(0.72),
                     accessibilityLabel: "Copy from above"
                 ) {
-                    vm.copySetFromAbove(exerciseIndex: exerciseIndex, setIndex: setIndex)
+                    vm.copySetFromAbove(exerciseIndex: eIdx, setIndex: setIndex)
                 }
             )
         }
@@ -212,7 +213,7 @@ struct ActiveExerciseCard: View {
                     tint: .orange,
                     accessibilityLabel: "Undo set"
                 ) {
-                    vm.unlogSet(exerciseIndex: exerciseIndex, setIndex: setIndex)
+                    vm.unlogSet(exerciseIndex: eIdx, setIndex: setIndex)
                 }
             )
         } else {
@@ -222,7 +223,7 @@ struct ActiveExerciseCard: View {
                     tint: .red,
                     accessibilityLabel: "Delete set"
                 ) {
-                    vm.removeSet(exerciseIndex: exerciseIndex, setIndex: setIndex)
+                    vm.removeSet(exerciseIndex: eIdx, setIndex: setIndex)
                 }
             )
         }
@@ -298,7 +299,7 @@ struct ActiveExerciseCard: View {
             ScrollView {
                 ActiveExerciseCard(
                     vm: vm,
-                    exerciseIndex: 0,
+                    exercise: vm.draftExercises[0],
                     theme: AccentTheme.midnight,
                     openSwipeSetID: .constant(nil)
                 )
@@ -329,7 +330,7 @@ struct ActiveExerciseCard: View {
             ScrollView {
                 ActiveExerciseCard(
                     vm: vm,
-                    exerciseIndex: 0,
+                    exercise: vm.draftExercises[0],
                     theme: AccentTheme.midnight,
                     openSwipeSetID: .constant(nil)
                 )

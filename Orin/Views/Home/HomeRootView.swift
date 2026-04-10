@@ -15,6 +15,7 @@ struct HomeRootView: View {
 
     @State private var stats = HomeStatsViewModel()
     @State private var routineBuilderRequest: RoutineBuilderRequest? = nil
+    @State private var historyTarget: (name: String, lineageID: UUID?)? = nil
 
     private var sortedRoutines: [RoutineTemplate] {
         routines.sorted {
@@ -68,7 +69,9 @@ struct HomeRootView: View {
                     HomeActiveWorkoutDashboard(vm: vm, sessionNumber: currentSessionNumber) {
                         appState.workout.isShowingFullWorkout = true
                     }
-                    HomePreviousBestsCard(vm: vm)
+                    HomePreviousBestsCard(vm: vm) { name, lineageID in
+                        historyTarget = (name, lineageID)
+                    }
                 } else {
                     HomeGreetingView()
 
@@ -124,6 +127,15 @@ struct HomeRootView: View {
         .sheet(item: $routineBuilderRequest) { request in
             RoutineBuilderView(existingRoutine: request.routine) { routineID in
                 appState.workout.startWorkout(routineID: routineID, modelContext: modelContext)
+            }
+        }
+        .sheet(isPresented: Binding(
+            get: { historyTarget != nil },
+            set: { if !$0 { historyTarget = nil } }
+        )) {
+            if let target = historyTarget {
+                ExerciseHistoryView(exerciseName: target.name, exerciseLineageID: target.lineageID)
+                    .environment(\.OrinCardMaterial, .regularMaterial)
             }
         }
         .onChange(of: sessions, initial: true) {

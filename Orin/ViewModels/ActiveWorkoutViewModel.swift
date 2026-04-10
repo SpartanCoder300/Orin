@@ -45,8 +45,8 @@ final class ActiveWorkoutViewModel {
 
     // MARK: - Types
 
-    struct DraftSet: Identifiable {
-        var id = UUID()
+    @Observable final class DraftSet: Identifiable {
+        let id = UUID()
         var weightText: String = ""
         var repsText: String = ""
         /// Seconds as a string, e.g. "30". Non-empty only when the parent exercise `isTimed`.
@@ -66,8 +66,8 @@ final class ActiveWorkoutViewModel {
         var duration: Double? = nil
     }
 
-    struct DraftExercise: Identifiable {
-        var id = UUID()
+    @Observable final class DraftExercise: Identifiable {
+        let id = UUID()
         var exerciseDefinitionID: UUID? = nil
         var exerciseLineageID: UUID? = nil
         var exerciseName: String
@@ -83,6 +83,34 @@ final class ActiveWorkoutViewModel {
         var restSeconds: Int = 90
 
         var tracksWeight: Bool { loadTrackingMode != .none }
+
+        init(
+            exerciseDefinitionID: UUID? = nil,
+            exerciseLineageID: UUID? = nil,
+            exerciseName: String,
+            equipmentType: String = "",
+            weightIncrement: Double = 2.5,
+            startingWeight: Double = 45,
+            loadTrackingMode: LoadTrackingMode = .externalWeight,
+            isTimed: Bool = false,
+            sets: [DraftSet],
+            previousSets: [PreviousSet] = [],
+            snapshot: ExerciseSnapshot? = nil,
+            restSeconds: Int = 90
+        ) {
+            self.exerciseDefinitionID = exerciseDefinitionID
+            self.exerciseLineageID = exerciseLineageID
+            self.exerciseName = exerciseName
+            self.equipmentType = equipmentType
+            self.weightIncrement = weightIncrement
+            self.startingWeight = startingWeight
+            self.loadTrackingMode = loadTrackingMode
+            self.isTimed = isTimed
+            self.sets = sets
+            self.previousSets = previousSets
+            self.snapshot = snapshot
+            self.restSeconds = restSeconds
+        }
     }
 
     struct SetFocus: Equatable {
@@ -306,14 +334,14 @@ final class ActiveWorkoutViewModel {
             resumeSession(id: sessionID)
         } else if let routineID = pendingRoutineID {
             loadRoutine(id: routineID)
-            for i in draftExercises.indices {
-                applyPreviousPerformance(to: &draftExercises[i])
+            for exercise in draftExercises {
+                applyPreviousPerformance(to: exercise)
             }
             eagerlyPersistWorkout()
         } else if let sessionID = pendingSessionID {
             loadSession(id: sessionID)
-            for i in draftExercises.indices {
-                applyPreviousPerformance(to: &draftExercises[i])
+            for exercise in draftExercises {
+                applyPreviousPerformance(to: exercise)
             }
             eagerlyPersistWorkout()
         }
@@ -349,7 +377,7 @@ final class ActiveWorkoutViewModel {
                 guard let def = entry.exerciseDefinition else { return nil }
                 let isTimed = def.isTimed
                 let sets = (0 ..< entry.targetSets).map { _ -> DraftSet in
-                    var s = DraftSet()
+                    let s = DraftSet()
                     if isTimed {
                         s.durationText = "30"
                     } else {
@@ -452,7 +480,7 @@ final class ActiveWorkoutViewModel {
 
             // Reconstruct each persisted set as a logged DraftSet.
             let sortedRecords = snapshot.sets.sorted { $0.loggedAt < $1.loggedAt }
-            if var restored = restorePersistedDraft(
+            if let restored = restorePersistedDraft(
                 from: snapshot,
                 sortedRecords: sortedRecords,
                 exerciseName: name,
@@ -465,11 +493,11 @@ final class ActiveWorkoutViewModel {
                 isTimed: isTimed,
                 restSeconds: restSeconds
             ) {
-                applyPreviousPerformance(to: &restored)
+                applyPreviousPerformance(to: restored)
                 return restored
             }
             var draftSets: [DraftSet] = sortedRecords.map { record in
-                var draft = DraftSet()
+                let draft = DraftSet()
                 if loadTrackingMode != .none {
                     draft.weightText = formatWeight(record.weight)
                 }
@@ -493,11 +521,11 @@ final class ActiveWorkoutViewModel {
                 let targetReps = routineEntry?.targetRepsMin ?? 0
                 let restSecs   = routineEntry?.restSeconds ?? 90
                 let sets = (0 ..< targetSets).map { _ -> DraftSet in
-                    var set = DraftSet()
+                    let set = DraftSet()
                     if !isTimed { set.repsText = targetReps > 0 ? "\(targetReps)" : "" }
                     return set
                 }
-                var exercise = DraftExercise(
+                let exercise = DraftExercise(
                     exerciseDefinitionID: def?.id,
                     exerciseLineageID: snapshot.exerciseLineageID ?? def?.id,
                     exerciseName:    name,
@@ -510,23 +538,26 @@ final class ActiveWorkoutViewModel {
                     snapshot:        snapshot,
                     restSeconds:     restSecs
                 )
-                applyPreviousPerformance(to: &exercise)
+                applyPreviousPerformance(to: exercise)
                 return exercise
             }
 
             // Build a blank set seeded from the last logged set (weight/reps carry forward).
-            var blankNext = DraftSet()
+            let blankTemplate: (weightText: String, repsText: String, durationText: String, setType: SetType)
             if let last = sortedRecords.last {
-                if loadTrackingMode != .none {
-                    blankNext.weightText = formatWeight(last.weight)
-                }
+                let w = loadTrackingMode != .none ? formatWeight(last.weight) : ""
+                let r: String
+                let d: String
                 if isTimed {
-                    blankNext.durationText = last.duration.map { "\(Int($0))" } ?? "30"
+                    r = ""
+                    d = last.duration.map { "\(Int($0))" } ?? "30"
                 } else {
-                    blankNext.repsText = "\(last.reps)"
+                    r = "\(last.reps)"
+                    d = ""
                 }
-                // Warmup sets don't propagate forward.
-                blankNext.setType = last.setType == .warmup ? .normal : last.setType
+                blankTemplate = (w, r, d, last.setType == .warmup ? .normal : last.setType)
+            } else {
+                blankTemplate = ("", "", "", .normal)
             }
 
             // Append enough blank sets to fill the routine's target count.
@@ -539,13 +570,16 @@ final class ActiveWorkoutViewModel {
                 ? max(0, targetSets - sortedRecords.count)
                 : 0
             for _ in 0 ..< blanksNeeded {
-                var s = blankNext
-                s.id = UUID()
+                let s = DraftSet()
+                s.weightText = blankTemplate.weightText
+                s.repsText = blankTemplate.repsText
+                s.durationText = blankTemplate.durationText
+                s.setType = blankTemplate.setType
                 draftSets.append(s)
             }
 
             let routineRestSecs = routineEntriesByName[name]?.restSeconds ?? 90
-            var exercise = DraftExercise(
+            let exercise = DraftExercise(
                 exerciseDefinitionID: def?.id,
                 exerciseLineageID: snapshot.exerciseLineageID ?? def?.id,
                 exerciseName:    name,
@@ -558,7 +592,7 @@ final class ActiveWorkoutViewModel {
                 snapshot:        snapshot,
                 restSeconds:     routineRestSecs
             )
-            applyPreviousPerformance(to: &exercise)
+            applyPreviousPerformance(to: exercise)
             return exercise
         }
 
@@ -575,7 +609,7 @@ final class ActiveWorkoutViewModel {
         }
     }
 
-    private func applyPreviousPerformance(to exercise: inout DraftExercise) {
+    private func applyPreviousPerformance(to exercise: DraftExercise) {
         let snapshotDescriptor: FetchDescriptor<ExerciseSnapshot>
         if let lineageID = exercise.exerciseLineageID {
             let name = exercise.exerciseName
@@ -599,13 +633,13 @@ final class ActiveWorkoutViewModel {
 
         guard let latest = completed.first else {
             // No history — fill with sensible defaults so fields are never blank.
-            applyDefaultValues(to: &exercise)
+            applyDefaultValues(to: exercise)
             return
         }
 
         let sortedSets = latest.sets.sorted { $0.loggedAt < $1.loggedAt }
         guard !sortedSets.isEmpty else {
-            applyDefaultValues(to: &exercise)
+            applyDefaultValues(to: exercise)
             return
         }
 
@@ -637,7 +671,7 @@ final class ActiveWorkoutViewModel {
 
     /// Fills empty fields with sensible defaults when no prior history exists.
     /// Uses the exercise's own startingWeight and generic rep/duration targets.
-    private func applyDefaultValues(to exercise: inout DraftExercise) {
+    private func applyDefaultValues(to exercise: DraftExercise) {
         for i in exercise.sets.indices {
             guard !exercise.sets[i].isLogged else { continue }
             if exercise.tracksWeight && exercise.sets[i].weightText.isEmpty {
@@ -688,7 +722,7 @@ final class ActiveWorkoutViewModel {
         // Preserve set count; clear logged state — new exercise starts fresh
         let setCount = max(1, draftExercises[index].sets.count)
         let sets = (0..<setCount).map { _ in DraftSet() }
-        var replacement = DraftExercise(
+        let replacement = DraftExercise(
             exerciseDefinitionID: def?.id,
             exerciseLineageID: def?.id,
             exerciseName: name,
@@ -699,7 +733,7 @@ final class ActiveWorkoutViewModel {
             isTimed: isTimed,
             sets: sets
         )
-        applyPreviousPerformance(to: &replacement)
+        applyPreviousPerformance(to: replacement)
         draftExercises[index] = replacement
         scheduleDraftPersistence()
         activityManager.update(currentActivityState)
@@ -731,7 +765,7 @@ final class ActiveWorkoutViewModel {
         let startingWeight = def?.resolvedStartingWeight ?? ExerciseDefinition.defaultStartingWeight(for: equipmentType)
         let loadTrackingMode = def?.loadTrackingMode ?? .externalWeight
         let isTimed = def?.isTimed ?? false
-        var draft = DraftExercise(
+        let draft = DraftExercise(
             exerciseDefinitionID: def?.id,
             exerciseLineageID: def?.id,
             exerciseName: name,
@@ -742,7 +776,7 @@ final class ActiveWorkoutViewModel {
             isTimed: isTimed,
             sets: [DraftSet(), DraftSet(), DraftSet()]
         )
-        applyPreviousPerformance(to: &draft)
+        applyPreviousPerformance(to: draft)
         draftExercises.append(draft)
         scheduleDraftPersistence()
         UISelectionFeedbackGenerator().selectionChanged()
@@ -832,7 +866,7 @@ final class ActiveWorkoutViewModel {
 
     func addSet(toExerciseAt index: Int) {
         guard draftExercises.indices.contains(index) else { return }
-        var new = DraftSet()
+        let new = DraftSet()
         if let last = draftExercises[index].sets.last {
             new.weightText = last.weightText
             new.repsText = last.repsText
@@ -905,7 +939,7 @@ final class ActiveWorkoutViewModel {
 
     func addDropset(toExerciseAt index: Int) {
         guard draftExercises.indices.contains(index) else { return }
-        var dropset = DraftSet()
+        let dropset = DraftSet()
         dropset.setType = .dropset
         if let last = draftExercises[index].sets.last {
             dropset.weightText = last.weightText
@@ -1514,7 +1548,7 @@ final class ActiveWorkoutViewModel {
         let recordsByID = Dictionary(uniqueKeysWithValues: sortedRecords.map { ($0.id, $0) })
 
         let sets = persistedSets.map { persisted -> DraftSet in
-            var draft = DraftSet()
+            let draft = DraftSet()
             draft.weightText = persisted.weightText
             draft.repsText = persisted.repsText
             draft.durationText = persisted.durationText
