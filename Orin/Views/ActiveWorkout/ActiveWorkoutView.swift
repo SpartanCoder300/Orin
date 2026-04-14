@@ -166,8 +166,8 @@ struct ActiveWorkoutView: View {
                                 .foregroundStyle(Color.textPrimary)
                                 .padding(.horizontal, 12)
                                 .padding(.vertical, 6)
-                                .glassEffect(in: Capsule())
                         }
+                        .glassEffect(in: Capsule())
                     }
                     ToolbarItem(placement: .topBarTrailing) {
                         Button { vm.isShowingExercisePicker = true } label: {
@@ -412,74 +412,80 @@ private struct RestTimerBar: View {
     private let cardWidth: CGFloat = 136
     private let cardHeight: CGFloat = 54
 
-    var body: some View {
-        TimelineView(.periodic(from: .now, by: 0.5)) { context in
-            let now = context.date
-            let progress = timer.progress(at: now) ?? 1.0
-            let textColor = timerTextColor(progress: progress)
-            let remaining = timer.targetEndDate
-                .map { max(0, Int(ceil($0.timeIntervalSince(now)))) } ?? 0
-            let inFinalCountdown = remaining <= 5 && remaining > 0 && timer.isActive
+    @State private var remaining: Int = 0
+    @State private var inFinalCountdown: Bool = false
 
-            Button {
-                isShowingActions = true
-            } label: {
+    var body: some View {
+        Button {
+            isShowingActions = true
+        } label: {
+            TimelineView(.periodic(from: .now, by: 1.0)) { context in
+                let now = context.date
+                let progress = timer.progress(at: now) ?? 1.0
+                let textColor = timerTextColor(progress: progress)
+                let currentRemaining = timer.targetEndDate
+                    .map { max(0, Int(ceil($0.timeIntervalSince(now)))) } ?? 0
+
                 timerContent(at: now, textColor: textColor, progress: progress)
                     .scaleEffect(pulseScale)
                     .frame(width: cardWidth, height: cardHeight)
-                    .contentShape(RoundedRectangle(cornerRadius: Radius.large, style: .continuous))
-            }
-            .buttonStyle(.plain)
-            .glassEffect(in: RoundedRectangle(cornerRadius: Radius.large, style: .continuous))
-            .background {
-                RoundedRectangle(cornerRadius: Radius.large, style: .continuous)
-                    .fill(.regularMaterial.opacity(0.12))
-                    .overlay {
+                    .background {
                         RoundedRectangle(cornerRadius: Radius.large, style: .continuous)
                             .fill(Color.OrinAmber.opacity(timerCardTintOpacity(progress: progress)))
                     }
-            }
-            .overlay {
-                RoundedRectangle(cornerRadius: Radius.large, style: .continuous)
-                    .strokeBorder(
-                        LinearGradient(
-                            colors: [Color.white.opacity(0.18), Color.white.opacity(0.06)],
-                            startPoint: .top,
-                            endPoint: .bottom
-                        ),
-                        lineWidth: 1
-                    )
-            }
-            .shadow(color: Color.black.opacity(0.22), radius: 14, y: 6)
-            .shadow(color: Color.black.opacity(0.10), radius: 4, y: 1)
-            .sensoryFeedback(.selection, trigger: adjustTrigger)
-            .sensoryFeedback(.impact(weight: .medium), trigger: skipTrigger)
-            .sensoryFeedback(.impact(weight: .heavy, intensity: 1.0), trigger: timer.pulseCount)
-            .sensoryFeedback(.impact(weight: .light), trigger: countdownHapticCount)
-            .onChange(of: remaining) { _, newVal in
-                guard timer.isActive, [3, 2, 1].contains(newVal) else { return }
-                countdownHapticCount += 1
-            }
-            .onChange(of: inFinalCountdown) { _, active in
-                if active {
-                    withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
-                        pulseScale = 1.02
+                    .onChange(of: currentRemaining) { _, newVal in
+                        remaining = newVal
+                        inFinalCountdown = newVal <= 5 && newVal > 0 && timer.isActive
                     }
-                } else {
-                    withAnimation(.spring(response: 0.3)) { pulseScale = 1.0 }
-                }
             }
-            .onChange(of: timer.pulseCount) { _, _ in
-                playRestCompleteSound()
+            .contentShape(RoundedRectangle(cornerRadius: Radius.large, style: .continuous))
+        }
+        .buttonStyle(.plain)
+        .glassEffect(in: RoundedRectangle(cornerRadius: Radius.large, style: .continuous))
+        .background {
+            RoundedRectangle(cornerRadius: Radius.large, style: .continuous)
+                .fill(.regularMaterial.opacity(0.12))
+        }
+        .overlay {
+            RoundedRectangle(cornerRadius: Radius.large, style: .continuous)
+                .strokeBorder(
+                    LinearGradient(
+                        colors: [Color.white.opacity(0.18), Color.white.opacity(0.06)],
+                        startPoint: .top,
+                        endPoint: .bottom
+                    ),
+                    lineWidth: 1
+                )
+        }
+        .shadow(color: Color.black.opacity(0.22), radius: 14, y: 6)
+        .shadow(color: Color.black.opacity(0.10), radius: 4, y: 1)
+        .sensoryFeedback(.selection, trigger: adjustTrigger)
+        .sensoryFeedback(.impact(weight: .medium), trigger: skipTrigger)
+        .sensoryFeedback(.impact(weight: .heavy, intensity: 1.0), trigger: timer.pulseCount)
+        .sensoryFeedback(.impact(weight: .light), trigger: countdownHapticCount)
+        .onChange(of: remaining) { _, newVal in
+            guard timer.isActive, [3, 2, 1].contains(newVal) else { return }
+            countdownHapticCount += 1
+        }
+        .onChange(of: inFinalCountdown) { _, active in
+            if active {
+                withAnimation(.easeInOut(duration: 0.8).repeatForever(autoreverses: true)) {
+                    pulseScale = 1.02
+                }
+            } else {
                 withAnimation(.spring(response: 0.3)) { pulseScale = 1.0 }
             }
-            .onDisappear { pulseScale = 1.0 }
-            .popover(isPresented: $isShowingActions, attachmentAnchor: .point(.bottom), arrowEdge: .top) {
-                RestTimerActionsSheet(
-                    onAdjust: { seconds in onAdjust(seconds); adjustTrigger += 1 },
-                    onSkip: { onSkip(); skipTrigger += 1 }
-                )
-            }
+        }
+        .onChange(of: timer.pulseCount) { _, _ in
+            playRestCompleteSound()
+            withAnimation(.spring(response: 0.3)) { pulseScale = 1.0 }
+        }
+        .onDisappear { pulseScale = 1.0 }
+        .popover(isPresented: $isShowingActions, attachmentAnchor: .point(.bottom), arrowEdge: .top) {
+            RestTimerActionsSheet(
+                onAdjust: { seconds in onAdjust(seconds); adjustTrigger += 1 },
+                onSkip: { onSkip(); skipTrigger += 1 }
+            )
         }
     }
 
