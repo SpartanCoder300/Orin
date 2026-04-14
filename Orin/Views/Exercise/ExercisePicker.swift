@@ -3,8 +3,8 @@
 import SwiftUI
 import SwiftData
 
-private let allMuscleGroups = ["Chest", "Back", "Shoulders", "Biceps", "Triceps", "Forearms", "Legs", "Core"]
-private let allEquipmentTypes = ["Barbell", "Dumbbell", "Cable", "Machine", "Kettlebell", "Bodyweight", "Band"]
+private let allMuscleGroups = ["Chest", "Back", "Legs", "Shoulders", "Biceps", "Triceps", "Core", "Glutes", "Forearms"]
+private let allEquipmentTypes = ["Barbell", "Dumbbell", "Machine", "Cable", "Bodyweight", "Kettlebell", "Band"]
 private let exercisePickerRaisedSurface = Color.white.opacity(0.055)
 
 struct ExercisePicker: View {
