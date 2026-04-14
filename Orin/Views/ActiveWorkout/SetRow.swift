@@ -80,6 +80,8 @@ struct SetRow: View {
     @State private var checkScale: CGFloat = 1.0
 
     private enum ActiveRowStyle {
+        static let minHeight: CGFloat = 54
+        static let focusedMinHeight: CGFloat = 62
         static let accentOpacity = 0.92
         static let accentFocusedHeight: CGFloat = 32
         static let accentUnfocusedHeight: CGFloat = 22
@@ -260,6 +262,11 @@ struct SetRow: View {
         .padding(.top, isFirstInCard ? 8 : (isFocused ? 6 : 3))
         .padding(.bottom, isFocused ? 6 : 3)
         .padding(.trailing, Spacing.sm)
+        .frame(
+            minHeight: isFocused
+                ? ActiveRowStyle.focusedMinHeight
+                : ActiveRowStyle.minHeight
+        )
         .overlay {
             if isFocused {
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
