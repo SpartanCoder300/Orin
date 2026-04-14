@@ -87,7 +87,6 @@ struct ActiveExerciseCard: View {
 
                 if sIdx < exercise.sets.count - 1 {
                     cardDivider
-                        .padding(.leading, Spacing.md)
                 }
             }
             .animation(Motion.standardSpring, value: exercise.sets.count)

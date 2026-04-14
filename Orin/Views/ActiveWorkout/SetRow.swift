@@ -80,7 +80,7 @@ struct SetRow: View {
     @State private var checkScale: CGFloat = 1.0
 
     private enum ActiveRowStyle {
-        static let minHeight: CGFloat = 54
+        static let minHeight: CGFloat = 50
         static let focusedMinHeight: CGFloat = 62
         static let accentOpacity = 0.92
         static let accentFocusedHeight: CGFloat = 32
