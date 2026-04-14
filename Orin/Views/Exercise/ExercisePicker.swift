@@ -183,36 +183,28 @@ struct ExercisePicker: View {
         let muscleFilters = allMuscleGroups.map { PickerFilter.muscleGroup($0) }
         let equipmentFilters = allEquipmentTypes.map { PickerFilter.equipment($0) } + [PickerFilter.custom]
         return VStack(alignment: .leading, spacing: 0) {
-            filterRow(label: "Muscle", filters: muscleFilters)
-            filterRow(label: "Equipment", filters: equipmentFilters)
+            filterRow(filters: muscleFilters)
+            filterRow(filters: equipmentFilters)
         }
     }
 
-    private func filterRow(label: String, filters: [PickerFilter]) -> some View {
+    private func filterRow(filters: [PickerFilter]) -> some View {
         let anyActive = filters.contains { vm.selectedFilters.contains($0) }
-        return HStack(spacing: 0) {
-            // Reduced label dominance: smaller, lower opacity
-            Text(label)
-                .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(Color.secondary.opacity(0.6))
-                .frame(width: 76, alignment: .leading)
-                .padding(.leading, Spacing.md)
-            ScrollView(.horizontal, showsIndicators: false) {
-                HStack(spacing: Spacing.xs) {
-                    chip(label: "All", active: !anyActive) {
-                        filters.forEach { vm.selectedFilters.remove($0) }
-                    }
-                    ForEach(filters, id: \.self) { filter in
-                        chip(label: filter.label, active: vm.selectedFilters.contains(filter)) {
-                            vm.toggleFilter(filter)
-                        }
+        return ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: Spacing.xs) {
+                chip(label: "All", active: !anyActive) {
+                    filters.forEach { vm.selectedFilters.remove($0) }
+                }
+                ForEach(filters, id: \.self) { filter in
+                    chip(label: filter.label, active: vm.selectedFilters.contains(filter)) {
+                        vm.toggleFilter(filter)
                     }
                 }
-                .padding(.horizontal, Spacing.sm)
-                .padding(.vertical, Spacing.xs)  // tighter vertical
             }
-            .scrollClipDisabled()
+            .padding(.horizontal, Spacing.sm)
+            .padding(.vertical, Spacing.xs)
         }
+        .scrollClipDisabled()
     }
 
     private func chip(label: String, active: Bool, action: @escaping () -> Void) -> some View {
