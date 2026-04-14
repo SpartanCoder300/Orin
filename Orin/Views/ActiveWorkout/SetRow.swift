@@ -71,7 +71,6 @@ struct SetRow: View {
     let onUndo: () -> Void
     let onCopyFromAbove: (() -> Void)?
     let onAdoptPlaceholder: (() -> Void)?
-    let swipeProgress: CGFloat
 
     @State private var rowScale: CGFloat = 1.0
     @State private var badgeScale: CGFloat = 0
@@ -87,9 +86,6 @@ struct SetRow: View {
         static let fillOpacity = 0.062
         static let strokeOpacity = 0.07
         static let strokeWidth: CGFloat = 1
-        static let swipeFillBoost = 0.022
-        static let swipeStrokeBoost = 0.018
-        static let swipeScale: CGFloat = 0.995
         static let defocusedRowOpacity = 0.94
         static let focusedShadowOpacity = 0.12
         static let focusedShadowRadius: CGFloat = 12
@@ -106,15 +102,8 @@ struct SetRow: View {
         return !isLogged && weightText.isEmpty && repsText.isEmpty && durationText.isEmpty
     }
 
-    private var rowFillOpacity: Double {
-        let base = isFocused ? ActiveRowStyle.fillOpacity : 0
-        return base + Double(min(1, max(0, swipeProgress))) * ActiveRowStyle.swipeFillBoost
-    }
-
-    private var rowStrokeOpacity: Double {
-        let base = isFocused ? ActiveRowStyle.strokeOpacity : 0
-        return base + Double(min(1, max(0, swipeProgress))) * ActiveRowStyle.swipeStrokeBoost
-    }
+    private var rowFillOpacity: Double { isFocused ? ActiveRowStyle.fillOpacity : 0 }
+    private var rowStrokeOpacity: Double { isFocused ? ActiveRowStyle.strokeOpacity : 0 }
 
     private var contentOpacity: Double {
         guard hasActiveSelection, !isFocused, !isSwiping else { return 1.0 }
@@ -263,17 +252,16 @@ struct SetRow: View {
                     .contentShape(Rectangle())
                     .contentTransition(.symbolEffect(.replace))
                     .scaleEffect(checkScale)
-                    .opacity(isSwiping ? 0.55 : 1.0)
             }
             .buttonStyle(.plain)
         }
         .opacity(contentOpacity)
-        .scaleEffect(rowScale * (isSwiping ? ActiveRowStyle.swipeScale : 1.0))
+        .scaleEffect(rowScale)
         .padding(.top, isFirstInCard ? 8 : (isFocused ? 6 : 3))
         .padding(.bottom, isFocused ? 6 : 3)
         .padding(.trailing, Spacing.sm)
         .overlay {
-            if isFocused || isSwiping {
+            if isFocused {
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .fill(accentColor.opacity(rowFillOpacity))
                     .padding(.top, isFirstInCard ? 6 : 1)
@@ -282,7 +270,7 @@ struct SetRow: View {
             }
         }
         .overlay {
-            if isFocused || isSwiping {
+            if isFocused {
                 RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .strokeBorder(
                         accentColor.opacity(rowStrokeOpacity),
@@ -456,7 +444,6 @@ struct SetRow: View {
         placeholderDelay: 0,
         previousSet: nil, justLogged: false,
         onCycleType: {}, onFocus: {}, onLog: {}, onDelete: {}, onUndo: {}, onCopyFromAbove: nil, onAdoptPlaceholder: nil,
-        swipeProgress: 0
     )
     .padding()
     .preferredColorScheme(.dark)
@@ -484,7 +471,6 @@ struct SetRow: View {
         placeholderDelay: 0.05,
         previousSet: nil, justLogged: false,
         onCycleType: {}, onFocus: {}, onLog: {}, onDelete: {}, onUndo: {}, onCopyFromAbove: {}, onAdoptPlaceholder: {},
-        swipeProgress: 0
     )
     .padding()
     .preferredColorScheme(.dark)
@@ -512,7 +498,6 @@ struct SetRow: View {
         placeholderDelay: 0,
         previousSet: nil, justLogged: false,
         onCycleType: {}, onFocus: {}, onLog: {}, onDelete: {}, onUndo: {}, onCopyFromAbove: {}, onAdoptPlaceholder: nil,
-        swipeProgress: 0
     )
     .padding()
     .preferredColorScheme(.dark)
@@ -540,7 +525,6 @@ struct SetRow: View {
         placeholderDelay: 0,
         previousSet: nil, justLogged: false,
         onCycleType: {}, onFocus: {}, onLog: {}, onDelete: {}, onUndo: {}, onCopyFromAbove: {}, onAdoptPlaceholder: nil,
-        swipeProgress: 0
     )
     .padding()
     .preferredColorScheme(.dark)

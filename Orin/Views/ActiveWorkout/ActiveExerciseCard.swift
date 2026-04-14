@@ -141,9 +141,10 @@ struct ActiveExerciseCard: View {
     ) -> some View {
         SwipeableSetRow(
             rowID: set.id,
-            actions: eIdx.map { swipeActions(for: set, setIndex: setIndex, exerciseIndex: $0) } ?? [],
+            actions: eIdx.map { trailingSwipeActions(for: set, setIndex: setIndex, exerciseIndex: $0) } ?? [],
+            leadingAction: eIdx.flatMap { leadingSwipeAction(for: set, setIndex: setIndex, exerciseIndex: $0) },
             openRowID: $openSwipeSetID
-        ) { isSwiping, swipeProgress in
+        ) { isSwiping, _ in
             SetRow(
                 setNumber: setIndex + 1,
                 weightText: set.weightText,
@@ -200,8 +201,7 @@ struct ActiveExerciseCard: View {
                         openSwipeSetID = nil
                         vm.adoptPlaceholderValues(exerciseIndex: eIdx, setIndex: setIndex)
                     }
-                },
-                swipeProgress: swipeProgress
+                }
             )
             .padding(.horizontal, Spacing.md)
         }
@@ -212,48 +212,34 @@ struct ActiveExerciseCard: View {
             .overlay(Color.white.opacity(0.08))
     }
 
-    private func swipeActions(
+    private func leadingSwipeAction(
+        for set: ActiveWorkoutViewModel.DraftSet,
+        setIndex: Int,
+        exerciseIndex eIdx: Int
+    ) -> SwipeSetAction? {
+        guard setIndex > 0, !set.isLogged else { return nil }
+        return SwipeSetAction(
+            systemImage: "arrow.up.doc.on.clipboard",
+            tint: Color.white.opacity(0.72),
+            accessibilityLabel: "Copy from above"
+        ) {
+            vm.copySetFromAbove(exerciseIndex: eIdx, setIndex: setIndex)
+        }
+    }
+
+    private func trailingSwipeActions(
         for set: ActiveWorkoutViewModel.DraftSet,
         setIndex: Int,
         exerciseIndex eIdx: Int
     ) -> [SwipeSetAction] {
-        var actions: [SwipeSetAction] = []
-
-        if setIndex > 0 && !set.isLogged {
-            actions.append(
-                SwipeSetAction(
-                    systemImage: "arrow.up.doc.on.clipboard",
-                    tint: Color.white.opacity(0.72),
-                    accessibilityLabel: "Copy from above"
-                ) {
-                    vm.copySetFromAbove(exerciseIndex: eIdx, setIndex: setIndex)
-                }
-            )
-        }
-
-        if set.isLogged {
-            actions.append(
-                SwipeSetAction(
-                    systemImage: "arrow.uturn.backward",
-                    tint: .orange,
-                    accessibilityLabel: "Undo set"
-                ) {
-                    vm.unlogSet(exerciseIndex: eIdx, setIndex: setIndex)
-                }
-            )
-        } else {
-            actions.append(
-                SwipeSetAction(
-                    systemImage: "trash",
-                    tint: .red,
-                    accessibilityLabel: "Delete set"
-                ) {
-                    vm.removeSet(exerciseIndex: eIdx, setIndex: setIndex)
-                }
-            )
-        }
-
-        return actions
+        guard !set.isLogged else { return [] }
+        return [SwipeSetAction(
+            systemImage: "trash",
+            tint: .red,
+            accessibilityLabel: "Delete set"
+        ) {
+            vm.removeSet(exerciseIndex: eIdx, setIndex: setIndex)
+        }]
     }
 
     private func resolveDefinition(for exercise: ActiveWorkoutViewModel.DraftExercise) -> ExerciseDefinition? {
