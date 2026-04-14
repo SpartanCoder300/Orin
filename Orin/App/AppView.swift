@@ -3,6 +3,7 @@
 import SwiftUI
 import SwiftData
 import UIKit
+import UserNotifications
 
 struct AppView: View {
     @Environment(AppState.self) private var appState
@@ -107,6 +108,7 @@ struct AppView: View {
             RoutineSeeder.deduplicateIfNeeded(in: modelContext)
             RoutineSeeder.seedStarterRoutinesIfNeeded(in: modelContext)
             appState.workout.onLaunch(modelContext: modelContext)
+            await requestNotificationPermissionIfNeeded()
         }
         // Re-run dedup whenever the routine count changes. This catches the case where
         // CloudKit delivers previously-synced routines after a reinstall, which arrives
@@ -135,6 +137,12 @@ struct AppView: View {
         }
     }
 
+    private func requestNotificationPermissionIfNeeded() async {
+        let center = UNUserNotificationCenter.current()
+        let settings = await center.notificationSettings()
+        guard settings.authorizationStatus == .notDetermined else { return }
+        _ = try? await center.requestAuthorization(options: [.alert, .sound])
+    }
 
 }
 
