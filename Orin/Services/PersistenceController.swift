@@ -67,6 +67,38 @@ enum PersistenceController {
         }
     }
 
+    #if DEBUG
+    /// Deletes every object across all model types.
+    /// CloudKit will sync the deletions automatically.
+    static func resetAllData(in context: ModelContext) {
+        let types: [any PersistentModel.Type] = [
+            SetRecord.self,
+            ExerciseSnapshot.self,
+            WorkoutSession.self,
+            RoutineEntry.self,
+            RoutineTemplate.self,
+            ExerciseDefinition.self,
+            BodyWeightEntry.self,
+            WeeklySnapshot.self,
+            AITrainingContext.self,
+        ]
+
+        for type in types {
+            do {
+                try context.delete(model: type)
+            } catch {
+                print("[Reset] Failed to delete \(type): \(error)")
+            }
+        }
+
+        do {
+            try context.save()
+        } catch {
+            print("[Reset] Failed to save after deletion: \(error)")
+        }
+    }
+    #endif
+
     @MainActor
     static let previewContainer: ModelContainer = {
         let configuration = ModelConfiguration(

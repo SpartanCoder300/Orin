@@ -9,6 +9,9 @@ struct SettingsRootView: View {
     @Environment(\.OrinTheme) private var theme
     @Environment(\.OrinCardMaterial) private var cardMaterial
     @State private var isShowingResetExercisesConfirm = false
+    #if DEBUG
+    @State private var isShowingResetAllConfirm = false
+    #endif
     @State private var tunerTapCount: Int = 0
     @State private var isShowingTuner = false
 
@@ -45,6 +48,25 @@ struct SettingsRootView: View {
                 Text("Restores all built-in exercises to their default names, equipment, type, increment, and starting weight. Custom exercises are not changed.")
             }
 
+            // ── Developer ─────────────────────────────────────────────
+            #if DEBUG
+            Section {
+                Button(role: .destructive) {
+                    isShowingResetAllConfirm = true
+                } label: {
+                    LabeledContent("Reset All Data") {
+                        Image(systemName: "trash.circle")
+                            .foregroundStyle(Color.OrinRed)
+                    }
+                }
+                .listRowBackground(Rectangle().fill(cardMaterial))
+            } header: {
+                Text("Developer")
+            } footer: {
+                Text("Deletes all workouts, routines, exercises, and body weight entries. Simulates a brand-new user. Deletions sync to iCloud.")
+            }
+            #endif
+
             // ── About ──────────────────────────────────────────────────
             Section {
                 LabeledContent("Version", value: "1.0")
@@ -74,6 +96,16 @@ struct SettingsRootView: View {
         } message: {
             Text("This restores all built-in exercises to the app defaults. Custom exercises will stay as they are.")
         }
+        #if DEBUG
+        .alert("Reset All Data?", isPresented: $isShowingResetAllConfirm) {
+            Button("Delete Everything", role: .destructive) {
+                PersistenceController.resetAllData(in: modelContext)
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This permanently deletes all workouts, routines, exercises, and body weight data. This cannot be undone.")
+        }
+        #endif
     }
 }
 
