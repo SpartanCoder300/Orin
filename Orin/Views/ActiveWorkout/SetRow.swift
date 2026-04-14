@@ -261,7 +261,8 @@ struct SetRow: View {
         .scaleEffect(rowScale)
         .padding(.top, isFirstInCard ? 8 : (isFocused ? 6 : 3))
         .padding(.bottom, isFocused ? 6 : 3)
-        .padding(.trailing, Spacing.sm)
+        .padding(.leading, Spacing.md)
+        .padding(.trailing, Spacing.md + Spacing.sm)
         .frame(
             minHeight: isFocused
                 ? ActiveRowStyle.focusedMinHeight
@@ -269,7 +270,7 @@ struct SetRow: View {
         )
         .overlay {
             if isFocused {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                Rectangle()
                     .fill(accentColor.opacity(rowFillOpacity))
                     .padding(.top, isFirstInCard ? 6 : 1)
                     .padding(.bottom, 1)
@@ -278,7 +279,7 @@ struct SetRow: View {
         }
         .overlay {
             if isFocused {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                Rectangle()
                     .strokeBorder(
                         accentColor.opacity(rowStrokeOpacity),
                         lineWidth: ActiveRowStyle.strokeWidth
@@ -295,7 +296,7 @@ struct SetRow: View {
         )
         .overlay {
             if logHighlightOpacity > 0 {
-                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                Rectangle()
                     .fill(accentColor.opacity(0.14))
                     .opacity(logHighlightOpacity)
                     .padding(.top, isFirstInCard ? 6 : 1)

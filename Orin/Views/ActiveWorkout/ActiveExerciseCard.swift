@@ -203,7 +203,6 @@ struct ActiveExerciseCard: View {
                     }
                 }
             )
-            .padding(.horizontal, Spacing.md)
         }
     }
 

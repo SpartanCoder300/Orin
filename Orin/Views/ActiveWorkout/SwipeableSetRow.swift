@@ -26,6 +26,9 @@ struct SwipeableSetRow<Content: View>: View {
     private enum SwipeDirection { case none, leading, trailing }
 
     private let actionWidth: CGFloat = 68
+    private let actionVisibleHeight: CGFloat = 46
+    private let actionCornerRadius: CGFloat = 8
+    private let actionHorizontalInset: CGFloat = 4
     private let maxOverswipe: CGFloat = 88
     private let commitOverswipeThreshold: CGFloat = 56
 
@@ -115,12 +118,22 @@ struct SwipeableSetRow<Content: View>: View {
                     closeRow()
                     action.action()
                 } label: {
-                    Image(systemName: action.systemImage)
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(fgColor)
-                        .frame(width: max(actionWidth, zoneWidth))
-                        .frame(maxHeight: .infinity)
-                        .background(action.tint.opacity(bgOpacity))
+                    let actionZoneWidth = max(actionWidth, zoneWidth)
+                    ZStack {
+                        RoundedRectangle(cornerRadius: actionCornerRadius, style: .continuous)
+                            .fill(action.tint.opacity(bgOpacity))
+                            .frame(
+                                width: max(0, actionZoneWidth - actionHorizontalInset * 2),
+                                height: actionVisibleHeight
+                            )
+
+                        Image(systemName: action.systemImage)
+                            .font(.system(size: 15, weight: .semibold))
+                            .foregroundStyle(fgColor)
+                    }
+                    .frame(width: actionZoneWidth)
+                    .frame(maxHeight: .infinity)
+                    .contentShape(Rectangle())
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(action.accessibilityLabel)
@@ -145,12 +158,22 @@ struct SwipeableSetRow<Content: View>: View {
                 closeRow()
                 action.action()
             } label: {
-                Image(systemName: action.systemImage)
-                    .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(fgColor)
-                    .frame(width: max(actionWidth, zoneWidth))
-                    .frame(maxHeight: .infinity)
-                    .background(action.tint.opacity(bgOpacity))
+                let actionZoneWidth = max(actionWidth, zoneWidth)
+                ZStack {
+                    RoundedRectangle(cornerRadius: actionCornerRadius, style: .continuous)
+                        .fill(action.tint.opacity(bgOpacity))
+                        .frame(
+                            width: max(0, actionZoneWidth - actionHorizontalInset * 2),
+                            height: actionVisibleHeight
+                        )
+
+                    Image(systemName: action.systemImage)
+                        .font(.system(size: 15, weight: .semibold))
+                        .foregroundStyle(fgColor)
+                }
+                .frame(width: actionZoneWidth)
+                .frame(maxHeight: .infinity)
+                .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
             .accessibilityLabel(action.accessibilityLabel)
