@@ -413,11 +413,12 @@ private struct MinimalView: View {
                 .foregroundStyle(restPhaseColor(endsAt: endsAt, totalDuration: total))
                 .minimumScaleFactor(0.7)
         } else {
-            // Minimal working: set count — most readable single metric in a ~20pt circle
-            Text("\(context.state.setsLogged)")
-                .font(.system(size: 13, weight: .bold, design: .monospaced))
+            // Minimal working: elapsed time — most useful at-a-glance metric
+            Text(context.state.startedAt, style: .timer)
+                .font(.system(size: 12, weight: .semibold, design: .monospaced))
+                .monospacedDigit()
                 .foregroundStyle(context.state.accentColor)
-                .contentTransition(.numericText(countsDown: false))
+                .minimumScaleFactor(0.7)
         }
     }
 }
