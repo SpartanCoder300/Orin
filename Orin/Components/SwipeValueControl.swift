@@ -325,10 +325,12 @@ struct SwipeValueControl: View {
             .padding(.vertical, isDragging ? 3 : 0)
             .fixedSize(horizontal: isDragging, vertical: false)
             .background {
-                RoundedRectangle(cornerRadius: Radius.large, style: .continuous)
-                    .glassEffect(in: RoundedRectangle(cornerRadius: Radius.large, style: .continuous))
-                    .shadow(color: .black.opacity(0.10), radius: 8, y: 2)
-                    .opacity(isDragging ? 0.78 : 0)
+                if isDragging {
+                    RoundedRectangle(cornerRadius: Radius.large, style: .continuous)
+                        .glassEffect(in: RoundedRectangle(cornerRadius: Radius.large, style: .continuous))
+                        .shadow(color: .black.opacity(0.10), radius: 8, y: 2)
+                        .opacity(0.78)
+                }
             }
             // Lift + horizontal follow. Follow is spring-animated in the gesture handler,
             // so the pill lags slightly behind the finger — feels tethered, not glued.

@@ -159,15 +159,13 @@ struct ActiveWorkoutView: View {
                             .foregroundStyle(.secondary)
                     }
                     ToolbarItem(placement: .principal) {
-                        TimelineView(.periodic(from: .now, by: 1.0)) { ctx in
-                            Text(vm.elapsedLabel(at: ctx.date))
-                                .font(.system(size: 15, weight: .semibold, design: .monospaced))
-                                .monospacedDigit()
-                                .foregroundStyle(Color.textPrimary)
-                                .padding(.horizontal, 12)
-                                .padding(.vertical, 6)
-                        }
-                        .glassEffect(in: Capsule())
+                        Text(vm.openedAt, style: .timer)
+                            .font(.system(size: 15, weight: .semibold, design: .monospaced))
+                            .monospacedDigit()
+                            .foregroundStyle(Color.textPrimary)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 6)
+                            .glassEffect(in: Capsule())
                     }
                     ToolbarItem(placement: .topBarTrailing) {
                         Button { vm.isShowingExercisePicker = true } label: {

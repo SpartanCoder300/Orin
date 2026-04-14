@@ -320,25 +320,22 @@ private struct CommandPanelElevation: ViewModifier {
 
     private enum DepthStyle {
         // White surface fill — makes the glass panel read as elevated on dark backgrounds
-        static let surfaceTintOpacity = 0.07
+        static let surfaceTintOpacity = 0.14
         // Specular highlight — brighter on top edge, fades out toward bottom
         static let borderTopOpacity = 0.18
         static let borderBottomOpacity = 0.05
         // Ambient shadow — large, soft, spreads depth far
-        static let primaryShadowOpacity = 0.30
-        static let primaryShadowRadius: CGFloat = 24
-        static let primaryShadowYOffset: CGFloat = 12
+        static let primaryShadowOpacity = 0.50
+        static let primaryShadowRadius: CGFloat = 32
+        static let primaryShadowYOffset: CGFloat = 16
         // Directional shadow — medium, main cast
-        static let secondaryShadowOpacity = 0.18
-        static let secondaryShadowRadius: CGFloat = 8
-        static let secondaryShadowYOffset: CGFloat = 4
+        static let secondaryShadowOpacity = 0.32
+        static let secondaryShadowRadius: CGFloat = 12
+        static let secondaryShadowYOffset: CGFloat = 6
         // Contact shadow — tight, reads as "lifted off surface"
-        static let contactShadowOpacity = 0.22
-        static let contactShadowRadius: CGFloat = 1
+        static let contactShadowOpacity = 0.36
+        static let contactShadowRadius: CGFloat = 2
         static let contactShadowYOffset: CGFloat = 1
-        static let recessionOpacity = 0.08
-        static let recessionInset: CGFloat = 3
-        static let recessionBlur: CGFloat = 18
     }
 
     func body(content: Content) -> some View {
@@ -346,13 +343,21 @@ private struct CommandPanelElevation: ViewModifier {
             .background {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
                     .fill(Color.white.opacity(DepthStyle.surfaceTintOpacity))
-                    .background {
-                        RoundedRectangle(cornerRadius: cornerRadius + DepthStyle.recessionInset, style: .continuous)
-                            .fill(Color.black.opacity(DepthStyle.recessionOpacity))
-                            .padding(.horizontal, -DepthStyle.recessionInset)
-                            .padding(.vertical, -DepthStyle.recessionInset)
-                            .blur(radius: DepthStyle.recessionBlur)
-                    }
+                    .shadow(
+                        color: Color.black.opacity(DepthStyle.contactShadowOpacity),
+                        radius: DepthStyle.contactShadowRadius,
+                        y: DepthStyle.contactShadowYOffset
+                    )
+                    .shadow(
+                        color: Color.black.opacity(DepthStyle.secondaryShadowOpacity),
+                        radius: DepthStyle.secondaryShadowRadius,
+                        y: DepthStyle.secondaryShadowYOffset
+                    )
+                    .shadow(
+                        color: Color.black.opacity(DepthStyle.primaryShadowOpacity),
+                        radius: DepthStyle.primaryShadowRadius,
+                        y: DepthStyle.primaryShadowYOffset
+                    )
             }
             // Specular highlight: bright top edge fades to subtle bottom — simulates light hitting a raised surface
             .overlay {
@@ -370,21 +375,6 @@ private struct CommandPanelElevation: ViewModifier {
                     )
                     .allowsHitTesting(false)
             }
-            .shadow(
-                color: Color.black.opacity(DepthStyle.contactShadowOpacity),
-                radius: DepthStyle.contactShadowRadius,
-                y: DepthStyle.contactShadowYOffset
-            )
-            .shadow(
-                color: Color.black.opacity(DepthStyle.secondaryShadowOpacity),
-                radius: DepthStyle.secondaryShadowRadius,
-                y: DepthStyle.secondaryShadowYOffset
-            )
-            .shadow(
-                color: Color.black.opacity(DepthStyle.primaryShadowOpacity),
-                radius: DepthStyle.primaryShadowRadius,
-                y: DepthStyle.primaryShadowYOffset
-            )
     }
 }
 
