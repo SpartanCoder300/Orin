@@ -20,23 +20,54 @@ struct ExerciseEditorView: View {
 
     @Query(sort: \ExerciseDefinition.name) private var allExercises: [ExerciseDefinition]
 
+    // MARK: - Draft state
+
     @State private var name = ""
     @State private var equipmentType = "Barbell"
-    @State private var selectedGroups: Set<String> = []
+    @State private var selectedGroups: [String] = []
     @State private var loadTrackingMode: LoadTrackingMode = .externalWeight
     @State private var isTimed = false
     @State private var weightIncrementText = ""
     @State private var startingWeightText = ""
+
+    // MARK: - UI state
+
+    @FocusState private var nameFieldFocused: Bool
+    @State private var showAdvanced = false
     @State private var saveErrorMessage: String? = nil
     @State private var showingArchiveConfirmation = false
     @State private var showingPermanentDeleteConfirmation = false
 
+    // MARK: - Smart defaults tracking
+
+    /// Tracks whether the user has manually touched advanced fields.
+    /// Equipment changes only apply defaults when these are false.
+    @State private var userEditedLoadTracking = false
+    @State private var userEditedIncrement = false
+    @State private var userEditedStartingWeight = false
+    @State private var userEditedTimed = false
+
+    // MARK: - Edit-mode original snapshot
+
+    @State private var originalName = ""
+    @State private var originalEquipment = ""
+    @State private var originalGroups: [String] = []
+    @State private var originalLoadTracking: LoadTrackingMode = .externalWeight
+    @State private var originalIsTimed = false
+    @State private var originalIncrementText = ""
+    @State private var originalStartingWeightText = ""
+
+    // MARK: - Derived
+
     private var isNew: Bool { exercise == nil }
     private var canEditName: Bool { exercise?.isCustom ?? true }
     private var trimmedName: String { name.trimmingCharacters(in: .whitespacesAndNewlines) }
+
     private var nameError: String? {
         guard canEditName else { return nil }
-        guard !trimmedName.isEmpty else { return "Enter an exercise name." }
+        // Don't report empty-name as an error — the save button is already disabled for that.
+        // Only surface errors that need visible inline feedback.
+        guard !trimmedName.isEmpty else { return nil }
         guard !hasActiveDuplicateName else { return "An exercise with this name already exists." }
         if !isNew, archivedMatch != nil {
             return "An archived exercise already uses this name. Restore it instead."
@@ -56,7 +87,24 @@ struct ExerciseEditorView: View {
         return nil
     }
     private var formErrorMessage: String? { nameError ?? weightIncrementError ?? startingWeightError }
-    private var isSaveEnabled: Bool { formErrorMessage == nil }
+
+    private var isSaveEnabled: Bool {
+        guard formErrorMessage == nil else { return false }
+        guard !trimmedName.isEmpty else { return false }
+        if !isNew { return hasChanges }
+        return true
+    }
+
+    private var hasChanges: Bool {
+        trimmedName != originalName ||
+        equipmentType != originalEquipment ||
+        selectedGroups != originalGroups ||
+        loadTrackingMode != originalLoadTracking ||
+        isTimed != originalIsTimed ||
+        weightIncrementText != originalIncrementText ||
+        startingWeightText != originalStartingWeightText
+    }
+
     private var activeMatch: ExerciseDefinition? {
         guard canEditName else { return nil }
         return allExercises.first { existing in
@@ -76,133 +124,32 @@ struct ExerciseEditorView: View {
     private var hasActiveDuplicateName: Bool { activeMatch != nil }
     private var canManageLifecycle: Bool { allowsLifecycleActions && (exercise?.isCustom ?? false) }
 
+    // MARK: - Body
+
     var body: some View {
         navigationContainer {
-            Form {
+            ScrollView {
+                VStack(spacing: Spacing.lg) {
+                    nameSection
+                    equipmentSection
+                    muscleGroupSection
+                    advancedSection
 
-                // ── Name ──────────────────────────────────────────────
-                Section {
-                    TextField("Exercise name", text: $name)
-                        .autocorrectionDisabled()
-                        .disabled(!canEditName)
-                } header: {
-                    Text("Name")
-                } footer: {
-                    if let error = nameError, canEditName {
-                        Text(error)
-                    } else if isNew, archivedMatch != nil {
-                        Text("Saving will restore the archived exercise and keep its history.")
-                    } else if let ex = exercise, !ex.isCustom {
-                        Text("Name cannot be changed for built-in exercises.")
+                    if let ex = exercise, ex.isEdited, !ex.isCustom {
+                        resetSection(ex)
+                    }
+
+                    if canManageLifecycle {
+                        lifecycleSection
                     }
                 }
-
-                // ── Equipment ─────────────────────────────────────────
-                Section("Equipment") {
-                    chipGrid(items: editorEquipmentTypes, selected: { equipmentType == $0 }) {
-                        equipmentType = $0
-                    }
-                }
-
-                // ── Muscle Groups ─────────────────────────────────────
-                Section("Muscle Groups") {
-                    chipGrid(
-                        items: editorMuscleGroups,
-                        selected: { selectedGroups.contains($0) }
-                    ) { group in
-                        if selectedGroups.contains(group) {
-                            selectedGroups.remove(group)
-                        } else {
-                            selectedGroups.insert(group)
-                        }
-                    }
-                }
-
-                Section {
-                    Picker("Load Tracking", selection: $loadTrackingMode) {
-                        Text("No Weight").tag(LoadTrackingMode.none)
-                        Text("External Weight").tag(LoadTrackingMode.externalWeight)
-                        Text("Bodyweight + Load").tag(LoadTrackingMode.bodyweightPlusLoad)
-                    }
-                    .pickerStyle(.menu)
-                } header: {
-                    Text("Load Tracking")
-                } footer: {
-                    Text(loadTrackingFooter)
-                }
-
-                // ── Type ──────────────────────────────────────────────
-                Section {
-                    Toggle("Timed (holds / isometric)", isOn: $isTimed)
-                }
-
-                // ── Weight Increment ──────────────────────────────────
-                if loadTrackingMode != .none {
-                    let defaultIncrement = ExerciseDefinition.defaultIncrement(for: equipmentType)
-                    let defaultStartingWeight = ExerciseDefinition.defaultStartingWeight(for: equipmentType)
-                    Section {
-                        TextField(
-                            "Default: \(formatIncrement(defaultIncrement)) lbs",
-                            text: $weightIncrementText
-                        )
-                        .keyboardType(.decimalPad)
-                    } header: {
-                        Text("Weight Increment (lbs)")
-                    } footer: {
-                        Text("Leave blank to use the equipment default (\(formatIncrement(defaultIncrement)) lbs).")
-                    }
-
-                    Section {
-                        TextField(
-                            "Default: \(formatIncrement(defaultStartingWeight)) lbs",
-                            text: $startingWeightText
-                        )
-                        .keyboardType(.decimalPad)
-                    } header: {
-                        Text("Starting Weight (lbs)")
-                    } footer: {
-                        Text("Used when a blank set gets its first weight value. Leave blank to use the equipment default (\(formatIncrement(defaultStartingWeight)) lbs).")
-                    }
-                }
-
-                // ── Reset to Default ──────────────────────────────────
-                if let ex = exercise, ex.isEdited, !ex.isCustom {
-                    Section {
-                        Button(role: .destructive) {
-                            resetToDefault(ex)
-                        } label: {
-                            Label("Reset to Default", systemImage: "arrow.uturn.backward")
-                        }
-                    } footer: {
-                        Text("Restores the original muscle groups, equipment, load tracking, type, increment, and starting weight.")
-                    }
-                }
-
-                if canManageLifecycle {
-                    Section {
-                        Button(role: .destructive) {
-                            showingArchiveConfirmation = true
-                        } label: {
-                            Label("Archive Exercise", systemImage: "archivebox")
-                        }
-                    } footer: {
-                        Text("Removes this exercise from your library and picker, but keeps its history and lets you restore it later by reusing the same name.")
-                    }
-
-                    Section {
-                        Button(role: .destructive) {
-                            showingPermanentDeleteConfirmation = true
-                        } label: {
-                            Label("Delete Exercise and History", systemImage: "trash")
-                        }
-                    } footer: {
-                        Text("Permanently deletes this exercise, its history, and any routine references. This cannot be undone.")
-                    }
-                }
+                .padding(.horizontal, Spacing.md)
+                .padding(.top, Spacing.lg)
+                .padding(.bottom, Spacing.xxl)
             }
-            .scrollContentBackground(.hidden)
+            .scrollDismissesKeyboard(.interactively)
             .workflowContentBackground()
-            .navigationTitle(isNew ? "New Exercise" : "Edit Exercise")
+            .navigationTitle(navigationTitle)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 if showsCancelButton {
@@ -219,96 +166,443 @@ struct ExerciseEditorView: View {
         }
         .workflowSheetBackground(enabled: embedsInNavigationStack)
         .onAppear { populateDraft() }
-        .alert("Couldn’t Save Exercise", isPresented: saveErrorIsPresented) {
-            Button("OK", role: .cancel) {
-                saveErrorMessage = nil
-            }
+        .task {
+            guard isNew else { return }
+            try? await Task.sleep(for: .milliseconds(100))
+            nameFieldFocused = true
+        }
+        .alert("Couldn't Save Exercise", isPresented: saveErrorIsPresented) {
+            Button("OK", role: .cancel) { saveErrorMessage = nil }
         } message: {
             Text(saveErrorMessage ?? "Please review your changes and try again.")
         }
         .alert("Archive Exercise?", isPresented: $showingArchiveConfirmation) {
-            Button("Archive", role: .destructive) {
-                archiveExercise()
-            }
+            Button("Archive", role: .destructive) { archiveExercise() }
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("This removes the exercise from your library without deleting any workout history.")
         }
         .alert("Delete Exercise and History?", isPresented: $showingPermanentDeleteConfirmation) {
-            Button("Delete", role: .destructive) {
-                permanentlyDeleteExercise()
-            }
+            Button("Delete", role: .destructive) { permanentlyDeleteExercise() }
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("This permanently deletes the exercise definition, its workout history, and any routine references.")
         }
     }
 
+    private var navigationTitle: String {
+        if isNew { return "New Exercise" }
+        if let ex = exercise, !ex.name.isEmpty { return ex.name }
+        return "Edit Exercise"
+    }
+
     @ViewBuilder
     private func navigationContainer<Content: View>(@ViewBuilder content: () -> Content) -> some View {
         if embedsInNavigationStack {
-            NavigationStack {
-                content()
-            }
+            NavigationStack { content() }
         } else {
             content()
         }
     }
 
-    // MARK: - Chip grid
+    // MARK: - Name Section
 
-    @ViewBuilder
-    private func chipGrid(
-        items: [String],
-        selected: @escaping (String) -> Bool,
-        onTap: @escaping (String) -> Void
-    ) -> some View {
-        let columns = [GridItem(.adaptive(minimum: 92), spacing: Spacing.xs)]
-        LazyVGrid(columns: columns, spacing: Spacing.xs) {
-            ForEach(items, id: \.self) { item in
-                let isSelected = selected(item)
-                Button { onTap(item) } label: {
-                    HStack(spacing: 6) {
-                        Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
-                            .imageScale(.small)
-                            .foregroundStyle(isSelected ? theme.accentColor : Color.textFaint)
-                        Text(item)
-                            .font(.footnote.weight(isSelected ? .semibold : .regular))
-                            .foregroundStyle(Color.textPrimary)
-                            .multilineTextAlignment(.center)
-                    }
-                        .frame(maxWidth: .infinity)
-                        .frame(minHeight: 36)
-                        .padding(.horizontal, 10)
-                        .padding(.vertical, 8)
-                }
-                .buttonStyle(.plain)
-                .glassEffect(.regular.interactive(), in: Capsule())
+    private var nameSection: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            TextField("Exercise name", text: $name)
+                .font(.title2.weight(.semibold))
+                .foregroundStyle(Color.textPrimary)
+                .focused($nameFieldFocused)
+                .autocorrectionDisabled()
+                .submitLabel(.done)
+                .onSubmit { nameFieldFocused = false }
+                .disabled(!canEditName)
+                .padding(.horizontal, Spacing.md)
+                .padding(.vertical, 14)
+                .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
                 .overlay {
-                    Capsule()
-                        .strokeBorder(isSelected ? theme.accentColor.opacity(0.45) : Color.white.opacity(0.08), lineWidth: 1)
+                    RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
+                        .strokeBorder(nameError != nil ? Color.OrinRed.opacity(0.5) : .white.opacity(0.08), lineWidth: 1)
                 }
-                .accessibilityLabel(item)
-                .accessibilityValue(isSelected ? "Selected" : "Not selected")
-                .accessibilityAddTraits(isSelected ? .isSelected : [])
+
+            if let error = nameError, canEditName {
+                Text(error)
+                    .font(.caption)
+                    .foregroundStyle(Color.OrinRed)
+                    .padding(.horizontal, Spacing.xs)
+            } else if isNew, archivedMatch != nil {
+                Text("Saving will restore the archived exercise and keep its history.")
+                    .font(.caption)
+                    .foregroundStyle(Color.textMuted)
+                    .padding(.horizontal, Spacing.xs)
+            } else if let ex = exercise, !ex.isCustom {
+                Text("Name cannot be changed for built-in exercises.")
+                    .font(.caption)
+                    .foregroundStyle(Color.textMuted)
+                    .padding(.horizontal, Spacing.xs)
             }
         }
-        .listRowBackground(Color.clear)
-        .listRowInsets(EdgeInsets(top: Spacing.sm, leading: Spacing.md, bottom: Spacing.sm, trailing: Spacing.md))
     }
 
-    // MARK: - Helpers
+    // MARK: - Equipment Section
+
+    private var equipmentSection: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            Text("Equipment")
+                .font(.subheadline.weight(.medium))
+                .foregroundStyle(Color.textMuted)
+
+            FlowLayout(spacing: Spacing.sm) {
+                ForEach(editorEquipmentTypes, id: \.self) { item in
+                    EquipmentChip(
+                        label: item,
+                        isSelected: equipmentType == item,
+                        accentColor: theme.accentColor
+                    ) {
+                        withAnimation(.easeInOut(duration: Motion.fast)) {
+                            applyEquipmentSelection(item)
+                        }
+                    }
+                }
+            }
+            .sensoryFeedback(.selection, trigger: equipmentType)
+        }
+    }
+
+    // MARK: - Muscle Group Section
+
+    private var muscleGroupSection: some View {
+        VStack(alignment: .leading, spacing: Spacing.sm) {
+            HStack(spacing: Spacing.xs) {
+                Text("Muscle Groups")
+                    .font(.subheadline.weight(.medium))
+                    .foregroundStyle(Color.textMuted)
+
+                if !selectedGroups.isEmpty {
+                    Text("First = primary")
+                        .font(.caption2)
+                        .foregroundStyle(Color.textFaint)
+                }
+            }
+
+            FlowLayout(spacing: Spacing.sm) {
+                ForEach(editorMuscleGroups, id: \.self) { group in
+                    let idx = selectedGroups.firstIndex(of: group)
+                    MuscleGroupChip(
+                        label: group,
+                        isPrimary: idx == 0,
+                        isSelected: idx != nil,
+                        accentColor: theme.accentColor
+                    ) {
+                        withAnimation(.easeInOut(duration: Motion.fast)) {
+                            toggleMuscleGroup(group)
+                        }
+                    }
+                }
+            }
+            .sensoryFeedback(.selection, trigger: selectedGroups)
+        }
+    }
+
+    // MARK: - Advanced Options Section
+
+    private var advancedSection: some View {
+        VStack(spacing: 0) {
+            Button {
+                withAnimation(.easeInOut(duration: Motion.standard)) {
+                    showAdvanced.toggle()
+                }
+            } label: {
+                HStack {
+                    Text("Advanced Options")
+                        .font(.subheadline.weight(.medium))
+                        .foregroundStyle(Color.textMuted)
+
+                    Spacer()
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Color.textFaint)
+                        .rotationEffect(.degrees(showAdvanced ? 90 : 0))
+                }
+                .padding(.horizontal, Spacing.md)
+                .padding(.vertical, 14)
+                .contentShape(Rectangle())
+            }
+            .buttonStyle(.plain)
+
+            if showAdvanced {
+                advancedContent
+                    .padding(.horizontal, Spacing.md)
+                    .padding(.bottom, Spacing.md)
+                    .transition(.asymmetric(
+                        insertion: .opacity.animation(.easeIn(duration: 0.18).delay(0.12)),
+                        removal: .opacity.animation(.easeOut(duration: Motion.fast))
+                    ))
+            }
+        }
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
+                .strokeBorder(.white.opacity(0.08), lineWidth: 1)
+        }
+        .sensoryFeedback(.selection, trigger: showAdvanced)
+    }
+
+    @ViewBuilder
+    private var advancedContent: some View {
+        VStack(spacing: Spacing.md) {
+            // Load Tracking
+            VStack(alignment: .leading, spacing: Spacing.xs) {
+                Text("Load Type")
+                    .font(.caption.weight(.medium))
+                    .foregroundStyle(Color.textFaint)
+
+                Picker("Load Tracking", selection: Binding(
+                    get: { loadTrackingMode },
+                    set: { newValue in
+                        loadTrackingMode = newValue
+                        userEditedLoadTracking = true
+                    }
+                )) {
+                    Text("None").tag(LoadTrackingMode.none)
+                    Text("External").tag(LoadTrackingMode.externalWeight)
+                    Text("BW + Load").tag(LoadTrackingMode.bodyweightPlusLoad)
+                }
+                .pickerStyle(.segmented)
+            }
+
+            // Weight fields — hidden when load tracking is none
+            if loadTrackingMode != .none {
+                let defaultIncrement = ExerciseDefinition.defaultIncrement(for: equipmentType)
+                let defaultStarting = ExerciseDefinition.defaultStartingWeight(for: equipmentType)
+
+                HStack(spacing: Spacing.sm) {
+                    // Increment
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
+                        Text("Increment (lbs)")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(Color.textFaint)
+
+                        TextField(
+                            "\(formatIncrement(defaultIncrement))",
+                            text: Binding(
+                                get: { weightIncrementText },
+                                set: { newValue in
+                                    weightIncrementText = newValue
+                                    userEditedIncrement = true
+                                }
+                            )
+                        )
+                        .keyboardType(.decimalPad)
+                        .font(.subheadline)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 10)
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: Radius.small, style: .continuous))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: Radius.small, style: .continuous)
+                                .strokeBorder(weightIncrementError != nil ? Color.OrinRed.opacity(0.5) : .white.opacity(0.08), lineWidth: 1)
+                        }
+                    }
+
+                    // Starting Weight
+                    VStack(alignment: .leading, spacing: Spacing.xs) {
+                        Text("Starting Weight (lbs)")
+                            .font(.caption.weight(.medium))
+                            .foregroundStyle(Color.textFaint)
+
+                        TextField(
+                            "\(formatIncrement(defaultStarting))",
+                            text: Binding(
+                                get: { startingWeightText },
+                                set: { newValue in
+                                    startingWeightText = newValue
+                                    userEditedStartingWeight = true
+                                }
+                            )
+                        )
+                        .keyboardType(.decimalPad)
+                        .font(.subheadline)
+                        .padding(.horizontal, 12)
+                        .padding(.vertical, 10)
+                        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: Radius.small, style: .continuous))
+                        .overlay {
+                            RoundedRectangle(cornerRadius: Radius.small, style: .continuous)
+                                .strokeBorder(startingWeightError != nil ? Color.OrinRed.opacity(0.5) : .white.opacity(0.08), lineWidth: 1)
+                        }
+                    }
+                }
+
+                if weightIncrementError != nil || startingWeightError != nil {
+                    Text(weightIncrementError ?? startingWeightError ?? "")
+                        .font(.caption)
+                        .foregroundStyle(Color.OrinRed)
+                }
+            }
+
+            // Timed toggle
+            Toggle(isOn: Binding(
+                get: { isTimed },
+                set: { newValue in
+                    isTimed = newValue
+                    userEditedTimed = true
+                }
+            )) {
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Timed Exercise")
+                        .font(.subheadline)
+                        .foregroundStyle(Color.textPrimary)
+                    Text("For holds and isometric movements")
+                        .font(.caption)
+                        .foregroundStyle(Color.textFaint)
+                }
+            }
+            .tint(theme.accentColor)
+        }
+    }
+
+    // MARK: - Reset Section
+
+    private func resetSection(_ ex: ExerciseDefinition) -> some View {
+        Button(role: .destructive) {
+            resetToDefault(ex)
+        } label: {
+            HStack {
+                Label("Reset to Default", systemImage: "arrow.uturn.backward")
+                    .font(.subheadline)
+                Spacer()
+            }
+            .padding(.horizontal, Spacing.md)
+            .padding(.vertical, 14)
+        }
+        .buttonStyle(.plain)
+        .foregroundStyle(Color.OrinRed)
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
+        .overlay {
+            RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
+                .strokeBorder(.white.opacity(0.08), lineWidth: 1)
+        }
+    }
+
+    // MARK: - Lifecycle Section
+
+    private var lifecycleSection: some View {
+        VStack(spacing: Spacing.sm) {
+            Button(role: .destructive) {
+                showingArchiveConfirmation = true
+            } label: {
+                HStack {
+                    Label("Archive Exercise", systemImage: "archivebox")
+                        .font(.subheadline)
+                    Spacer()
+                }
+                .padding(.horizontal, Spacing.md)
+                .padding(.vertical, 14)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.OrinRed.opacity(0.8))
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
+                    .strokeBorder(.white.opacity(0.08), lineWidth: 1)
+            }
+
+            Button(role: .destructive) {
+                showingPermanentDeleteConfirmation = true
+            } label: {
+                HStack {
+                    Label("Delete Exercise and History", systemImage: "trash")
+                        .font(.subheadline)
+                    Spacer()
+                }
+                .padding(.horizontal, Spacing.md)
+                .padding(.vertical, 14)
+            }
+            .buttonStyle(.plain)
+            .foregroundStyle(Color.OrinRed)
+            .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: Radius.medium, style: .continuous))
+            .overlay {
+                RoundedRectangle(cornerRadius: Radius.medium, style: .continuous)
+                    .strokeBorder(.white.opacity(0.08), lineWidth: 1)
+            }
+        }
+    }
+
+    // MARK: - Equipment Smart Defaults
+
+    private func applyEquipmentSelection(_ newEquipment: String) {
+        equipmentType = newEquipment
+
+        // Apply smart defaults only for fields the user hasn't manually edited.
+        // defaultLoadTracking already handles Bodyweight/Band → .none correctly.
+        if !userEditedLoadTracking {
+            loadTrackingMode = defaultLoadTracking(for: newEquipment)
+        }
+        if !userEditedIncrement {
+            weightIncrementText = ""
+        }
+        if !userEditedStartingWeight {
+            startingWeightText = ""
+        }
+    }
+
+    private func defaultLoadTracking(for equipment: String) -> LoadTrackingMode {
+        switch equipment {
+        case "Bodyweight": return .none
+        case "Band": return .none
+        default: return .externalWeight
+        }
+    }
+
+    // MARK: - Muscle Group Toggle
+
+    private func toggleMuscleGroup(_ group: String) {
+        if let index = selectedGroups.firstIndex(of: group) {
+            selectedGroups.remove(at: index)
+        } else {
+            selectedGroups.append(group)
+        }
+    }
+
+    // MARK: - Populate Draft
 
     private func populateDraft() {
         guard let ex = exercise else { return }
         name = ex.name
         equipmentType = ex.equipmentType.isEmpty ? "Barbell" : ex.equipmentType
-        selectedGroups = Set(ex.muscleGroups)
+        // Preserve muscle group order from the model
+        selectedGroups = ex.muscleGroups
         loadTrackingMode = ex.loadTrackingMode
         isTimed = ex.isTimed
         weightIncrementText = ex.weightIncrement.map { formatIncrement($0) } ?? ""
         startingWeightText = ex.startingWeight.map { formatIncrement($0) } ?? ""
+
+        // Snapshot originals for change detection
+        originalName = ex.name
+        originalEquipment = ex.equipmentType.isEmpty ? "Barbell" : ex.equipmentType
+        originalGroups = ex.muscleGroups
+        originalLoadTracking = ex.loadTrackingMode
+        originalIsTimed = ex.isTimed
+        originalIncrementText = weightIncrementText
+        originalStartingWeightText = startingWeightText
+
+        // In edit mode, treat all fields as user-edited to prevent equipment changes from overwriting
+        userEditedLoadTracking = true
+        userEditedIncrement = ex.weightIncrement != nil
+        userEditedStartingWeight = ex.startingWeight != nil
+        userEditedTimed = true
+
+        // Auto-expand advanced if the exercise has non-default advanced values
+        let defaultLoad = defaultLoadTracking(for: equipmentType)
+        if ex.loadTrackingMode != defaultLoad
+            || ex.weightIncrement != nil
+            || ex.startingWeight != nil
+            || ex.isTimed {
+            showAdvanced = true
+        }
     }
+
+    // MARK: - Save
 
     private func save() {
         guard nameError == nil else {
@@ -317,10 +611,8 @@ struct ExerciseEditorView: View {
         }
         let increment = validatedOptionalNumber(from: weightIncrementText, fieldName: "Weight Increment")
         let startingWeight = validatedOptionalNumber(from: startingWeightText, fieldName: "Starting Weight")
-        guard increment.isValid, startingWeight.isValid else {
-            return
-        }
-        let orderedGroups = editorMuscleGroups.filter { selectedGroups.contains($0) }
+        guard increment.isValid, startingWeight.isValid else { return }
+        let orderedGroups = selectedGroups
 
         if let ex = exercise {
             let previousName = ex.name
@@ -335,12 +627,11 @@ struct ExerciseEditorView: View {
             ex.weightIncrement = increment.value
             ex.startingWeight = startingWeight.value
             ex.archivedAt = nil
-            // Mark edited if values differ from the seed
             if !ex.isCustom {
                 let original = ExerciseSeeder.defaultDefinition(named: ex.name)
                 let matchesDefault = original.map {
                     $0.equipmentType == equipmentType &&
-                    Set($0.muscleGroups) == selectedGroups &&
+                    Set($0.muscleGroups) == Set(selectedGroups) &&
                     $0.loadTrackingMode == loadTrackingMode &&
                     $0.isTimed == isTimed &&
                     increment.value == $0.weightIncrement &&
@@ -379,7 +670,7 @@ struct ExerciseEditorView: View {
             try modelContext.save()
             dismiss()
         } catch {
-            saveErrorMessage = "Your changes couldn’t be saved. Please try again."
+            saveErrorMessage = "Your changes couldn't be saved. Please try again."
         }
     }
 
@@ -394,14 +685,16 @@ struct ExerciseEditorView: View {
         ex.startingWeight = original.startingWeight
         ex.isEdited = false
         try? modelContext.save()
-        // Refresh draft to reflect restored values
+
         equipmentType = original.equipmentType
-        selectedGroups = Set(original.muscleGroups)
+        selectedGroups = original.muscleGroups
         loadTrackingMode = original.loadTrackingMode
         isTimed = original.isTimed
         weightIncrementText = original.weightIncrement.map { formatIncrement($0) } ?? ""
         startingWeightText = original.startingWeight.map { formatIncrement($0) } ?? ""
     }
+
+    // MARK: - Helpers
 
     private func formatIncrement(_ v: Double) -> String {
         v.truncatingRemainder(dividingBy: 1) == 0 ? "\(Int(v))" : String(format: "%.1f", v)
@@ -424,7 +717,7 @@ struct ExerciseEditorView: View {
             try modelContext.save()
             dismiss()
         } catch {
-            saveErrorMessage = "This exercise couldn’t be archived. Please try again."
+            saveErrorMessage = "This exercise couldn't be archived. Please try again."
         }
     }
 
@@ -435,19 +728,16 @@ struct ExerciseEditorView: View {
             || (snapshot.exerciseLineageID == nil && snapshot.exerciseName == exercise.name) {
             modelContext.delete(snapshot)
         }
-
         let routineEntries = (try? modelContext.fetch(FetchDescriptor<RoutineEntry>())) ?? []
         for entry in routineEntries where entry.exerciseDefinition?.id == exercise.id {
             modelContext.delete(entry)
         }
-
         modelContext.delete(exercise)
-
         do {
             try modelContext.save()
             dismiss()
         } catch {
-            saveErrorMessage = "This exercise couldn’t be deleted. Please try again."
+            saveErrorMessage = "This exercise couldn't be deleted. Please try again."
         }
     }
 
@@ -472,33 +762,144 @@ struct ExerciseEditorView: View {
     private var saveErrorIsPresented: Binding<Bool> {
         Binding(
             get: { saveErrorMessage != nil },
-            set: { isPresented in
-                if !isPresented { saveErrorMessage = nil }
-            }
+            set: { if !$0 { saveErrorMessage = nil } }
         )
     }
+}
 
-    private var loadTrackingFooter: String {
-        switch loadTrackingMode {
-        case .none:
-            return "Use this for plain bodyweight or duration-only movements that should not show weight controls."
-        case .externalWeight:
-            return "Tracks only the external load, like barbells, dumbbells, cables, and machines."
-        case .bodyweightPlusLoad:
-            return "Tracks added load on top of bodyweight, like weighted dips or weighted pull-ups."
+// MARK: - Chip Views
+
+private struct EquipmentChip: View {
+    let label: String
+    let isSelected: Bool
+    let accentColor: Color
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(label)
+                .font(.subheadline.weight(isSelected ? .semibold : .regular))
+                .foregroundStyle(isSelected ? Color.white : Color.textPrimary)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 9)
         }
+        .buttonStyle(.plain)
+        .background {
+            if isSelected {
+                Capsule(style: .continuous).fill(accentColor.opacity(0.35))
+            }
+        }
+        .background(.ultraThinMaterial, in: Capsule(style: .continuous))
+        .overlay {
+            Capsule(style: .continuous)
+                .strokeBorder(isSelected ? accentColor.opacity(0.5) : Color.white.opacity(0.08), lineWidth: 1)
+        }
+        .contentShape(Capsule())
+        .accessibilityLabel(label)
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 }
 
-#Preview("Edit existing") {
-    let ex = ExerciseDefinition(name: "Barbell Bench Press", muscleGroups: ["Chest", "Triceps"], equipmentType: "Barbell")
-    ExerciseEditorView(exercise: ex)
-        .environment(AppState())
-        .modelContainer(PersistenceController.previewContainer)
+private struct MuscleGroupChip: View {
+    let label: String
+    let isPrimary: Bool
+    let isSelected: Bool
+    let accentColor: Color
+    let action: () -> Void
+
+    var body: some View {
+        Button(action: action) {
+            Text(label)
+                .font(.subheadline.weight(isSelected ? .semibold : .regular))
+                .foregroundStyle(isSelected ? Color.white : Color.textPrimary)
+                .padding(.horizontal, 14)
+                .padding(.vertical, 9)
+        }
+        .buttonStyle(.plain)
+        .background(chipFill)
+        .background(.ultraThinMaterial, in: Capsule(style: .continuous))
+        .overlay(chipBorder)
+        .contentShape(Capsule())
+        .accessibilityLabel(label)
+        .accessibilityValue(isPrimary ? "Primary" : isSelected ? "Secondary" : "Not selected")
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
+    }
+
+    @ViewBuilder private var chipFill: some View {
+        if isPrimary {
+            Capsule(style: .continuous).fill(accentColor.opacity(0.4))
+        } else if isSelected {
+            Capsule(style: .continuous).fill(accentColor.opacity(0.2))
+        }
+    }
+
+    private var chipBorder: some View {
+        let color: Color = isPrimary ? accentColor.opacity(0.6) :
+                           isSelected ? accentColor.opacity(0.35) :
+                           Color.white.opacity(0.08)
+        return Capsule(style: .continuous).strokeBorder(color, lineWidth: 1)
+    }
 }
+
+// MARK: - Flow Layout
+
+/// A simple wrapping horizontal layout for pill chips.
+private struct FlowLayout: Layout {
+    var spacing: CGFloat = 8
+
+    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+        let available = proposal.width ?? 0
+        let result = layout(in: available, subviews: subviews)
+        return CGSize(width: available, height: result.size.height)
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+        let result = layout(in: bounds.width, subviews: subviews)
+        for (index, position) in result.positions.enumerated() {
+            subviews[index].place(
+                at: CGPoint(x: bounds.minX + position.x, y: bounds.minY + position.y),
+                proposal: ProposedViewSize(subviews[index].sizeThatFits(.unspecified))
+            )
+        }
+    }
+
+    private func layout(in maxWidth: CGFloat, subviews: Subviews) -> (size: CGSize, positions: [CGPoint]) {
+        var positions: [CGPoint] = []
+        var x: CGFloat = 0
+        var y: CGFloat = 0
+        var rowHeight: CGFloat = 0
+        var maxX: CGFloat = 0
+
+        for subview in subviews {
+            let size = subview.sizeThatFits(.unspecified)
+            if x + size.width > maxWidth, x > 0 {
+                x = 0
+                y += rowHeight + spacing
+                rowHeight = 0
+            }
+            positions.append(CGPoint(x: x, y: y))
+            rowHeight = max(rowHeight, size.height)
+            x += size.width + spacing
+            maxX = max(maxX, x - spacing)
+        }
+
+        return (CGSize(width: maxX, height: y + rowHeight), positions)
+    }
+}
+
+// MARK: - Previews
 
 #Preview("New exercise") {
     ExerciseEditorView(exercise: nil)
-        .environment(AppState())
-        .modelContainer(PersistenceController.previewContainer)
+        .exerciseEditorPreviewEnvironments()
+}
+
+#Preview("Edit — advanced visible") {
+    ExerciseEditorView(exercise: ExerciseEditorPreviewData.editableExercise())
+        .exerciseEditorPreviewEnvironments()
+}
+
+#Preview("Edit — timed bodyweight") {
+    ExerciseEditorView(exercise: ExerciseEditorPreviewData.timedExercise())
+        .exerciseEditorPreviewEnvironments()
 }
