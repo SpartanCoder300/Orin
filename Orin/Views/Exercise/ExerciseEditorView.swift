@@ -201,7 +201,7 @@ struct ExerciseEditorView: View {
                 }
             }
             .scrollContentBackground(.hidden)
-            .background(Color.OrinWorkflowBackground)
+            .workflowContentBackground()
             .navigationTitle(isNew ? "New Exercise" : "Edit Exercise")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -217,7 +217,7 @@ struct ExerciseEditorView: View {
                 }
             }
         }
-        .modifier(ExerciseEditorPresentationBackground(enabled: embedsInNavigationStack))
+        .workflowSheetBackground(enabled: embedsInNavigationStack)
         .onAppear { populateDraft() }
         .alert("Couldn’t Save Exercise", isPresented: saveErrorIsPresented) {
             Button("OK", role: .cancel) {
@@ -501,17 +501,4 @@ struct ExerciseEditorView: View {
     ExerciseEditorView(exercise: nil)
         .environment(AppState())
         .modelContainer(PersistenceController.previewContainer)
-}
-
-private struct ExerciseEditorPresentationBackground: ViewModifier {
-    let enabled: Bool
-
-    @ViewBuilder
-    func body(content: Content) -> some View {
-        if enabled {
-            content.presentationBackground(Color.OrinWorkflowBackground)
-        } else {
-            content
-        }
-    }
 }

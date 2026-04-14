@@ -105,6 +105,7 @@ struct RoutineBuilderView: View {
                 }
             }
             .scrollContentBackground(.hidden)
+            .workflowContentBackground()
             .environment(\.editMode, .constant(vm.entries.isEmpty ? .inactive : .active))
             .navigationTitle(vm.isEditingExisting ? "Edit Routine" : "New Routine")
             .navigationBarTitleDisplayMode(.inline)
@@ -186,6 +187,7 @@ struct RoutineBuilderView: View {
                 Text("Your workout history won't be affected.")
             }
         }
+        .workflowSheetBackground()
     }
 }
 

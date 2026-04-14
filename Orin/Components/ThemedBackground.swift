@@ -51,4 +51,27 @@ extension View {
     func themedBackground(dimmed: Bool = false) -> some View {
         modifier(ThemedBackgroundModifier(dimmed: dimmed))
     }
+
+    func workflowContentBackground() -> some View {
+        background(Color.OrinWorkflowBackground)
+    }
+
+    func workflowSheetBackground(enabled: Bool = true) -> some View {
+        modifier(WorkflowSheetBackgroundModifier(enabled: enabled))
+    }
+}
+
+/// Applies Orin's stable background to extended modal workflows.
+/// Use this for sheet flows that behave like full screens, not small utility sheets.
+private struct WorkflowSheetBackgroundModifier: ViewModifier {
+    let enabled: Bool
+
+    @ViewBuilder
+    func body(content: Content) -> some View {
+        if enabled {
+            content.presentationBackground(Color.OrinWorkflowBackground)
+        } else {
+            content
+        }
+    }
 }

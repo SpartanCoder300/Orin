@@ -89,7 +89,7 @@ struct ExercisePicker: View {
                 }
                 .padding(.bottom, Spacing.lg)
             }
-            .background(Color.OrinWorkflowBackground)
+            .workflowContentBackground()
             .scrollDismissesKeyboard(.immediately)
             .navigationTitle(title)
             .navigationBarTitleDisplayMode(.inline)
@@ -153,7 +153,7 @@ struct ExercisePicker: View {
                 }
             }
         }
-        .modifier(ExercisePickerPresentationBackground(enabled: embedsInNavigationStack))
+        .workflowSheetBackground(enabled: embedsInNavigationStack)
         .onAppear {
             vm.load(container: modelContext.container)
         }
@@ -245,7 +245,7 @@ struct ExercisePicker: View {
         .padding(.horizontal, Spacing.md)
         .padding(.top, prominence.topPadding)
         .padding(.bottom, Spacing.xs)
-        .background(Color.OrinWorkflowBackground)
+        .workflowContentBackground()
     }
 
     // MARK: - Helpers
@@ -409,17 +409,4 @@ private enum SectionHeaderProminence {
     )
         .environment(AppState())
         .modelContainer(PersistenceController.previewContainer)
-}
-
-private struct ExercisePickerPresentationBackground: ViewModifier {
-    let enabled: Bool
-
-    @ViewBuilder
-    func body(content: Content) -> some View {
-        if enabled {
-            content.presentationBackground(Color.OrinWorkflowBackground)
-        } else {
-            content
-        }
-    }
 }

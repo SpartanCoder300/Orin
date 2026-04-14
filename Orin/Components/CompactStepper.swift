@@ -120,7 +120,6 @@ struct CompactStepper: View {
             .presentationDetents([.height(220)])
             .presentationDragIndicator(.hidden)
             .presentationCornerRadius(Radius.large)
-            .presentationBackground(.regularMaterial)
         }
     }
 }
