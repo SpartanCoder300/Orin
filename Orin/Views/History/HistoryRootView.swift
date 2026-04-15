@@ -28,7 +28,7 @@ struct HistoryRootView: View {
             if map[key] == nil { order.append(key) }
             map[key, default: []].append(session)
         }
-        return order.map { (section: $0, sessions: map[$0]!) }
+        return order.map { (section: $0, sessions: map[$0] ?? []) }
     }
 
     var body: some View {

@@ -38,7 +38,11 @@ struct OrinApp: App {
             forTaskWithIdentifier: "MysticByte.Orin.rest-timer-end",
             using: nil
         ) { task in
-            Self.handleRestTimerEndTask(task as! BGAppRefreshTask)
+            guard let refreshTask = task as? BGAppRefreshTask else {
+                task.setTaskCompleted(success: false)
+                return
+            }
+            Self.handleRestTimerEndTask(refreshTask)
         }
     }
 

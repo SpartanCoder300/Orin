@@ -13,7 +13,6 @@ enum PersistenceController {
         SetRecord.self,
         BodyWeightEntry.self,
         WeeklySnapshot.self,
-        AITrainingContext.self,
     ])
 
     static let sharedModelContainer: ModelContainer = {
@@ -80,7 +79,6 @@ enum PersistenceController {
             ExerciseDefinition.self,
             BodyWeightEntry.self,
             WeeklySnapshot.self,
-            AITrainingContext.self,
         ]
 
         for type in types {

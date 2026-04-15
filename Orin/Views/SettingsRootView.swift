@@ -12,8 +12,10 @@ struct SettingsRootView: View {
     #if DEBUG
     @State private var isShowingResetAllConfirm = false
     #endif
+    #if DEBUG
     @State private var tunerTapCount: Int = 0
     @State private var isShowingTuner = false
+    #endif
 
     var body: some View {
         List {
@@ -71,6 +73,7 @@ struct SettingsRootView: View {
             Section {
                 LabeledContent("Version", value: "1.0")
                     .listRowBackground(Rectangle().fill(cardMaterial))
+                    #if DEBUG
                     .onTapGesture {
                         tunerTapCount += 1
                         if tunerTapCount >= 7 {
@@ -78,15 +81,18 @@ struct SettingsRootView: View {
                             isShowingTuner = true
                         }
                     }
+                    #endif
             } header: {
                 Text("About")
             }
         }
         .scrollContentBackground(.hidden)
         .navigationTitle("Settings")
+        #if DEBUG
         .sheet(isPresented: $isShowingTuner) {
             SwipeTunerSheet()
         }
+        #endif
         .themedBackground()
         .alert("Reset Built-In Exercises?", isPresented: $isShowingResetExercisesConfirm) {
             Button("Reset", role: .destructive) {
