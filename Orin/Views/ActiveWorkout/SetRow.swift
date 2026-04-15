@@ -133,12 +133,13 @@ struct SetRow: View {
     }
 
     private func handleJustLoggedChange(_ oldValue: Bool, _ isJust: Bool) {
-        deltaFadeTask?.cancel()
         if isJust {
+            deltaFadeTask?.cancel()
             showDelta = true
             deltaFadeTask = Task { @MainActor in
                 try? await Task.sleep(for: .milliseconds(2500))
                 guard !Task.isCancelled else { return }
+                guard !justLogged else { return }  // Only fade if user has moved on to logging more
                 withAnimation(Motion.standardSpring) { showDelta = false }
             }
             withAnimation(.easeOut(duration: 0.08)) {
@@ -157,9 +158,9 @@ struct SetRow: View {
                 }
             }
         } else {
-            withAnimation(Motion.standardSpring) { showDelta = false }
             logHighlightOpacity = 0
             checkScale = 1.0
+            // Timer keeps running — fades after 2.5s only if user has continued logging
         }
     }
 
