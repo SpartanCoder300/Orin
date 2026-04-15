@@ -290,9 +290,11 @@ struct SwipeableSetRow<Content: View>: View {
             if let action = actions.last { commit(action, velocityX: velocityX) }
             return
         }
-        // Flick left → stay open. Flick right OR slow drag past midpoint → close.
+        // Flick right → close. Flick left → stay open. Slow drag: use position midpoint,
+        // but also close if the user clearly dragged away from the open position.
+        let movedTowardClose = panStartOffsetX < 0 && offsetX > panStartOffsetX + trailingRevealWidth * 0.4
         let shouldOpen: Bool
-        if velocityX > flickThreshold {
+        if velocityX > flickThreshold || movedTowardClose {
             shouldOpen = false
         } else if velocityX < -flickThreshold {
             shouldOpen = true
@@ -432,14 +434,18 @@ private struct HorizontalSwipePanGesture: UIGestureRecognizerRepresentable {
                 return false
             }
             let velocity = pan.velocity(in: pan.view)
-            guard abs(velocity.x) > 0 else { return false }
             let isRightSwipe = velocity.x > 0
-            // When closing an already-open row, be lenient — accept even somewhat diagonal
-            // swipes so a slow deliberate close always registers.
-            let ratio: CGFloat = (allowsRightSwipeToClose && isRightSwipe) ? 0.5 : 1.5
-            guard abs(velocity.x) > abs(velocity.y) * ratio else { return false }
+
+            // When closing an already-open row, be very lenient — accept any rightward gesture
+            // that isn't nearly vertical. The direction lock handles drift in handlePanChanged.
+            if allowsRightSwipeToClose && isRightSwipe {
+                return abs(velocity.x) > abs(velocity.y) * 0.25
+            }
+
+            // For opening, require a clearly horizontal gesture to avoid competing with ScrollView.
+            guard abs(velocity.x) > abs(velocity.y) * 1.5 else { return false }
             if !isRightSwipe { return true }
-            return allowsRightSwipeToClose || hasLeadingAction
+            return hasLeadingAction
         }
 
         func gestureRecognizer(

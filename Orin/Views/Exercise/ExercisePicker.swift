@@ -25,6 +25,7 @@ struct ExercisePicker: View {
     @State private var editorTarget: ExerciseEditorTarget? = nil
     @State private var selectedExercises: [ExerciseDefinition] = []
     @State private var selectionFeedbackTrigger = 0
+    @State private var isKeyboardVisible = false
     @FocusState private var isSearchFocused: Bool
 
     var body: some View {
@@ -135,12 +136,16 @@ struct ExercisePicker: View {
                     Spacer()
 
                     Button {
-                        editorTarget = .new
+                        if isKeyboardVisible {
+                            UIApplication.shared.sendAction(#selector(UIResponder.resignFirstResponder), to: nil, from: nil, for: nil)
+                        } else {
+                            editorTarget = .new
+                        }
                     } label: {
-                        Image(systemName: "square.and.pencil")
+                        Image(systemName: isKeyboardVisible ? "keyboard.chevron.compact.down" : "square.and.pencil")
                             .font(.system(size: 20))
                     }
-                    .tint(theme.accentColor)
+                    .tint(isKeyboardVisible ? .secondary : theme.accentColor)
                 }
             }
             .navigationDestination(item: $editorTarget) { target in
@@ -158,6 +163,12 @@ struct ExercisePicker: View {
             vm.load(container: modelContext.container)
         }
         .sensoryFeedback(.selection, trigger: selectionFeedbackTrigger)
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillShowNotification)) { _ in
+            isKeyboardVisible = true
+        }
+        .onReceive(NotificationCenter.default.publisher(for: UIResponder.keyboardWillHideNotification)) { _ in
+            isKeyboardVisible = false
+        }
         .task {
             // Brief delay so the sheet presentation animation finishes before
             // the keyboard appears — prevents layout jump on open.
