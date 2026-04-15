@@ -87,6 +87,7 @@
 		20C2373D2F74B34F00D5763E /* ExerciseDetailCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C2372F2F74B34F00D5763E /* ExerciseDetailCard.swift */; };
 		20C2373E2F74B34F00D5763E /* DetailStatChip.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C2372E2F74B34F00D5763E /* DetailStatChip.swift */; };
 		20C237452F74B34F00D5763E /* SetRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C237402F74B34F00D5763E /* SetRow.swift */; };
+		20C237FE2F74B34F00D5763E /* ProgressFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C237FF2F74B34F00D5763E /* ProgressFeedback.swift */; };
 		20C237462F74B34F00D5763E /* ActiveWorkoutCommandPanel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C237412F74B34F00D5763E /* ActiveWorkoutCommandPanel.swift */; };
 		20C237472F74B34F00D5763E /* FeaturedRoutineCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C237422F74B34F00D5763E /* FeaturedRoutineCard.swift */; };
 		20C237482F74B34F00D5763E /* RoutineListRow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 20C237432F74B34F00D5763E /* RoutineListRow.swift */; };
@@ -226,6 +227,7 @@
 		20C237322F74B34F00D5763E /* SetTypeLabel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetTypeLabel.swift; sourceTree = "<group>"; };
 		20C237352F74B34F00D5763E /* LibraryRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LibraryRow.swift; sourceTree = "<group>"; };
 		20C237402F74B34F00D5763E /* SetRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SetRow.swift; sourceTree = "<group>"; };
+		20C237FF2F74B34F00D5763E /* ProgressFeedback.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProgressFeedback.swift; sourceTree = "<group>"; };
 		20C237412F74B34F00D5763E /* ActiveWorkoutCommandPanel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActiveWorkoutCommandPanel.swift; sourceTree = "<group>"; };
 		20C237422F74B34F00D5763E /* FeaturedRoutineCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FeaturedRoutineCard.swift; sourceTree = "<group>"; };
 		20C237432F74B34F00D5763E /* RoutineListRow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RoutineListRow.swift; sourceTree = "<group>"; };
@@ -480,6 +482,7 @@
 				20C236D62F746D2300D5763E /* ActiveExerciseCard.swift */,
 				20C237412F74B34F00D5763E /* ActiveWorkoutCommandPanel.swift */,
 				20C237402F74B34F00D5763E /* SetRow.swift */,
+				20C237FF2F74B34F00D5763E /* ProgressFeedback.swift */,
 				20D4A0003070000000D5763E /* SwipeableSetRow.swift */,
 				20C236D72F746D2300D5763E /* ActiveWorkoutView.swift */,
 				20C236D82F746D2300D5763E /* MiniWorkoutBar.swift */,
@@ -839,6 +842,7 @@
 				EC0000052F74B34F00D5763E /* ExerciseHistorySessionCard.swift in Sources */,
 				EC0000062F74B34F00D5763E /* ExerciseHistoryView.swift in Sources */,
 				20C237452F74B34F00D5763E /* SetRow.swift in Sources */,
+				20C237FE2F74B34F00D5763E /* ProgressFeedback.swift in Sources */,
 				20D4A0013070000000D5763E /* SwipeableSetRow.swift in Sources */,
 				20C237462F74B34F00D5763E /* ActiveWorkoutCommandPanel.swift in Sources */,
 				20C237472F74B34F00D5763E /* FeaturedRoutineCard.swift in Sources */,

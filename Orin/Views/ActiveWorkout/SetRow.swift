@@ -13,28 +13,6 @@ func formatDuration(_ seconds: Int) -> String {
     return s == 0 ? "\(m)m" : "\(m):\(String(format: "%02d", s))"
 }
 
-private func formatWeight(_ w: Double) -> String {
-    w.truncatingRemainder(dividingBy: 1) == 0 ? "\(Int(w))" : String(format: "%.1f", w)
-}
-
-private enum DeltaDirection {
-    case up, down
-    var symbol: String { switch self { case .up: "↑"; case .down: "↓" } }
-    var color: Color {
-        switch self {
-        case .up:   Color.OrinGreen
-        case .down: Color.red.opacity(0.75)
-        }
-    }
-}
-
-private struct DeltaResult {
-    let direction: DeltaDirection
-    let label: String
-    var displayText: String { "\(direction.symbol) \(label)" }
-    var color: Color { direction.color }
-}
-
 // MARK: - Set Row
 
 /// Compact set row — values display only, editing via bottom command bar.
@@ -222,11 +200,8 @@ struct SetRow: View {
                     )
             }
 
-            if showDelta, let delta = deltaResult {
-                Text(delta.displayText)
-                    .font(.system(size: 12, weight: .semibold, design: .rounded))
-                    .foregroundStyle(delta.color)
-                    .transition(.opacity)
+            if showDelta {
+                progressFeedbackView
             }
 
             if isPR {
@@ -379,52 +354,52 @@ struct SetRow: View {
         return "Last  \(prev.reps) reps"
     }
 
-    /// Progress vs previous session — direction + magnitude label for logged rows.
-    private var deltaResult: DeltaResult? {
-        guard isLogged, let prev = previousSet else { return nil }
+    /// Renders the ephemeral progress indicator for the most recently logged set.
+    @ViewBuilder private var progressFeedbackView: some View {
+        let state = feedbackState
+        if state.isVisible {
+            Text(state.displayText)
+                .font(.system(size: 12, weight: .semibold, design: .rounded))
+                .foregroundStyle(state.color)
+                .transition(.opacity)
+        }
+    }
+
+    /// Progress vs previous session. Returns `.none` when PR is shown or data is missing/unchanged.
+    private var feedbackState: ProgressFeedbackState {
+        guard isLogged, let prev = previousSet, !isPR else { return .none }
 
         if isTimed {
-            guard let prevDur = prev.duration, let loggedDur = Double(durationText) else { return nil }
+            guard let prevDur = prev.duration,
+                  let loggedDur = Double(durationText),
+                  loggedDur > 0, prevDur > 0 else { return .none }
             let diff = loggedDur - prevDur
-            guard diff != 0 else { return nil }
-            let dir: DeltaDirection = diff > 0 ? .up : .down
-            let label = (diff > 0 ? "+" : "") + formatDuration(Int(abs(diff)))
-            return DeltaResult(direction: dir, label: label)
+            guard abs(diff) >= ProgressThreshold.duration else { return .none }
+            let label = (diff > 0 ? "+" : "") + formatDuration(Int(abs(diff).rounded()))
+            return diff > 0
+                ? .positive(primary: label, secondary: nil)
+                : .negative(primary: label, secondary: nil)
         }
-
-        let loggedWeight = Double(weightText) ?? 0
-        let loggedReps   = Int(repsText) ?? 0
 
         if tracksWeight {
-            let weightDiff = loggedWeight - prev.weight
-            let repsDiff   = loggedReps - prev.reps
-            guard weightDiff != 0 || repsDiff != 0 else { return nil }
-
-            let loggedVol = loggedWeight * Double(loggedReps)
-            let prevVol   = prev.weight  * Double(prev.reps)
-            guard loggedVol != prevVol else { return nil }
-
-            let dir: DeltaDirection = loggedVol > prevVol ? .up : .down
-
-            // Weight changed → label shows weight delta; otherwise show reps delta
-            if weightDiff != 0 {
-                let abs = formatWeight(Swift.abs(weightDiff))
-                let prefix = weightDiff > 0 ? "+" : "-"
-                return DeltaResult(direction: dir, label: "\(prefix)\(abs) lb")
-            } else {
-                let abs = Swift.abs(repsDiff)
-                let prefix = repsDiff > 0 ? "+" : "-"
-                return DeltaResult(direction: dir, label: "\(prefix)\(abs) \(abs == 1 ? "rep" : "reps")")
-            }
+            guard let loggedWeight = Double(weightText), loggedWeight > 0,
+                  let loggedReps = Int(repsText), loggedReps > 0,
+                  prev.weight >= 0, prev.reps > 0 else { return .none }
+            return classifySetProgress(
+                loggedWeight: loggedWeight, loggedReps: loggedReps,
+                prevWeight: prev.weight, prevReps: prev.reps
+            )
         }
 
-        // Reps only
+        // Reps-only exercise
+        guard let loggedReps = Int(repsText), loggedReps > 0, prev.reps > 0 else { return .none }
         let repsDiff = loggedReps - prev.reps
-        guard repsDiff != 0 else { return nil }
-        let dir: DeltaDirection = repsDiff > 0 ? .up : .down
-        let abs = Swift.abs(repsDiff)
-        let prefix = repsDiff > 0 ? "+" : "-"
-        return DeltaResult(direction: dir, label: "\(prefix)\(abs) \(abs == 1 ? "rep" : "reps")")
+        guard abs(repsDiff) >= ProgressThreshold.reps else { return .none }
+        let rAbs = abs(repsDiff)
+        let label = "\(rAbs) \(rAbs == 1 ? "rep" : "reps")"
+        return repsDiff > 0
+            ? .positive(primary: label, secondary: nil)
+            : .negative(primary: label, secondary: nil)
     }
 
 }
