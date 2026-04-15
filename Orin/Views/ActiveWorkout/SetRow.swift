@@ -85,11 +85,11 @@ struct SetRow: View {
         static let accentOpacity = 0.92
         static let accentFocusedHeight: CGFloat = 32
         static let accentUnfocusedHeight: CGFloat = 22
-        static let fillOpacity = 0.062
-        static let strokeOpacity = 0.07
+        static let fillOpacity = 0.11
+        static let strokeOpacity = 0.132
         static let strokeWidth: CGFloat = 1
-        static let defocusedRowOpacity = 0.94
-        static let focusedShadowOpacity = 0.12
+        static let defocusedRowOpacity = 1.0
+        static let focusedShadowOpacity = 0.132
         static let focusedShadowRadius: CGFloat = 12
     }
 

@@ -33,15 +33,7 @@ enum AccentTheme: String, CaseIterable, Identifiable {
         }
     }
 
-    var activeBackgroundColor: Color {
-        switch self {
-        case .midnight: Color("ActiveBackgroundMidnight")
-        case .graphite: Color("ActiveBackgroundGraphite")
-        case .ember:    Color("ActiveBackgroundEmber")
-        }
-    }
-
-    /// Raw sRGB doubles for encoding into Live Activity ContentState.
+/// Raw sRGB doubles for encoding into Live Activity ContentState.
     /// Color is not Codable so the widget reconstructs it from these values.
     var accentRGB: (r: Double, g: Double, b: Double) {
         switch self {

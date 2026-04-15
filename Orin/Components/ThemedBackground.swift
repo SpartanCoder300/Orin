@@ -12,7 +12,7 @@ struct ThemedBackgroundModifier: ViewModifier {
         content
             .background {
                 ZStack {
-                    dimmed ? theme.activeBackgroundColor : theme.backgroundColor
+                    theme.backgroundColor
 
                     // Ambient accent glow — contained to top, seeps down into content
                     EllipticalGradient(

@@ -350,10 +350,106 @@ enum ExerciseSeeder {
         exercise("Landmine Twist", ["Core"], equipmentType: "Barbell", increment: 5, start: 25),
         exercise("Turkish Get-Up", ["Core", "Shoulders"], equipmentType: "Kettlebell", start: 10),
 
-        // MARK: Power
+        // MARK: Power / Olympic
         exercise("Power Clean", ["Back", "Legs", "Shoulders"], equipmentType: "Barbell", start: 45),
         exercise("Hang Clean", ["Back", "Legs", "Shoulders"], equipmentType: "Barbell", start: 45),
         exercise("Push Jerk", ["Shoulders", "Legs"], equipmentType: "Barbell", start: 45),
+        exercise("Power Snatch", ["Back", "Legs", "Shoulders"], equipmentType: "Barbell", start: 45),
+        exercise("Hang Snatch", ["Back", "Legs", "Shoulders"], equipmentType: "Barbell", start: 45),
+        exercise("Clean and Jerk", ["Back", "Legs", "Shoulders"], equipmentType: "Barbell", start: 45),
+        exercise("Split Jerk", ["Shoulders", "Legs"], equipmentType: "Barbell", start: 45),
+        exercise("Muscle Snatch", ["Shoulders", "Back"], equipmentType: "Barbell", start: 45),
+
+        // MARK: Smith Machine
+        exercise("Smith Machine Bench Press", ["Chest", "Triceps"], equipmentType: "Machine", increment: 5, start: 45),
+        exercise("Smith Machine Incline Press", ["Chest", "Shoulders"], equipmentType: "Machine", increment: 5, start: 45),
+        exercise("Smith Machine Overhead Press", ["Shoulders", "Triceps"], equipmentType: "Machine", increment: 5, start: 45),
+        exercise("Smith Machine Row", ["Back", "Biceps"], equipmentType: "Machine", increment: 5, start: 45),
+        exercise("Smith Machine Squat", ["Legs", "Core"], equipmentType: "Machine", increment: 5, start: 45),
+        exercise("Smith Machine Romanian Deadlift", ["Legs", "Back"], equipmentType: "Machine", increment: 5, start: 45),
+        exercise("Smith Machine Calf Raise", ["Legs"], equipmentType: "Machine", increment: 5, start: 45),
+        exercise("Smith Machine Shrug", ["Shoulders"], equipmentType: "Machine", increment: 5, start: 45),
+
+        // MARK: Chest (additions)
+        exercise("Cable Crossover", ["Chest"], equipmentType: "Cable", increment: 2.5, start: 10),
+        exercise("Hammer Strength Chest Press", ["Chest", "Triceps"], equipmentType: "Machine", increment: 5, start: 25),
+        exercise("Plate-Loaded Chest Fly", ["Chest"], equipmentType: "Machine", increment: 5, start: 25),
+        exercise("Deficit Push-Up", ["Chest", "Triceps"], equipmentType: "Bodyweight", loadTrackingMode: .none),
+        exercise("Archer Push-Up", ["Chest", "Triceps"], equipmentType: "Bodyweight", loadTrackingMode: .none),
+
+        // MARK: Back (additions)
+        exercise("Wide-Grip Lat Pulldown", ["Back", "Biceps"], equipmentType: "Cable", increment: 5, start: 10),
+        exercise("Neutral-Grip Lat Pulldown", ["Back", "Biceps"], equipmentType: "Cable", increment: 5, start: 10),
+        exercise("Underhand Lat Pulldown", ["Back", "Biceps"], equipmentType: "Cable", increment: 5, start: 10),
+        exercise("V-Bar Pulldown", ["Back", "Biceps"], equipmentType: "Cable", increment: 5, start: 10),
+        exercise("Wide-Grip Seated Cable Row", ["Back", "Biceps"], equipmentType: "Cable", increment: 5, start: 10),
+        exercise("Hammer Strength Row", ["Back", "Biceps"], equipmentType: "Machine", increment: 5, start: 25),
+        exercise("Machine Row", ["Back", "Biceps"], equipmentType: "Machine", increment: 5, start: 25),
+        exercise("Cable Pullover", ["Back", "Chest"], equipmentType: "Cable", increment: 5, start: 20),
+        exercise("Trap Bar Shrug", ["Shoulders", "Back"], equipmentType: "Barbell", start: 60),
+
+        // MARK: Shoulders (additions)
+        exercise("Seated Barbell Overhead Press", ["Shoulders", "Triceps"], equipmentType: "Barbell", start: 45),
+        exercise("Machine Lateral Raise", ["Shoulders"], equipmentType: "Machine", increment: 5, start: 10),
+        exercise("Bent-Over Rear Delt Raise", ["Shoulders", "Back"], equipmentType: "Dumbbell", start: 5),
+        exercise("Cable Rear Delt Fly", ["Shoulders", "Back"], equipmentType: "Cable", increment: 2.5, start: 5),
+        exercise("Plate Front Raise", ["Shoulders"], equipmentType: "Barbell", increment: 5, start: 10),
+        exercise("Landmine Lateral Raise", ["Shoulders"], equipmentType: "Barbell", increment: 5, start: 10),
+        exercise("Cable Upright Row", ["Shoulders", "Biceps"], equipmentType: "Cable", increment: 5, start: 20),
+
+        // MARK: Biceps (additions)
+        exercise("EZ Bar Preacher Curl", ["Biceps"], equipmentType: "Barbell", start: 30),
+        exercise("Dumbbell Preacher Curl", ["Biceps"], equipmentType: "Dumbbell", start: 10),
+        exercise("High Cable Curl", ["Biceps"], equipmentType: "Cable", increment: 5, start: 10),
+        exercise("Rope Cable Curl", ["Biceps"], equipmentType: "Cable", increment: 5, start: 10),
+        exercise("Reverse EZ Bar Curl", ["Biceps", "Forearms"], equipmentType: "Barbell", start: 25),
+        exercise("Drag Curl", ["Biceps"], equipmentType: "Barbell", start: 30),
+
+        // MARK: Triceps (additions)
+        exercise("EZ Bar Skull Crusher", ["Triceps"], equipmentType: "Barbell", start: 30),
+        exercise("French Press", ["Triceps"], equipmentType: "Barbell", start: 30),
+        exercise("Lying Dumbbell Extension", ["Triceps"], equipmentType: "Dumbbell", start: 10),
+        exercise("Single-Arm Cable Pushdown", ["Triceps"], equipmentType: "Cable", increment: 2.5, start: 10),
+
+        // MARK: Legs (additions)
+        exercise("Sissy Squat", ["Legs"], equipmentType: "Bodyweight", loadTrackingMode: .none),
+        exercise("Wall Sit", ["Legs"], equipmentType: "Bodyweight", loadTrackingMode: .none, isTimed: true),
+        exercise("Cyclist Squat", ["Legs"], equipmentType: "Barbell", start: 45),
+        exercise("Zercher Squat", ["Legs", "Core"], equipmentType: "Barbell", start: 45),
+        exercise("Safety Bar Squat", ["Legs", "Core"], equipmentType: "Barbell", start: 45),
+        exercise("Box Jump", ["Legs"], equipmentType: "Bodyweight", loadTrackingMode: .none),
+        exercise("Jump Squat", ["Legs"], equipmentType: "Bodyweight", loadTrackingMode: .none),
+        exercise("Landmine Squat", ["Legs", "Core"], equipmentType: "Barbell", increment: 5, start: 25),
+        exercise("Dumbbell Step-Up", ["Legs", "Glutes"], equipmentType: "Dumbbell", start: 10),
+        exercise("Weighted Step-Up", ["Legs", "Glutes"], equipmentType: "Barbell", start: 45),
+
+        // MARK: Glutes (additions)
+        exercise("Donkey Kick", ["Glutes"], equipmentType: "Bodyweight", loadTrackingMode: .none),
+        exercise("Fire Hydrant", ["Glutes"], equipmentType: "Bodyweight", loadTrackingMode: .none),
+        exercise("Sumo Deadlift High Pull", ["Glutes", "Shoulders"], equipmentType: "Barbell", start: 45),
+
+        // MARK: Core (additions)
+        exercise("Cable Woodchop", ["Core"], equipmentType: "Cable", increment: 5, start: 10),
+        exercise("Medicine Ball Slam", ["Core", "Shoulders"], equipmentType: "Bodyweight", loadTrackingMode: .none),
+        exercise("L-Sit", ["Core"], equipmentType: "Bodyweight", loadTrackingMode: .none, isTimed: true),
+        exercise("Toes to Bar", ["Core"], equipmentType: "Bodyweight", loadTrackingMode: .none),
+        exercise("Kneeling Cable Crunch", ["Core"], equipmentType: "Cable", increment: 5, start: 10),
+        exercise("Weighted Sit-Up", ["Core"], equipmentType: "Barbell", increment: 5, start: 10),
+        exercise("Suitcase Carry", ["Core", "Forearms"], equipmentType: "Dumbbell", start: 20),
+        exercise("Overhead Carry", ["Core", "Shoulders"], equipmentType: "Dumbbell", start: 10),
+
+        // MARK: Cardio / Conditioning
+        exercise("Rowing Machine", ["Back", "Legs", "Core"], equipmentType: "Machine", loadTrackingMode: .none, isTimed: true),
+        exercise("Stationary Bike", ["Legs"], equipmentType: "Machine", loadTrackingMode: .none, isTimed: true),
+        exercise("Stair Climber", ["Legs", "Core"], equipmentType: "Machine", loadTrackingMode: .none, isTimed: true),
+        exercise("Elliptical", ["Legs", "Core"], equipmentType: "Machine", loadTrackingMode: .none, isTimed: true),
+        exercise("Treadmill Run", ["Legs"], equipmentType: "Machine", loadTrackingMode: .none, isTimed: true),
+        exercise("Jump Rope", ["Legs", "Core"], equipmentType: "Bodyweight", loadTrackingMode: .none, isTimed: true),
+        exercise("Battle Ropes", ["Shoulders", "Core"], equipmentType: "Bodyweight", loadTrackingMode: .none, isTimed: true),
+        exercise("Burpee", ["Core", "Legs", "Chest"], equipmentType: "Bodyweight", loadTrackingMode: .none),
+        exercise("Sled Push", ["Legs", "Core"], equipmentType: "Machine", increment: 10, start: 90),
+        exercise("Sled Pull", ["Back", "Legs"], equipmentType: "Machine", increment: 10, start: 90),
+        exercise("Assault Bike", ["Legs", "Shoulders"], equipmentType: "Machine", loadTrackingMode: .none, isTimed: true),
     ]
     // swiftlint:enable function_body_length
 }

@@ -320,22 +320,22 @@ private struct CommandPanelElevation: ViewModifier {
 
     private enum DepthStyle {
         // White surface fill — makes the glass panel read as elevated on dark backgrounds
-        static let surfaceTintOpacity = 0.14
+        static let surfaceTintOpacity = 0.24
         // Specular highlight — brighter on top edge, fades out toward bottom
-        static let borderTopOpacity = 0.18
-        static let borderBottomOpacity = 0.05
+        static let borderTopOpacity = 0.26
+        static let borderBottomOpacity = 0.08
         // Ambient shadow — large, soft, spreads depth far
-        static let primaryShadowOpacity = 0.50
-        static let primaryShadowRadius: CGFloat = 32
-        static let primaryShadowYOffset: CGFloat = 16
+        static let primaryShadowOpacity = 0.68
+        static let primaryShadowRadius: CGFloat = 40
+        static let primaryShadowYOffset: CGFloat = 20
         // Directional shadow — medium, main cast
-        static let secondaryShadowOpacity = 0.32
-        static let secondaryShadowRadius: CGFloat = 12
-        static let secondaryShadowYOffset: CGFloat = 6
+        static let secondaryShadowOpacity = 0.44
+        static let secondaryShadowRadius: CGFloat = 16
+        static let secondaryShadowYOffset: CGFloat = 8
         // Contact shadow — tight, reads as "lifted off surface"
-        static let contactShadowOpacity = 0.36
-        static let contactShadowRadius: CGFloat = 2
-        static let contactShadowYOffset: CGFloat = 1
+        static let contactShadowOpacity = 0.48
+        static let contactShadowRadius: CGFloat = 3
+        static let contactShadowYOffset: CGFloat = 2
     }
 
     func body(content: Content) -> some View {
