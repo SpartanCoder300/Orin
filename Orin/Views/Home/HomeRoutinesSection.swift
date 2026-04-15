@@ -20,6 +20,7 @@ struct HomeRoutinesSection: View {
             } else {
                 if !nonFeatured.isEmpty {
                     SectionHeader(title: featured != nil ? "Other routines" : "Routines")
+                        .opacity(featured != nil ? 0.55 : 1)
                     ForEach(nonFeatured) { routine in
                         RoutineListRow(
                             routine: routine,
@@ -28,7 +29,7 @@ struct HomeRoutinesSection: View {
                             onEdit: { onEdit(routine) }
                         )
                     }
-                    .opacity(0.72)
+                    .opacity(0.84)
                 }
                 NewRoutineCard(action: onNew)
             }
@@ -54,12 +55,13 @@ private struct NewRoutineCard: View {
     var body: some View {
         Button(action: action) {
             Label("New Routine", systemImage: "plus.circle.fill")
-                .font(Typography.body.weight(.medium))
+                .font(Typography.body.weight(.semibold))
                 .foregroundStyle(theme.accentColor)
                 .padding(.horizontal, Spacing.md)
                 .padding(.vertical, Spacing.sm)
         }
         .buttonStyle(.plain)
+        .padding(.top, Spacing.xs)
     }
 }
 

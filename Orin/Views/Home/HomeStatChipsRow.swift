@@ -13,7 +13,7 @@ struct HomeStatChipsRow: View {
             StatChip(label: "This Week", value: stats.thisWeekLabel,
                      icon: "figure.strengthtraining.traditional", iconColor: theme.accentColor)
             StatChip(label: "PRs", value: stats.prCountLabel,
-                     icon: "trophy.fill", iconColor: theme.accentColor, isAccented: true)
+                     icon: "trophy.fill", iconColor: theme.accentColor)
         }
     }
 }
@@ -34,16 +34,16 @@ struct StatChip: View {
         ZStack(alignment: .leading) {
             // ── Watermark ────────────────────────────────────────────
             Image(systemName: icon)
-                .font(.system(size: 42, weight: .bold))
-                .foregroundStyle(iconColor.opacity(isAccented ? 0.26 : isHighlighted ? 0.30 : 0.24))
+                .font(.system(size: 36, weight: .bold))
+                .foregroundStyle(iconColor.opacity(isAccented ? 0.42 : isHighlighted ? 0.46 : 0.36))
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
-                .offset(x: 8, y: 8)
+                .offset(x: 4, y: 4)
 
             // ── Content ──────────────────────────────────────────────
             VStack(alignment: .leading, spacing: 1) {
                 Text(value)
-                    .font(.system(size: 20, weight: .semibold, design: .rounded))
-                    .foregroundStyle(isAccented ? iconColor : .white)
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .foregroundStyle(isAccented ? iconColor : Color.white.opacity(0.95))
                     .monospacedDigit()
                 Text(label)
                     .font(.system(size: 10, weight: .medium))
@@ -51,6 +51,7 @@ struct StatChip: View {
                     .textCase(.uppercase)
                     .tracking(0.45)
             }
+            .padding(.trailing, 38)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 12)

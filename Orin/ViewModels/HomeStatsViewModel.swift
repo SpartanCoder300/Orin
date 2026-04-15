@@ -7,9 +7,9 @@ import Observation
 @Observable
 @MainActor
 final class HomeStatsViewModel {
-    private(set) var streakLabel: String = "—"
-    private(set) var thisWeekLabel: String = "—"
-    private(set) var prCountLabel: String = "—"
+    private(set) var streakLabel: String = "0"
+    private(set) var thisWeekLabel: String = "0"
+    private(set) var prCountLabel: String = "0"
     private(set) var featuredRoutine: FeaturedRoutineSuggestion? = nil
 
     private var refreshTask: Task<Void, Never>?
@@ -29,9 +29,9 @@ final class HomeStatsViewModel {
         let (s, w, p, f) = await (streak, thisWeek, prs, featured)
         guard !Task.isCancelled else { return }
 
-        streakLabel     = s > 0 ? "\(s)" : "—"
-        thisWeekLabel   = w > 0 ? "\(w)" : "—"
-        prCountLabel    = p > 0 ? "\(p)" : "—"
+        streakLabel     = "\(s)"
+        thisWeekLabel   = "\(w)"
+        prCountLabel    = p > 0 ? "\(p)" : "0"
         featuredRoutine = f
     }
 }

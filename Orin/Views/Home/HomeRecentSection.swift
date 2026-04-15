@@ -55,9 +55,9 @@ private struct RecentWorkoutListRow: View {
                             .font(Typography.caption)
                             .foregroundStyle(Color.textMuted)
                     }
-                    Label("Repeat", systemImage: "arrow.clockwise")
-                        .font(Typography.caption.weight(.medium))
-                        .foregroundStyle(theme.accentColor.opacity(0.8))
+                    Image(systemName: "arrow.clockwise")
+                        .font(Typography.caption)
+                        .foregroundStyle(theme.accentColor.opacity(0.50))
                 }
             }
             .padding(Spacing.md)

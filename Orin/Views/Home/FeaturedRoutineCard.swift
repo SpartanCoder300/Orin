@@ -21,9 +21,9 @@ struct FeaturedRoutineCard: View {
         } label: {
             VStack(alignment: .leading, spacing: Spacing.md) {
                 HStack(alignment: .top, spacing: Spacing.md) {
-                    VStack(alignment: .leading, spacing: 2) {
+                    VStack(alignment: .leading, spacing: 6) {
                         Text(suggestion.routineName)
-                            .font(.system(size: 26, weight: .bold, design: .rounded))
+                            .font(.system(size: 28, weight: .heavy, design: .rounded))
                             .foregroundStyle(Color.textPrimary)
                             .lineLimit(2)
                         Text(summaryLine)
@@ -36,8 +36,8 @@ struct FeaturedRoutineCard: View {
                 }
 
                 Text("Start Workout")
-                    .font(.system(size: 15, weight: .bold))
-                    .foregroundStyle(.black.opacity(0.85))
+                    .font(.system(size: 15, weight: .heavy))
+                    .foregroundStyle(.white)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, 12)
                     .background(theme.accentColor, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
@@ -51,7 +51,7 @@ struct FeaturedRoutineCard: View {
                         RoundedRectangle(cornerRadius: Radius.large, style: .continuous)
                             .fill(
                                 LinearGradient(
-                                    colors: [theme.accentColor.opacity(0.22), theme.accentColor.opacity(0.10)],
+                                    colors: [theme.accentColor.opacity(0.30), theme.accentColor.opacity(0.14)],
                                     startPoint: .topLeading,
                                     endPoint: .bottomTrailing
                                 )
@@ -71,8 +71,9 @@ struct FeaturedRoutineCard: View {
             }
             .overlay {
                 RoundedRectangle(cornerRadius: Radius.large, style: .continuous)
-                    .strokeBorder(Color.white.opacity(0.10), lineWidth: 1)
+                    .strokeBorder(Color.white.opacity(0.18), lineWidth: 1)
             }
+            .shadow(color: .black.opacity(0.28), radius: 12, x: 0, y: 6)
             .proGlass()
         }
         .buttonStyle(.plain)

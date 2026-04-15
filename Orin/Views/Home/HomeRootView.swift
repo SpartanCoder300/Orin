@@ -93,7 +93,7 @@ struct HomeRootView: View {
 
                     // Stats recede — they're context, not the primary action
                     HomeStatChipsRow(stats: stats)
-                        .opacity(0.58)
+                        .opacity(0.82)
 
                     HomeRoutinesSection(
                         routines: sortedRoutines,
