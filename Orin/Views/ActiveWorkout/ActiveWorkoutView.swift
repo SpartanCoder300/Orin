@@ -387,10 +387,10 @@ private struct PRCelebrationBackdrop: View {
                 flashOpacity = 0.0
             }
             withAnimation(.easeOut(duration: 0.95).delay(0.14)) {
-                scrimOpacity = 0.66
-                washOpacity = 0.52
-                spotlightOpacity = 0.64
-                haloOpacity = 0.54
+                scrimOpacity = 0.72
+                washOpacity = 0.48
+                spotlightOpacity = 0.58
+                haloOpacity = 0.48
             }
         }
     }
