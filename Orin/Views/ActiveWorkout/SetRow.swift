@@ -54,7 +54,6 @@ struct SetRow: View {
     @State private var badgeScale: CGFloat = 0
     @State private var showDelta = false
     @State private var deltaFadeTask: Task<Void, Never>? = nil
-    @State private var logHighlightOpacity: Double = 0
     @State private var checkScale: CGFloat = 1.0
 
     private enum ActiveRowStyle {
@@ -121,22 +120,17 @@ struct SetRow: View {
                 withAnimation(Motion.standardSpring) { showDelta = false }
             }
             withAnimation(.easeOut(duration: 0.08)) {
-                logHighlightOpacity = 1.0
                 rowScale = 0.992
                 checkScale = 1.08
             }
             Task { @MainActor in
                 try? await Task.sleep(for: .milliseconds(110))
-                withAnimation(.easeOut(duration: 0.16)) {
-                    logHighlightOpacity = 0.0
-                }
                 withAnimation(Motion.standardSpring) {
                     rowScale = 1.0
                     checkScale = 1.0
                 }
             }
         } else {
-            logHighlightOpacity = 0
             checkScale = 1.0
             // Timer keeps running — fades after 2.5s only if user has continued logging
         }
@@ -270,16 +264,6 @@ struct SetRow: View {
             radius: isFocused ? ActiveRowStyle.focusedShadowRadius : 0,
             y: 1
         )
-        .overlay {
-            if logHighlightOpacity > 0 {
-                Rectangle()
-                    .fill(accentColor.opacity(0.14))
-                    .opacity(logHighlightOpacity)
-                    .padding(.top, isFirstInCard ? 6 : 1)
-                    .padding(.bottom, 1)
-                    .allowsHitTesting(false)
-            }
-        }
         .contentShape(Rectangle())
         .onTapGesture {
             guard !isLogged else { return }
