@@ -146,7 +146,7 @@ struct ActiveWorkoutView: View {
         ZStack {
             NavigationStack {
                 workoutScrollView
-                .themedBackground()
+                .themedBackground(dimmed: true)
                 .onTapGesture {
                     openSwipeSetID = nil
                     dismissKeyboard()

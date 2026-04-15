@@ -27,6 +27,7 @@ struct ThemedBackgroundModifier: ViewModifier {
                         startRadiusFraction: 0,
                         endRadiusFraction: 0.30
                     )
+                    .opacity(dimmed ? 0.5 : 1.0)
 
                     // Bottom fade to black
                     LinearGradient(
