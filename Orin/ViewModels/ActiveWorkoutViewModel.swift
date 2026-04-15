@@ -1331,10 +1331,11 @@ final class ActiveWorkoutViewModel {
             if newMaxWeight > def.maxWeight {
                 def.maxWeight = newMaxWeight
                 def.maxRepsAtMaxWeight = newMaxReps
-            } else if newMaxWeight == def.maxWeight {
-                def.maxRepsAtMaxWeight = max(def.maxRepsAtMaxWeight, newMaxReps)
+                def.prDate = .now
+            } else if newMaxWeight == def.maxWeight, newMaxReps > def.maxRepsAtMaxWeight {
+                def.maxRepsAtMaxWeight = newMaxReps
+                def.prDate = .now
             }
-            def.prDate = .now
         }
         pendingMaxWeightByExercise.removeAll()
         pendingMaxRepsAtMaxWeightByExercise.removeAll()
@@ -1620,16 +1621,25 @@ final class ActiveWorkoutViewModel {
         let sessionMaxReps = pendingMaxRepsAtMaxWeightByExercise[lineageID] ?? 0
 
         // Always track session best so applyPendingPRs can seed def.maxWeight on workout end,
-        // even when no PR fires (e.g. first workout for this exercise)
+        // even when no PR fires (e.g. first workout for this exercise).
+        // For bodyweight sets (weight == 0), we still need the lineage in pendingMaxWeightByExercise
+        // so applyPendingPRs runs and can update def.maxRepsAtMaxWeight.
         if weight > sessionMaxWeight {
             pendingMaxWeightByExercise[lineageID] = weight
             pendingMaxRepsAtMaxWeightByExercise[lineageID] = reps
         } else if weight == sessionMaxWeight, reps > sessionMaxReps {
             pendingMaxRepsAtMaxWeightByExercise[lineageID] = reps
+            if pendingMaxWeightByExercise[lineageID] == nil {
+                pendingMaxWeightByExercise[lineageID] = weight
+            }
         }
 
-        // No history → no PR
-        guard def.maxWeight > 0 else { return nil }
+        // No history → no PR (first-ever set for this exercise).
+        // sessionMaxWeight/Reps were read before the current set updated them, so > 0 means
+        // at least one prior set exists this session. Also accept def.maxRepsAtMaxWeight > 0
+        // so bodyweight exercises (weight == 0) can PR on reps from a prior session.
+        guard def.maxWeight > 0 || def.maxRepsAtMaxWeight > 0
+                || sessionMaxWeight > 0 || sessionMaxReps > 0 else { return nil }
 
         // Effective best: persisted + prior session sets (read before update above)
         let allTimeMaxWeight: Double
@@ -1677,7 +1687,8 @@ final class ActiveWorkoutViewModel {
                 newMaxReps = record.reps
             }
         }
-        if newMaxWeight > 0 {
+        // Keep bodyweight exercises (weight == 0) tracked if any reps were logged.
+        if newMaxWeight > 0 || newMaxReps > 0 {
             pendingMaxWeightByExercise[lineageID] = newMaxWeight
             pendingMaxRepsAtMaxWeightByExercise[lineageID] = newMaxReps
         } else {

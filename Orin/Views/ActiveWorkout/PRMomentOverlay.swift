@@ -96,6 +96,9 @@ struct PRMomentOverlay: View {
                 cardScale = 1.0
                 glowOpacity = 0.42
             }
+            AccessibilityNotification.Announcement(
+                "Personal Record! \(moment.exerciseName). \(moment.formattedWeight) pounds, \(moment.reps) reps. \(moment.deltaText)."
+            ).post()
         }
         .task {
             // Start countdown bar one frame after appear so animation is visible
